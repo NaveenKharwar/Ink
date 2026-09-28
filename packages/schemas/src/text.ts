@@ -1,6 +1,8 @@
 import type { EditorDoc, EditorNode } from "./piece.js";
 
 const LIST_TYPES = new Set(["bulletList", "orderedList"]);
+// How a scene break reads in plain text.
+const SCENE_BREAK = "* * *";
 
 function inlineText(nodes: EditorNode[] = []): string {
   return nodes
@@ -21,6 +23,8 @@ function blockText(node: EditorNode): string {
       .join("\n");
   }
   if (node.type === "listItem") return (node.content ?? []).map(blockText).join("\n");
+  if (node.type === "horizontalRule") return SCENE_BREAK;
+  if (node.type === "blockquote") return joinBlocks(node.content);
   if (node.content?.some((child) => child.type === "text" || child.type === "hardBreak")) {
     return inlineText(node.content);
   }
@@ -33,5 +37,13 @@ function blockText(node: EditorNode): string {
  * Stanzas (top-level blocks) are separated by a blank line; lines keep their breaks.
  */
 export function docToPlainText(doc: EditorDoc): string {
-  return (doc.content ?? []).map(blockText).join("\n\n").replace(/\s+$/u, "");
+  return joinBlocks(doc.content).replace(/\s+$/u, "");
+}
+
+// Blocks are stanzas: one blank line between them, empty ones dropped.
+function joinBlocks(nodes: EditorNode[] = []): string {
+  return nodes
+    .map(blockText)
+    .filter((text) => text.trim() !== "")
+    .join("\n\n");
 }

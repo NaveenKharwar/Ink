@@ -52,3 +52,17 @@ test("editorDoc rejects very deep nesting without overflowing the stack", () => 
   const result = editorDoc.safeParse({ type: "doc", content: [node] });
   assert.equal(result.success, false);
 });
+
+test("a scene break reads as * * * and a quote keeps its stanza gaps", () => {
+  const doc = {
+    type: "doc" as const,
+    content: [
+      { type: "paragraph", content: [line("before")] },
+      { type: "horizontalRule" },
+      { type: "blockquote", content: [{ type: "paragraph", content: [line("one")] }, { type: "paragraph", content: [line("two")] }] },
+      { type: "paragraph" },
+      { type: "paragraph", content: [line("\tindented"), br, line("  two spaces")] }
+    ]
+  };
+  assert.equal(docToPlainText(doc), "before\n\n* * *\n\none\n\ntwo\n\n\tindented\n  two spaces");
+});

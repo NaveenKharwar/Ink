@@ -121,3 +121,75 @@ body {
   outline: 2px solid var(--color-auth-accent);
   outline-offset: 2px;
 }
+
+/* The writing page. Stanzas are paragraphs, one line height apart; lines are hard breaks. */
+.ink-editor .ProseMirror {
+  --lh: 33px;
+  --bar-gap: 29px;
+  outline: none;
+  font-family: var(--font-serif);
+  font-size: 22px;
+  line-height: var(--lh);
+  color: var(--ink);
+  white-space: pre-wrap;
+  tab-size: 4;
+  min-height: calc(var(--lh) * 6);
+}
+@media (max-width: 1023px) {
+  .ink-editor .ProseMirror {
+    --lh: 29px;
+    --bar-gap: 14px;
+    font-size: 19px;
+  }
+}
+.ink-editor .ProseMirror > * + * { margin-top: var(--lh); }
+.ink-editor .ProseMirror p { position: relative; }
+/* The stanza bar, once a stanza has text. */
+.ink-editor .ProseMirror p.has-text::before {
+  content: "";
+  position: absolute;
+  left: calc(-3px - var(--bar-gap));
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--stanza);
+}
+.ink-editor .ProseMirror h1 {
+  font-size: 30px;
+  line-height: 36px;
+  font-weight: 400;
+}
+.ink-editor .ProseMirror blockquote {
+  padding-left: 1.5em;
+  color: var(--ink-muted);
+}
+.ink-editor .ProseMirror blockquote > * + * { margin-top: var(--lh); }
+/* Scene break: a small diamond between two short rules, centred. */
+.ink-editor .ProseMirror hr {
+  border: 0;
+  height: var(--lh);
+  background:
+    linear-gradient(var(--ink-muted), var(--ink-muted)) calc(50% - 22px) 50% / 20px 1px no-repeat,
+    linear-gradient(var(--ink-muted), var(--ink-muted)) calc(50% + 22px) 50% / 20px 1px no-repeat;
+  position: relative;
+}
+.ink-editor .ProseMirror hr::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border: 1.4px solid var(--ink-muted);
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.ink-editor .ProseMirror hr.ProseMirror-selectednode { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ink-editor .ProseMirror p.is-editor-empty:first-child::after {
+  content: attr(data-placeholder);
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--ink-muted);
+  pointer-events: none;
+}
