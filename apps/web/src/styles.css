@@ -1,0 +1,123 @@
+@import "tailwindcss";
+
+/* App colours switch with the system theme. */
+:root {
+  --ground: #f4f4f3;
+  --surface: #ffffff;
+  --line: #ececea;
+  --ink: #1a1a1a;
+  --on-ink: #ffffff;
+  --ink-muted: #6b6b6b;
+  --accent: #1d4ed8;
+  --surface-hover: #f2f2f1;
+  --line-strong: #e4e4e2;
+  --ink-subtle: #8a8a8a;
+  --stanza: #9db5f5;
+  --tooltip: #16181d;
+  --tooltip-key: #2e323a;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: #121314;
+    --surface: #1a1b1d;
+    --line: #2a2b2e;
+    --ink: #ededec;
+    --on-ink: #121314;
+    --ink-muted: #a3a3a0;
+    --accent: #8aa8ff;
+    --surface-hover: #232427;
+    --line-strong: #34363a;
+    --ink-subtle: #7a7b7e;
+    --stanza: #4a64b5;
+    --tooltip: #2e3035;
+    --tooltip-key: #3a3d43;
+  }
+}
+
+@theme inline {
+  --color-ground: var(--ground);
+  --color-surface: var(--surface);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-on-ink: var(--on-ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-accent: var(--accent);
+  --color-surface-hover: var(--surface-hover);
+  --color-line-strong: var(--line-strong);
+  --color-ink-subtle: var(--ink-subtle);
+  --color-stanza: var(--stanza);
+  --color-tooltip: var(--tooltip);
+  --color-tooltip-key: var(--tooltip-key);
+}
+
+@theme {
+  /* Sign-in is light only, so it uses the light values directly. */
+  --color-auth-ink: #1a1a1a;
+  --color-auth-accent: #1d4ed8;
+  --color-auth-cream: #faf8f3;
+  --color-auth-line: #e2ded5;
+  --color-auth-muted: #6b665e;
+  --color-auth-backdrop: #e6d9c6;
+  --color-auth-on-sky: #2b2a28;
+
+  --font-serif: "Source Serif 4", "Noto Serif Devanagari", Georgia, serif;
+  --font-sans: Inter, "Noto Sans Devanagari", system-ui, sans-serif;
+  --font-hand: "Homemade Apple", Kalam, cursive;
+
+  --radius-sm: 5px;
+  --radius-md: 8px;
+  --radius-bar: 10px;
+  --radius-panel: 12px;
+  --radius-auth-card: 20px;
+  --radius-auth-control: 10px;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  background: var(--ground);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Sign-in sky: each cloud layer is two overlapping copies of a 1672px-wide image whose
+   loop length is 1412px (84.45%). The track slides one loop and repeats without a seam;
+   the copies add together (plus-lighter) so their cross-faded ends make one cloud. */
+.sky-track {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+  isolation: isolate;
+}
+.sky-track img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+.sky-track img + img {
+  left: -84.45%;
+  mix-blend-mode: plus-lighter;
+}
+@keyframes sky-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(84.45%, 0, 0); }
+}
+.sky-clouds-main { animation: sky-drift 490s linear infinite; }
+.sky-clouds-far { animation: sky-drift 830s linear infinite; }
+.sky-still .sky-clouds-main,
+.sky-still .sky-clouds-far { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .sky-clouds-main,
+  .sky-clouds-far { animation: none; }
+}
+
+.auth :focus-visible {
+  outline: 2px solid var(--color-auth-accent);
+  outline-offset: 2px;
+}
