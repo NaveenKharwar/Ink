@@ -1,22 +1,36 @@
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from "react";
+import { Loader } from "../lib/Loader";
 
 export function Eyebrow({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <div className={`text-[12px] leading-4 tracking-[0.3em] text-auth-muted ${className}`}>{children}</div>;
 }
 
-export function Heading({ children, wide }: { children: ReactNode; wide: boolean }) {
-  return (
-    <h1 className={`mt-2 font-serif font-normal leading-[1.15] ${wide ? "text-[44px]" : "text-[32px]"}`}>{children}</h1>
-  );
+export function Heading({ children }: { children: ReactNode }) {
+  return <h1 className="mt-2 font-serif text-[32px] leading-[1.15] font-normal wide:text-[44px]">{children}</h1>;
 }
 
-export function MainButton({ children, className = "", ...rest }: ButtonHTMLAttributes<HTMLButtonElement>) {
+// While busy, the label gives way to the loader (screen readers still hear the label).
+export function MainButton({
+  children,
+  busy = false,
+  className = "",
+  ...rest
+}: ButtonHTMLAttributes<HTMLButtonElement> & { busy?: boolean }) {
   return (
     <button
       {...rest}
-      className={`flex h-12 w-full cursor-pointer items-center justify-center gap-3 rounded-auth-control border-0 bg-auth-ink text-[15px] font-medium text-white hover:bg-black disabled:cursor-default disabled:opacity-80 ${className}`}
+      disabled={busy || rest.disabled}
+      aria-busy={busy || undefined}
+      className={`flex h-12 w-full cursor-pointer items-center justify-center gap-3 rounded-auth-control border-0 bg-auth-ink text-[15px] font-medium text-white hover:bg-black disabled:cursor-default disabled:opacity-80 aria-busy:opacity-100 ${className}`}
     >
-      {children}
+      {busy ? (
+        <>
+          <span className="sr-only">{children}</span>
+          <Loader size={18} label="Loading" className="text-auth-sunset" />
+        </>
+      ) : (
+        children
+      )}
     </button>
   );
 }

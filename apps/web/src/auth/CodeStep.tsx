@@ -9,12 +9,11 @@ type Note = "wrong" | "short" | "resent" | { problem: Exclude<AuthProblem, "wron
 
 type Props = {
   email: string;
-  wide: boolean;
   onUsePassword: () => void;
   onChangeEmail: () => void;
 };
 
-export function CodeStep({ email, wide, onUsePassword, onChangeEmail }: Props) {
+export function CodeStep({ email, onUsePassword, onChangeEmail }: Props) {
   const [code, setCode] = useState("");
   const [focused, setFocused] = useState(false);
   const [left, setLeft] = useState(RESEND_AFTER);
@@ -54,7 +53,7 @@ export function CodeStep({ email, wide, onUsePassword, onChangeEmail }: Props) {
 
   return (
     <form onSubmit={submit} noValidate className="m-0">
-      <Heading wide={wide}>Check your email</Heading>
+      <Heading>Check your email</Heading>
       <p className="mt-2.5 mb-0 text-auth-muted">
         We sent a 6-digit code to <span className="font-medium text-auth-ink">{email}</span>.
       </p>
@@ -109,8 +108,8 @@ export function CodeStep({ email, wide, onUsePassword, onChangeEmail }: Props) {
         {typeof note === "object" && note && <Message>{problemText(note.problem, note.sending)}</Message>}
       </div>
 
-      <MainButton type="submit" className="mt-4" disabled={busy} aria-busy={busy}>
-        Continue
+      <MainButton type="submit" className="mt-4" busy={busy}>
+        Start writing
       </MainButton>
 
       <div className="mt-5 border-t border-auth-line pt-4 text-[13px] leading-[18px]">

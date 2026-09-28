@@ -53,18 +53,22 @@
 }
 
 @theme {
+  /* Sign-in switches from the stacked phone layout to the side-by-side card here. */
+  --breakpoint-wide: 1100px;
+
   /* Sign-in is light only, so it uses the light values directly. */
   --color-auth-ink: #1a1a1a;
   --color-auth-accent: #1d4ed8;
   --color-auth-cream: #faf8f3;
   --color-auth-line: #e2ded5;
+  --color-auth-rule: #cfc9bd;
+  --color-auth-sunset: #f2b99a;
   --color-auth-muted: #6b665e;
   --color-auth-backdrop: #e6d9c6;
   --color-auth-on-sky: #2b2a28;
 
   --font-serif: "Source Serif 4", "Noto Serif Devanagari", Georgia, serif;
   --font-sans: Inter, "Noto Sans Devanagari", system-ui, sans-serif;
-  --font-hand: "Homemade Apple", Kalam, cursive;
 
   --radius-sm: 5px;
   --radius-md: 8px;
@@ -192,4 +196,20 @@ body {
   top: 0;
   color: var(--ink-muted);
   pointer-events: none;
+}
+
+/* Sign-in: the rolling sentence in the corner of the sky. */
+@keyframes sky-roll-in {
+  from { transform: translateY(-100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes sky-roll-out {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(100%); opacity: 0; }
+}
+.sky-roll-in { animation: sky-roll-in 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.sky-roll-out { animation: sky-roll-out 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .sky-roll-in, .sky-roll-out { animation: none; }
+  .sky-roll-out { display: none; }
 }

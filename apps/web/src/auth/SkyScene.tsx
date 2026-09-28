@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState } from "react";
+import { SkyRoller } from "./SkyRoller";
 
 // The painting's layers are all 1672 × 941.
 const ART_W = 1672;
@@ -8,8 +9,8 @@ const ANCHOR_X = 0.2;
 
 type Stage = { width: number; height: number; left: number; top: number };
 
-// The desktop sky: still plate, two cloud layers drifting one way, the rooftop in front.
-export function SkyScene({ still }: { still: boolean }) {
+// The sky: still plate, two cloud layers drifting one way, the rooftop in front.
+export function SkyScene({ still, className = "" }: { still: boolean; className?: string }) {
   const sceneRef = useRef<HTMLDivElement>(null);
   const [stage, setStage] = useState<Stage | null>(null);
 
@@ -31,7 +32,7 @@ export function SkyScene({ still }: { still: boolean }) {
   }, []);
 
   return (
-    <div ref={sceneRef} className={`relative grow overflow-hidden ${still ? "sky-still" : ""}`}>
+    <div ref={sceneRef} className={`relative overflow-hidden ${still ? "sky-still" : ""} ${className}`}>
       <div aria-hidden="true" className="absolute" style={stage ?? { inset: 0 }}>
         <img src="/sign-in/sky-plate-matched.webp" alt="" className="absolute inset-0 h-full w-full" />
         <div className="sky-track sky-clouds-far">
@@ -52,23 +53,7 @@ export function SkyScene({ still }: { still: boolean }) {
         <rect width="100%" height="100%" filter="url(#sky-grain)" />
       </svg>
 
-      <div className="absolute top-14 left-[72px] text-white [text-shadow:0_1px_14px_rgba(25,45,90,0.28)]">
-        <div className="font-serif text-[76px] leading-[80px] tracking-[-0.01em]" aria-hidden="true">
-          Ink
-        </div>
-        <div className="mt-3.5 text-[14px] leading-[18px] tracking-[0.24em]">Write. Remember. Rediscover.</div>
-      </div>
-
-      <div
-        aria-hidden="true"
-        className="absolute top-[300px] left-24 w-[340px] origin-top-left -rotate-4 font-hand text-[24px] leading-[46px] whitespace-pre-line text-auth-on-sky"
-      >
-        {"Same sky,\nsame you,\nbut a different story\nevery time."}
-      </div>
-      <div className="absolute top-[470px] left-[clamp(96px,calc(100%-340px),272px)] h-10 w-px bg-auth-on-sky" />
-      <p className="absolute top-[530px] left-[clamp(96px,calc(100%-340px),272px)] m-0 w-[300px] font-serif text-[18px] leading-[27px] text-auth-on-sky">
-        Ink keeps everything you write, and quietly shows you which pieces belong together.
-      </p>
+      <SkyRoller still={still} />
     </div>
   );
 }

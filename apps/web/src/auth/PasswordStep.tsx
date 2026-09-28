@@ -5,12 +5,11 @@ import { problemText } from "./problems";
 
 type Props = {
   email: string;
-  wide: boolean;
   onUseCode: () => Promise<AuthProblem | null>;
   onChangeEmail: () => void;
 };
 
-export function PasswordStep({ email, wide, onUseCode, onChangeEmail }: Props) {
+export function PasswordStep({ email, onUseCode, onChangeEmail }: Props) {
   const [password, setPassword] = useState("");
   const [shown, setShown] = useState(false);
   const [problem, setProblem] = useState<AuthProblem | null>(null);
@@ -34,7 +33,7 @@ export function PasswordStep({ email, wide, onUseCode, onChangeEmail }: Props) {
 
   return (
     <form onSubmit={submit} noValidate className="m-0">
-      <Heading wide={wide}>Your password</Heading>
+      <Heading>Your password</Heading>
       <p className="mt-2.5 mb-0 text-auth-muted">
         For <span className="font-medium text-auth-ink">{email}</span>. This works only if you added a password in your
         profile.
@@ -72,7 +71,7 @@ export function PasswordStep({ email, wide, onUseCode, onChangeEmail }: Props) {
         {sendProblem && <Message>{problemText(sendProblem === "wrong" ? "unknown" : sendProblem, true)}</Message>}
       </div>
 
-      <MainButton type="submit" className="mt-4" disabled={busy} aria-busy={busy}>
+      <MainButton type="submit" className="mt-4" busy={busy}>
         Sign in
       </MainButton>
 

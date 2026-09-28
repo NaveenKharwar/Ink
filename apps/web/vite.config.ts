@@ -10,6 +10,8 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, rootDir, "");
   return {
     plugins: [react(), tailwindcss()],
+    // Lists every bundled library with its license, served as /licenses.md.
+    build: { license: { fileName: "licenses.md" } },
     define: {
       __SUPABASE_URL__: JSON.stringify(env.SUPABASE_URL ?? ""),
       __SUPABASE_ANON_KEY__: JSON.stringify(env.SUPABASE_ANON_KEY ?? "")

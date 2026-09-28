@@ -14,11 +14,17 @@ export function EmailStep({ email, onEmailChange, onCodeSent }: Props) {
   const [problem, setProblem] = useState<AuthProblem | null>(null);
   const [googleFailed, setGoogleFailed] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
 
+  // On success the browser leaves for Google, so the loader stays until then.
   async function google() {
     setGoogleFailed(false);
+    setGoogleBusy(true);
     const result = await continueWithGoogle();
-    if (!result.ok) setGoogleFailed(true);
+    if (!result.ok) {
+      setGoogleBusy(false);
+      setGoogleFailed(true);
+    }
   }
 
   async function submit(e: FormEvent) {
@@ -35,7 +41,7 @@ export function EmailStep({ email, onEmailChange, onCodeSent }: Props) {
 
   return (
     <>
-      <MainButton type="button" onClick={google}>
+      <MainButton type="button" onClick={google} busy={googleBusy}>
         <GoogleMark />
         Continue with Google
       </MainButton>
@@ -44,9 +50,9 @@ export function EmailStep({ email, onEmailChange, onCodeSent }: Props) {
       </div>
 
       <div className="my-[18px] flex items-center gap-4 text-[13px] text-auth-muted">
-        <span className="h-px grow bg-auth-line" />
+        <span className="h-px grow bg-auth-rule" />
         or
-        <span className="h-px grow bg-auth-line" />
+        <span className="h-px grow bg-auth-rule" />
       </div>
 
       <form onSubmit={submit} noValidate className="m-0 flex flex-col">
@@ -56,7 +62,7 @@ export function EmailStep({ email, onEmailChange, onCodeSent }: Props) {
           type="email"
           autoComplete="email"
           inputMode="email"
-          placeholder="name@gmail.com"
+          placeholder="the.one.who.writes@example.com"
           value={email}
           invalid={invalid}
           aria-describedby="auth-email-msg"
@@ -67,12 +73,12 @@ export function EmailStep({ email, onEmailChange, onCodeSent }: Props) {
           }}
         />
         <div id="auth-email-msg" aria-live="polite">
-          {invalid && <Message>That doesn’t look like an email address. It should look like name@gmail.com.</Message>}
+          {invalid && <Message>That doesn’t look like an email address. It should look like the.one.who.writes@example.com.</Message>}
           {problem && problem !== "wrong" && <Message>{problemText(problem, true)}</Message>}
           {problem === "wrong" && <Message>Ink couldn’t send a code to that address. Check it and try again.</Message>}
         </div>
-        <MainButton type="submit" className="mt-3" disabled={busy} aria-busy={busy}>
-          Continue
+        <MainButton type="submit" className="mt-3" busy={busy}>
+          Start writing
         </MainButton>
       </form>
 

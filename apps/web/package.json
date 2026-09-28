@@ -27,6 +27,7 @@
     "@tiptap/extensions": "^3.31.3",
     "@tiptap/pm": "^3.31.3",
     "@tiptap/react": "^3.31.3",
+    "loading-dev": "^0.3.4",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },
