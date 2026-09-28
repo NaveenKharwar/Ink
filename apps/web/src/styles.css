@@ -213,3 +213,8 @@ body {
   .sky-roll-in, .sky-roll-out { animation: none; }
   .sky-roll-out { display: none; }
 }
+
+/* Plain pages (privacy): the browser's own default look, undoing the reset. */
+.plain,
+.plain * { all: revert; }
+.plain { display: block; margin: 8px; font-family: serif; color: CanvasText; background: Canvas; }
