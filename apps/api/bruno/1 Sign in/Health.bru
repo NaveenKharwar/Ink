@@ -1,0 +1,15 @@
+meta {
+  name: Health
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/health
+  body: none
+  auth: none
+}
+
+docs {
+  Is the API running? Needs no token.
+}

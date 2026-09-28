@@ -1,0 +1,27 @@
+meta {
+  name: Not JSON
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/pieces
+  body: text
+  auth: bearer
+}
+
+headers {
+  content-type: application/json
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:text {
+  { not json
+}
+
+docs {
+  Expect 400: "The request body is not valid JSON."
+}

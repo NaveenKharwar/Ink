@@ -1,0 +1,26 @@
+meta {
+  name: Invalid body
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/pieces
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "title": "no content",
+    "status": "published"
+  }
+}
+
+docs {
+  Expect 400 invalid_request with an `issues` list: content is required and status must be draft or finished.
+}

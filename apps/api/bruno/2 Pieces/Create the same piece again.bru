@@ -1,0 +1,39 @@
+meta {
+  name: Create the same piece again
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/pieces
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "id": "{{pieceId}}",
+    "content": {
+      "type": "doc",
+      "content": [
+        { "type": "paragraph", "content": [
+          { "type": "text", "text": "The kettle clicks off" },
+          { "type": "hardBreak" },
+          { "type": "text", "text": "and for a second the house" },
+          { "type": "hardBreak" },
+          { "type": "text", "text": "remembers you" }
+        ] }
+      ]
+    },
+    "language": "en"
+  }
+}
+
+docs {
+  Sends the same poem with the same id as the last create. Expect 200 and the stored piece, not a duplicate.
+  This is how a retry after a dropped connection stays safe.
+}

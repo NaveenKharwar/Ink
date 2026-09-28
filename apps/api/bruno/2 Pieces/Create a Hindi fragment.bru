@@ -1,0 +1,37 @@
+meta {
+  name: Create a Hindi fragment
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/pieces
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "content": {
+      "type": "doc",
+      "content": [
+        { "type": "paragraph", "content": [
+          { "type": "text", "text": "पिता के हाथों में" },
+          { "type": "hardBreak" },
+          { "type": "text", "text": "लोहे की गंध थी," }
+        ] },
+        { "type": "paragraph", "content": [ { "type": "text", "text": "और सर्दियों में" } ] }
+      ]
+    },
+    "language": "hi",
+    "isFragment": true
+  }
+}
+
+docs {
+  Two stanzas in Hindi. In `text` the stanzas are separated by a blank line.
+}

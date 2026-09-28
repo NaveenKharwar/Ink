@@ -1,13 +1,32 @@
-import Fastify from "fastify";
-import { registerHealthRoutes } from "./routes/health.js";
+import { buildApp } from "./app.js";
+import { supabaseTokenVerifier } from "./auth.js";
+import { createPool } from "./db.js";
+import { loadEnv } from "./env.js";
+import { pgPiecesRepo } from "./pieces/repo.js";
 
-const app = Fastify({ logger: true });
+const env = loadEnv();
+const warnings: string[] = [];
+const pool = createPool(env, (message) => warnings.push(message));
 
-registerHealthRoutes(app);
+const app = await buildApp({
+  repo: pgPiecesRepo(pool),
+  verify: supabaseTokenVerifier(env.SUPABASE_URL),
+  logger: true,
+  docs: env.NODE_ENV !== "production"
+});
+for (const message of warnings) app.log.warn(message);
 
-const port = Number(process.env.PORT ?? 3001);
+app.addHook("onClose", async () => {
+  await pool.end();
+});
 
-app.listen({ port, host: "0.0.0.0" }).catch((err) => {
+for (const signal of ["SIGINT", "SIGTERM"] as const) {
+  process.once(signal, () => {
+    void app.close().then(() => process.exit(0));
+  });
+}
+
+app.listen({ port: env.PORT, host: "0.0.0.0" }).catch((err) => {
   app.log.error(err);
   process.exit(1);
 });

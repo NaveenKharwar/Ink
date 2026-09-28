@@ -1,0 +1,23 @@
+meta {
+  name: Nothing to update
+  type: http
+  seq: 6
+}
+
+patch {
+  url: {{baseUrl}}/api/pieces/{{pieceId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {}
+}
+
+docs {
+  Expect 400 invalid_request: "Nothing to update".
+}

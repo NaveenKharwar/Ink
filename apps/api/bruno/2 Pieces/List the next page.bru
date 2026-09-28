@@ -1,0 +1,29 @@
+meta {
+  name: List the next page
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/pieces?limit=2&cursor={{cursor}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+script:pre-request {
+  // The API rejects an empty cursor on purpose. Only send this when the last list had a next page.
+  const cursor = bru.getVar("cursor");
+  if (!cursor) {
+    throw new Error("There is no next page: the last list returned nextCursor: null. Create more pieces, run List my pieces again, then try this.");
+  }
+}
+
+docs {
+  Continues after the last piece of the previous page, using the nextCursor kept by "List my pieces".
+  If that list had no next page (nextCursor: null), this request stops before sending and says so.
+  On the last page, nextCursor in the answer is null.
+}

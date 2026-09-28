@@ -1,0 +1,42 @@
+meta {
+  name: Create a piece
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/pieces
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "id": "{{$randomUUID}}",
+    "content": {
+      "type": "doc",
+      "content": [
+        { "type": "paragraph", "content": [
+          { "type": "text", "text": "The kettle clicks off" },
+          { "type": "hardBreak" },
+          { "type": "text", "text": "and for a second the house" },
+          { "type": "hardBreak" },
+          { "type": "text", "text": "remembers you" }
+        ] }
+      ]
+    },
+    "language": "en"
+  }
+}
+
+script:post-response {
+  if (res.status === 201 || res.status === 200) { bru.setVar("pieceId", res.body.id); }
+}
+
+docs {
+  Creates a piece with a new client id. Look at `text` in the answer: the API made it from `content`. The id is kept as pieceId for the next requests.
+}

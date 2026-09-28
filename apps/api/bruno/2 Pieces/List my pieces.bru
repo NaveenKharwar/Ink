@@ -1,0 +1,23 @@
+meta {
+  name: List my pieces
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/pieces?limit=2
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+script:post-response {
+  bru.setVar("cursor", res.body.nextCursor || "");
+}
+
+docs {
+  Newest first, 2 per page, without `content`. If there are more, nextCursor is kept for "List the next page"; if not, it is cleared.
+}

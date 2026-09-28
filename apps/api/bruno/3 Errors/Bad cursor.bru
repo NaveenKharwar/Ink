@@ -1,0 +1,19 @@
+meta {
+  name: Bad cursor
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/pieces?cursor=not-a-real-cursor
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  Expect 400: "The cursor is not valid."
+}

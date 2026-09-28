@@ -1,0 +1,19 @@
+meta {
+  name: Get the piece
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/api/pieces/{{pieceId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  The full piece, including the editor document in `content`.
+}

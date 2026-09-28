@@ -1,0 +1,19 @@
+meta {
+  name: Unknown piece
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/pieces/00000000-0000-4000-8000-000000000000
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  Expect 404 not_found. Someone else's piece answers exactly the same way.
+}

@@ -1,0 +1,26 @@
+meta {
+  name: Finish and title it
+  type: http
+  seq: 7
+}
+
+patch {
+  url: {{baseUrl}}/api/pieces/{{pieceId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "title": "Kettle",
+    "status": "finished"
+  }
+}
+
+docs {
+  Only the fields you send change. updatedAt moves forward. Send "title": null to clear the title.
+}
