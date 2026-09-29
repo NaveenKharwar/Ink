@@ -118,9 +118,9 @@ export function AllWriting({ wide, showMenuButton, onMenu, groups, failed, onRet
   );
 }
 
-// "Today · English", "Aug · fragment · हिन्दी".
+// "Today · English", "Aug · हिन्दी".
 function meta(item: LibraryItem, now: Date = new Date()): string {
-  return [when(new Date(item.createdAt), now), item.isFragment ? "fragment" : null, item.language ? LANGUAGE[item.language] : null]
+  return [when(new Date(item.createdAt), now), item.language ? LANGUAGE[item.language] : null]
     .filter(Boolean)
     .join(" · ");
 }

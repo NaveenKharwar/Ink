@@ -5,7 +5,7 @@ const LINES = [
   "Ink remembers what you wrote last monsoon.",
   "It quietly finds the pieces that belong together.",
   "An old line can still answer a new one.",
-  "Your fragments find their way back.",
+  "Your old lines find their way back.",
   "Clean editor.",
   "No streaks, no scores. Just writing.",
   "Write a line, or a whole story.",

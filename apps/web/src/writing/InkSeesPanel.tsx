@@ -23,7 +23,7 @@ export function InkSeesPanel({ phone = false, onClose }: { phone?: boolean; onCl
       </div>
       <div className="grow overflow-y-auto px-4 pb-6">
         <p className="m-0 py-5 leading-[1.5] text-ink-muted">
-          Nothing yet. Once you have written a few lines, related pieces and fragments appear here.
+          Nothing yet. Once you have written a few lines, related writing appears here.
         </p>
       </div>
     </aside>
