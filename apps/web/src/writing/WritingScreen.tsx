@@ -193,7 +193,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
     onAll: () => openAll(),
     onSeason: (key: string) => openAll(key),
     onProfile: openProfile,
-    onSignOut: () => void signOut()
+    onSignOut: signOut
   };
 
   const onMenu = () => (wide ? setMenuOpen(true) : setPos("menu"));
@@ -206,7 +206,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
         showMenuButton={!wide || !menuOpen}
         onMenu={onMenu}
         onBack={leaveProfile}
-        onSignOut={() => void signOut()}
+        onSignOut={signOut}
       />
     ) : view.kind === "all" ? (
       <AllWriting

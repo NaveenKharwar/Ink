@@ -21,7 +21,7 @@ type Props = {
   onAll: () => void;
   onSeason: (key: string) => void;
   onProfile: () => void;
-  onSignOut: () => void;
+  onSignOut: () => Promise<void>;
 };
 
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";

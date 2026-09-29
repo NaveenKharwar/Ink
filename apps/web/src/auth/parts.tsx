@@ -1,5 +1,5 @@
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from "react";
-import { Loader } from "../lib/Loader";
+import { Loader } from "../ui/Loader";
 
 export function Eyebrow({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <div className={`text-[12px] leading-4 tracking-[0.3em] text-auth-muted ${className}`}>{children}</div>;
@@ -26,7 +26,7 @@ export function MainButton({
       {busy ? (
         <>
           <span className="sr-only">{children}</span>
-          <Loader size={18} label="Loading" className="text-auth-sunset" />
+          <Loader size={18} label="Loading" tone="current" className="text-auth-sunset" />
         </>
       ) : (
         children

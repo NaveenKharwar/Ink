@@ -1,6 +1,7 @@
 import type { LibraryItem, MarkedLine } from "@ink/schemas";
 import { useEffect, useId, useRef, useState } from "react";
 import { pieces } from "../lib/api";
+import { ScreenLoader } from "../ui/Loader";
 import { deviceTimeZone, seasonText, type SeasonSet } from "../lib/seasons";
 import { CloseIcon, SearchIcon } from "./icons";
 
@@ -22,6 +23,8 @@ export function SearchDialog({ wide, recent, seasonSet, onOpen, onClose }: Props
   const season = (createdAt: string) => seasonText(new Date(createdAt), new Date(), deviceTimeZone(), seasonSet);
   const [q, setQ] = useState("");
   const [found, setFound] = useState<Result[] | null>(null);
+  // Which words the results are for, so a newer search shows the loader, not the old results.
+  const [foundFor, setFoundFor] = useState("");
   const [failed, setFailed] = useState(false);
   const [active, setActive] = useState(0);
   const listId = useId();
@@ -42,6 +45,7 @@ export function SearchDialog({ wide, recent, seasonSet, onOpen, onClose }: Props
       setFailed(false);
       return;
     }
+    setFailed(false);
     const abort = new AbortController();
     const timer = setTimeout(() => {
       pieces.search(query, abort.signal).then(
@@ -49,6 +53,7 @@ export function SearchDialog({ wide, recent, seasonSet, onOpen, onClose }: Props
           setFound(
             res.items.map((r) => ({ id: r.id, first: r.firstLine, match: r.match, season: season(r.createdAt) }))
           );
+          setFoundFor(query);
           setFailed(false);
           setActive(0);
         },
@@ -61,8 +66,11 @@ export function SearchDialog({ wide, recent, seasonSet, onOpen, onClose }: Props
     };
   }, [query]);
 
+  const searching = Boolean(query) && foundFor !== query && !failed;
   const results: Result[] = query
-    ? (found ?? [])
+    ? searching
+      ? []
+      : (found ?? [])
     : recent.map((item) => ({
         id: item.id,
         first: { text: item.lines[0] ?? item.title ?? "Untitled", marks: [] },
@@ -162,7 +170,8 @@ export function SearchDialog({ wide, recent, seasonSet, onOpen, onClose }: Props
               </li>
             ))}
           </ul>
-          {query && found && !found.length && !failed && <p className="m-0 pt-2 text-ink-muted">Nothing with those words yet.</p>}
+          {searching && <ScreenLoader label="Searching" className="py-10" />}
+          {query && !searching && found && !found.length && !failed &&<p className="m-0 pt-2 text-ink-muted">Nothing with those words yet.</p>}
           {failed && <p className="m-0 pt-2 text-ink-muted">Search isn't working right now. Check your connection.</p>}
         </div>
       </div>

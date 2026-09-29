@@ -1,4 +1,4 @@
-import { Loader } from "../lib/Loader";
+import { ScreenLoader } from "../ui/Loader";
 import { MenuIcon } from "./icons";
 import { Page } from "./Page";
 import { usePieceLoad } from "./usePieceLoad";
@@ -32,7 +32,7 @@ export function PieceView({ open, onWrite, ...page }: Props) {
         </div>
       )}
       <div className="flex grow flex-col items-center justify-center gap-4 px-6 text-center text-ink-muted">
-        {load.status === "loading" && <Loader size={28} delayMs={300} label="Opening" />}
+        {load.status === "loading" && <ScreenLoader label="Opening" />}
         {load.status === "missing" && (
           <>
             <p className="m-0">This piece isn't here.</p>

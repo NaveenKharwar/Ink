@@ -1,6 +1,6 @@
 import type { LibraryItem, PieceLanguage } from "@ink/schemas";
 import { useEffect, useRef, useState } from "react";
-import { Loader } from "../lib/Loader";
+import { ScreenLoader } from "../ui/Loader";
 import { prefersReducedMotion } from "../lib/motion";
 import type { SeasonGroup } from "../lib/seasons";
 import { AdSlot } from "./AdSlot";
@@ -128,9 +128,7 @@ export function AllWriting({ wide, showMenuButton, onMenu, groups, failed, onRet
           )}
 
           {!groups && !failed && (
-            <div className="flex justify-center pt-16 text-ink-muted">
-              <Loader size={28} delayMs={300} label="Loading your writing" />
-            </div>
+            <ScreenLoader label="Loading your writing" className="pt-16" />
           )}
           {!groups && failed && (
             <div className="flex flex-col items-start gap-3 pt-8 text-ink-muted">

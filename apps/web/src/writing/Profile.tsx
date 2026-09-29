@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { PEN_NAME_MAX, savePenName, saveSeasons, sendPasswordCode, setPassword, type Account } from "../lib/account";
 import type { PasswordProblem } from "../lib/password";
 import { deviceTimeZone, resolveSeasonSet, seasonPlace, seasonSetFor, type SeasonChoice, type SeasonSet } from "../lib/seasons";
+import { Button } from "../ui/Button";
 import { MenuIcon } from "./icons";
 import { SeasonPainting } from "./SeasonPainting";
 import { SideColumn } from "./SideColumn";
@@ -17,11 +18,10 @@ type Props = {
   showMenuButton: boolean;
   onMenu: () => void;
   onBack: () => void;
-  onSignOut: () => void;
+  onSignOut: () => Promise<void>;
 };
 
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
-const plainButton = `h-11 cursor-pointer rounded-md border border-line-strong bg-surface px-[18px] font-medium text-ink hover:bg-surface-hover ${focusRing}`;
 
 const SET_NAMES: Record<SeasonSet, string> = { "south-asia": "South Asia", north: "North of the equator", south: "South of the equator" };
 const SEASON_OPTIONS: Array<{ value: SeasonChoice; label: string; sub: string }> = [
@@ -86,9 +86,8 @@ export function Profile({ account, items, wide, showMenuButton, onMenu, onBack, 
             <SigningIn email={account.email} google={account.via === "google"} hasPassword={account.hasPassword} />
           </Section>
           <Section>
-            <button type="button" onClick={onSignOut} className={plainButton}>
-              Sign out
-            </button>          </Section>
+            <SignOutButton onSignOut={onSignOut} />
+          </Section>
         </div>
       </div>
 
@@ -382,9 +381,9 @@ function SigningIn({ email, google, hasPassword }: { email: string; google: bool
         )}
       </ul>
       {!has && !form && (
-        <button type="button" onClick={open} className={`mt-3 ${plainButton}`}>
+        <Button onClick={open} className="mt-3">
           Add a password
-        </button>
+        </Button>
       )}
       {saved && !form && (
         <p className="mt-2 mb-0 text-[13px] leading-[18px] text-ink-muted">
@@ -492,14 +491,9 @@ function SigningIn({ email, google, hasPassword }: { email: string; google: bool
             At least 8 characters
           </div>
           <div className="mt-4 flex gap-2">
-            <button
-              type="submit"
-              disabled={busy}
-              aria-busy={busy || undefined}
-              className={`h-11 cursor-pointer rounded-md border-0 bg-ink px-[18px] font-medium text-on-ink disabled:cursor-default ${focusRing}`}
-            >
-              {busy ? "Saving…" : "Save password"}
-            </button>
+            <Button type="submit" look="main" busy={busy}>
+              Save password
+            </Button>
             <button
               type="button"
               onClick={() => setForm(false)}
@@ -515,7 +509,22 @@ function SigningIn({ email, google, hasPassword }: { email: string; google: bool
   );
 }
 
-const linkButton = `cursor-pointer border-0 bg-transparent p-0 text-[13px] font-medium text-ink underline underline-offset-2 ${focusRing}`;
+function SignOutButton({ onSignOut }: { onSignOut: () => Promise<void> }) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <Button
+      busy={busy}
+      onClick={() => {
+        setBusy(true);
+        void onSignOut().finally(() => setBusy(false));
+      }}
+    >
+      Sign out
+    </Button>
+  );
+}
+
+const linkButton =`cursor-pointer border-0 bg-transparent p-0 text-[13px] font-medium text-ink underline underline-offset-2 ${focusRing}`;
 
 function WayIn({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (

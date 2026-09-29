@@ -1,7 +1,7 @@
 import { SignIn } from "./auth/SignIn";
 import { useSession } from "./auth/useSession";
 import { accountOf } from "./lib/account";
-import { Loader } from "./lib/Loader";
+import { ScreenLoader } from "./ui/Loader";
 import { PrivacyPage } from "./privacy/PrivacyPage";
 import { WritingScreen } from "./writing/WritingScreen";
 
@@ -15,11 +15,7 @@ export function App() {
 function SignedInOrNot() {
   const session = useSession();
   if (session === undefined) {
-    return (
-      <div className="flex min-h-dvh items-center justify-center bg-ground text-ink-muted">
-        <Loader size={28} delayMs={300} />
-      </div>
-    );
+    return <ScreenLoader className="min-h-dvh bg-ground" />;
   }
   if (!session) return <SignIn />;
   return <WritingScreen userId={session.user.id} account={accountOf(session.user)} />;

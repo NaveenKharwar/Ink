@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { Loader } from "../ui/Loader";
 import { useTheme, type ThemeChoice } from "../lib/theme";
 
 const THEMES: Array<{ value: ThemeChoice; label: string }> = [
@@ -6,7 +8,7 @@ const THEMES: Array<{ value: ThemeChoice; label: string }> = [
   { value: "dark", label: "Dark" }
 ];
 
-type Props = { name: string; onProfile: () => void; onSignOut: () => void };
+type Props = { name: string; onProfile: () => void; onSignOut: () => Promise<void> };
 
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 const link = `cursor-pointer border-0 border-b bg-transparent px-0 pt-0.5 pb-px text-[12px] ${focusRing}`;
@@ -15,6 +17,7 @@ const link = `cursor-pointer border-0 border-b bg-transparent px-0 pt-0.5 pb-px 
 // paper slip: the name in serif, the look (System · Light · Dark), then Profile and Sign out.
 export function AccountMenu({ name, onProfile, onSignOut }: Props) {
   const [theme, setTheme] = useTheme();
+  const [signingOut, setSigningOut] = useState(false);
 
   return (
     <div aria-label="Account" role="group" className="border-t border-line px-2 pt-3">
@@ -40,8 +43,18 @@ export function AccountMenu({ name, onProfile, onSignOut }: Props) {
           Profile
         </button>
         <span aria-hidden="true">·</span>
-        <button type="button" onClick={onSignOut} className={`${link} border-transparent text-ink-muted hover:text-ink`}>
-          Sign out
+        <button
+          type="button"
+          disabled={signingOut}
+          aria-busy={signingOut || undefined}
+          onClick={() => {
+            setSigningOut(true);
+            void onSignOut().finally(() => setSigningOut(false));
+          }}
+          className={`${link} relative border-transparent text-ink-muted hover:text-ink disabled:cursor-default`}
+        >
+          <span className={signingOut ? "opacity-0" : undefined}>Sign out</span>
+          {signingOut && <Loader size={12} label="Signing out" className="absolute inset-0 items-center justify-center" />}
         </button>
       </div>
     </div>
