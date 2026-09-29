@@ -1,6 +1,6 @@
 import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
-import { listPiecesQuery, piece, syncPieceInput, syncPieceOutput, updatePieceInput } from "@ink/schemas";
+import { listPiecesQuery, piece, searchQuery, syncPieceInput, syncPieceOutput, updatePieceInput } from "@ink/schemas";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
@@ -17,6 +17,19 @@ const validationBody = z.object({
 });
 const pieceSummary = piece.omit({ content: true });
 const listBody = z.object({ items: z.array(pieceSummary), nextCursor: z.string().nullable() });
+const libraryBody = z.object({
+  items: z.array(
+    piece.pick({ id: true, title: true, language: true, isFragment: true, createdAt: true, updatedAt: true }).extend({ lines: z.array(z.string()) })
+  )
+});
+const markedLine = z.object({ text: z.string(), marks: z.array(z.tuple([z.number().int(), z.number().int()])) });
+const searchBody = z.object({
+  items: z.array(
+    piece
+      .pick({ id: true, language: true, isFragment: true, createdAt: true, updatedAt: true })
+      .extend({ firstLine: markedLine, match: markedLine.nullable() })
+  )
+});
 
 const json = (schema: z.ZodTypeAny, description: string) => ({
   description,
@@ -56,6 +69,24 @@ export const openApiDocument = {
           schema
         })),
         responses: { "200": json(listBody, "One page."), "400": json(errorBody, "Bad limit or cursor."), ...errors }
+      }
+    },
+    "/api/library": {
+      get: {
+        summary: "Your whole library in one light list",
+        description: "Every piece, newest written first, with its first two lines instead of the words. No paging (up to 5000).",
+        responses: { "200": json(libraryBody, "All your pieces."), ...errors }
+      }
+    },
+    "/api/search": {
+      get: {
+        summary: "Search your writing by its words",
+        description:
+          "Finds your pieces holding every word, or part of a word, in `q`: Hindi and English, and Hinglish typing finds Hindi writing. " +
+          "Up to 20, best first. Each result has its first line and, when the words are on another line, that line; " +
+          "`marks` are [start, end) offsets of the found words.",
+        parameters: [{ name: "q", in: "query", required: true, schema: (toSchema(searchQuery).properties as Record<string, unknown>).q }],
+        responses: { "200": json(searchBody, "Results, possibly none."), "400": json(validationBody, "No search words."), ...errors }
       }
     },
     "/api/pieces/{id}/sync": {

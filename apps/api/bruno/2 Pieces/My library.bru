@@ -1,0 +1,19 @@
+meta {
+  name: My library
+  type: http
+  seq: 12
+}
+
+get {
+  url: {{baseUrl}}/api/library
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  Every piece of yours, newest written first, with its first two lines instead of the words. Signed in as another writer, none of yours may appear.
+}

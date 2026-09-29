@@ -1,4 +1,4 @@
-import type { ListPiecesResponse, Piece, SyncPieceInput, SyncPieceOutput, UpdatePieceInput } from "@ink/schemas";
+import type { LibraryResponse, ListPiecesResponse, Piece, SearchResponse, SyncPieceInput, SyncPieceOutput, UpdatePieceInput } from "@ink/schemas";
 import { supabase } from "./supabase";
 
 export class ApiError extends Error {
@@ -44,5 +44,8 @@ export const pieces = {
   },
   get: (id: string) => request<Piece>(`/api/pieces/${encodeURIComponent(id)}`),
   update: (id: string, patch: UpdatePieceInput) =>
-    request<Piece>(`/api/pieces/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(patch) })
+    request<Piece>(`/api/pieces/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  library: () => request<LibraryResponse>("/api/library"),
+  search: (q: string, signal?: AbortSignal) =>
+    request<SearchResponse>(`/api/search?${new URLSearchParams({ q })}`, { signal })
 };

@@ -9,7 +9,7 @@
     "start": "node dist/server.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "echo \"(lint not configured yet)\"",
-    "test": "tsx --test src/pieces/routes.test.ts"
+    "test": "tsx --test src/pieces/routes.test.ts src/pieces/fold.test.ts"
   },
   "dependencies": {
     "@fastify/swagger": "^9.9.0",

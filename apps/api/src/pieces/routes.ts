@@ -1,6 +1,18 @@
-import { fromBase64, listPiecesQuery, syncPieceInput, toBase64, updatePieceInput, type ListPiecesResponse, type SyncPieceOutput } from "@ink/schemas";
+import {
+  fromBase64,
+  listPiecesQuery,
+  searchQuery,
+  syncPieceInput,
+  toBase64,
+  updatePieceInput,
+  type LibraryResponse,
+  type ListPiecesResponse,
+  type SearchResponse,
+  type SyncPieceOutput
+} from "@ink/schemas";
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { z } from "zod";
+import { describeMatch, openingLines, searchWords } from "./fold.js";
 import { InvalidUpdateError } from "./merge.js";
 import type { PiecesRepo } from "./repo.js";
 
@@ -32,6 +44,8 @@ function invalid(reply: FastifyReply, error: z.ZodError) {
     issues: error.issues.map((issue) => ({ path: issue.path.join("."), message: issue.message }))
   });
 }
+
+const SEARCH_LIMIT = 20;
 
 const notFound = (reply: FastifyReply) => reply.code(404).send({ error: "not_found", message: "This piece doesn't exist." });
 
@@ -74,6 +88,31 @@ export function registerPieceRoutes(app: FastifyInstance, repo: PiecesRepo) {
 
     const page = await repo.list(request.userId, { limit: query.data.limit, after });
     const response: ListPiecesResponse = { items: page.items, nextCursor: page.next ? encodeCursor(page.next) : null };
+    return response;
+  });
+
+  // The whole library in one light list: what the menu's seasons and All writing need.
+  app.get("/api/library", async (request) => {
+    const rows = await repo.library(request.userId);
+    const response: LibraryResponse = {
+      items: rows.map(({ id, title, text, language, isFragment, createdAt, updatedAt }) => ({
+        id, title, lines: openingLines(text), language, isFragment, createdAt, updatedAt
+      }))
+    };
+    return response;
+  });
+
+  // Word search over the writer's own pieces only.
+  app.get("/api/search", async (request, reply) => {
+    const query = searchQuery.safeParse(request.query);
+    if (!query.success) return invalid(reply, query.error);
+    const words = searchWords(query.data.q);
+    const rows = words.even.length ? await repo.search(request.userId, words, SEARCH_LIMIT) : [];
+    const response: SearchResponse = {
+      items: rows.map(({ id, text, language, isFragment, createdAt, updatedAt }) => ({
+        id, language, isFragment, createdAt, updatedAt, ...describeMatch(text, query.data.q)
+      }))
+    };
     return response;
   });
 

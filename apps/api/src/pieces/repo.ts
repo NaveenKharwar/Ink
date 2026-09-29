@@ -1,5 +1,7 @@
 import type { Piece, PieceSummary, UpdatePieceInput } from "@ink/schemas";
 import type pg from "pg";
+import type { SearchWords } from "./fold.js";
+import { searchText } from "./fold.js";
 import { mergeYdoc } from "./merge.js";
 
 export type PiecePatch = UpdatePieceInput;
@@ -17,7 +19,13 @@ export interface PiecesRepo {
   list(userId: string, options: { limit: number; after?: { updatedAt: string; id: string } }): Promise<ListPage>;
   get(userId: string, id: string): Promise<Piece | null>;
   update(userId: string, id: string, patch: PiecePatch): Promise<Piece | null>;
+  /** Every piece of the writer's, newest first; `text` may be cut short (lists show two lines). */
+  library(userId: string): Promise<PieceSummary[]>;
+  /** The writer's pieces holding every searched word, best first (see fold.ts). */
+  search(userId: string, words: SearchWords, limit: number): Promise<PieceSummary[]>;
 }
+
+export const LIBRARY_LIMIT = 5000;
 
 type PieceRow = {
   id: string;
@@ -100,6 +108,7 @@ export function pgPiecesRepo(db: pg.Pool): PiecesRepo {
           // Title and language are part of the document; these columns are copies.
           set("title", merged.meta.title);
           set("language", merged.meta.language);
+          set("search_text", searchText(merged.meta.title, merged.text));
         }
         if (sets.length) sets.push("updated_at = now()");
 
@@ -145,6 +154,36 @@ export function pgPiecesRepo(db: pg.Pool): PiecesRepo {
         userId
       ]);
       return rows[0] ? toPiece(rows[0]) : null;
+    },
+
+    async library(userId) {
+      // Only the start of the words: a list shows each piece's first two lines.
+      const { rows } = await db.query<PieceRow>(
+        `select id, title, left(text, 1000) as text, status, language, is_fragment, include_in_memory, created_at, updated_at
+         from pieces
+         where user_id = $1
+         order by created_at desc, id desc
+         limit $2`,
+        [userId, LIBRARY_LIMIT]
+      );
+      return rows.map(toSummary);
+    },
+
+    async search(userId, words, limit) {
+      // Every word must be in one of the two copies: (evened words) OR (loose Latin words).
+      // Each side is escaped, so nothing the writer types is read as query syntax.
+      const { rows } = await db.query<PieceRow>(
+        `select ${SUMMARY_COLUMNS}
+         from pieces
+         where user_id = $1
+           and search_text operator(extensions.&@~) (
+             '(' || extensions.pgroonga_query_escape($2) || ') OR (' || extensions.pgroonga_query_escape($3) || ')'
+           )
+         order by extensions.pgroonga_score(tableoid, ctid) desc, updated_at desc
+         limit $4`,
+        [userId, words.even.join(" "), words.latin.filter(Boolean).join(" ") || words.even.join(" "), limit]
+      );
+      return rows.map(toSummary);
     },
 
     async update(userId, id, patch) {

@@ -20,3 +20,9 @@ test("/p/ with something that is not an id is missing, not a blank page", () => 
   assert.deepEqual(parseRoute("/p/not-an-id"), { kind: "missing" });
   assert.deepEqual(parseRoute(`/p/${ID}/extra`), { kind: "new" });
 });
+
+test("/all is All writing", () => {
+  assert.deepEqual(parseRoute("/all"), { kind: "all" });
+  assert.deepEqual(parseRoute("/all/"), { kind: "all" });
+  assert.deepEqual(parseRoute("/allx"), { kind: "new" });
+});

@@ -76,3 +76,46 @@ export function seasonText(date: Date, now: Date = new Date(), timeZone: string 
   if (place.year === current.year && place.name === current.name) return "Now";
   return place.year === current.year ? place.name : `${place.name} ${place.year}`;
 }
+
+export type SeasonGroup<T> = {
+  /** Stable id, e.g. "2025-Monsoon". */
+  key: string;
+  /** How it reads in a list: "Now", or the season's name alone. */
+  label: string;
+  /** How it reads on its own (chip, top bar): "Now", "Summer", "Monsoon 2025". */
+  text: string;
+  /** "— 2025 —" before the first season of each earlier year; none for this year. */
+  divider: string | null;
+  items: T[];
+};
+
+/** Pieces grouped by the season they were written in, newest first. */
+export function groupBySeason<T extends { createdAt: string }>(
+  items: T[],
+  now: Date = new Date(),
+  timeZone: string = deviceTimeZone()
+): SeasonGroup<T>[] {
+  const current = seasonPlace(now, timeZone);
+  const sorted = [...items].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const groups: SeasonGroup<T>[] = [];
+  for (const item of sorted) {
+    const place = seasonPlace(new Date(item.createdAt), timeZone);
+    const key = `${place.year}-${place.name}`;
+    const last = groups[groups.length - 1];
+    if (last?.key === key) {
+      last.items.push(item);
+      continue;
+    }
+    const isNow = place.year === current.year && place.name === current.name;
+    const thisYear = place.year === current.year;
+    const newYear = !groups.length || !groups[groups.length - 1]!.key.startsWith(`${place.year}-`);
+    groups.push({
+      key,
+      label: isNow ? "Now" : place.name,
+      text: isNow ? "Now" : thisYear ? place.name : `${place.name} ${place.year}`,
+      divider: !thisYear && newYear ? `— ${place.year} —` : null,
+      items: [item]
+    });
+  }
+  return groups;
+}

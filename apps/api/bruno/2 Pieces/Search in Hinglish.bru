@@ -1,0 +1,19 @@
+meta {
+  name: Search in Hinglish
+  type: http
+  seq: 13
+}
+
+get {
+  url: {{baseUrl}}/api/search?q=sardiyon
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  Typing Hinglish finds the Hindi fragment from "Write a Hindi fragment" (और सर्दियों में). The result has the first line and, when the words are on another line, that line; marks are the found words. Signed in as another writer, it must come back empty.
+}

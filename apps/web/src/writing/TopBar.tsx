@@ -15,22 +15,24 @@ type Props = {
   save: SaveState;
   showSparkle: boolean;
   onSparkle: () => void;
+  /** ☰: always on phone; on desktop while the menu is closed. */
+  showMenuButton: boolean;
   onMenu: () => void;
 };
 
 const iconButton =
   "flex cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
-export function TopBar({ wide, season, title, firstLine, onRename, save, showSparkle, onSparkle, onMenu }: Props) {
+export function TopBar({ wide, season, title, firstLine, onRename, save, showSparkle, onSparkle, showMenuButton, onMenu }: Props) {
   return (
-    <div className={`flex shrink-0 items-center justify-between gap-2 ${wide ? "h-14 pr-4 pl-[26px]" : "h-[52px] pr-1.5 pl-1"}`}>
+    <div className={`flex shrink-0 items-center justify-between gap-2 ${wide ? "h-14 pr-4 pl-4" : "h-[52px] pr-1.5 pl-1"}`}>
       <div className="flex min-w-0 items-center gap-2.5">
-        {!wide && (
+        {showMenuButton && (
           <button type="button" onClick={onMenu} aria-label="Open menu" className={`h-10 w-10 shrink-0 ${iconButton}`}>
             <MenuIcon />
           </button>
         )}
-        <span className="whitespace-nowrap">{season}</span>
+        <span className={`whitespace-nowrap ${showMenuButton ? "" : "pl-2.5"}`}>{season}</span>
         <span className="text-ink-muted">/</span>
         <PieceName title={title} firstLine={firstLine} onRename={onRename} />
       </div>

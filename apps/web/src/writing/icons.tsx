@@ -55,3 +55,23 @@ export const CheckCircleIcon = ({ size = 20, saving = false }: P & { saving?: bo
     <path d={saving ? "M12 7v5l3 2" : "M8 12.5l2.7 2.7L16 9.8"} />
   </svg>
 );
+
+export const SearchIcon = ({ size = 17 }: P) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+    <circle cx="11" cy="11" r="6.5" />
+    <path d="M16 16l4.5 4.5" />
+  </svg>
+);
+
+export const DocumentIcon = ({ size = 17 }: P) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" aria-hidden="true">
+    <path d="M7 3h7l4 4v14H7z" />
+    <path d="M10 12h5M10 16h5" />
+  </svg>
+);
+
+export const ChevronIcon = ({ size = 14, up = false }: P & { up?: boolean }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d={up ? "M6 15l6-6 6 6" : "M6 9l6 6 6-6"} />
+  </svg>
+);

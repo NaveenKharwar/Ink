@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { seasonPlace, seasonSetFor, seasonText } from "./seasons.ts";
+import { groupBySeason, seasonPlace, seasonSetFor, seasonText } from "./seasons.ts";
 
 const d = (iso: string) => new Date(iso);
 const place = (iso: string, tz: string) => {
@@ -49,4 +49,23 @@ test("a season reads Now, its name this year, or name and year before", () => {
   assert.equal(text("2026-06-02T12:00:00Z"), "Summer");
   assert.equal(text("2025-12-15T12:00:00Z"), "Winter");
   assert.equal(text("2025-08-15T12:00:00Z"), "Monsoon 2025");
+});
+
+test("pieces group by the season they were written in, with a divider for each earlier year", () => {
+  const now = d("2026-09-29T12:00:00Z");
+  const at = (createdAt: string) => ({ createdAt });
+  const groups = groupBySeason(
+    [at("2026-09-01T12:00:00Z"), at("2025-08-10T12:00:00Z"), at("2026-05-10T12:00:00Z"), at("2026-09-20T12:00:00Z"), at("2024-12-20T12:00:00Z"), at("2025-07-01T12:00:00Z")],
+    now,
+    "Asia/Kolkata"
+  );
+  assert.deepEqual(
+    groups.map((g) => [g.label, g.text, g.divider, g.items.length]),
+    [
+      ["Now", "Now", null, 2],
+      ["Summer", "Summer", null, 1],
+      ["Monsoon", "Monsoon 2025", "— 2025 —", 2],
+      ["Winter", "Winter 2025", null, 1]
+    ]
+  );
 });

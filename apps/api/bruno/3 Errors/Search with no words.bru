@@ -1,0 +1,19 @@
+meta {
+  name: Search with no words
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/api/search?q=%20
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  Only spaces: 400 invalid_request.
+}

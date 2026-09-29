@@ -15,6 +15,7 @@
   --stanza: #9db5f5;
   --tooltip: #16181d;
   --tooltip-key: #2e323a;
+  --scrim: rgba(20, 20, 20, 0.28);
   color-scheme: light;
 }
 
@@ -33,6 +34,7 @@
     --stanza: #4a64b5;
     --tooltip: #2e3035;
     --tooltip-key: #3a3d43;
+    --scrim: rgba(0, 0, 0, 0.5);
     color-scheme: dark;
   }
 }
@@ -51,6 +53,7 @@
   --stanza: #4a64b5;
   --tooltip: #2e3035;
   --tooltip-key: #3a3d43;
+  --scrim: rgba(0, 0, 0, 0.5);
   color-scheme: dark;
 }
 
@@ -68,6 +71,7 @@
   --color-stanza: var(--stanza);
   --color-tooltip: var(--tooltip);
   --color-tooltip-key: var(--tooltip-key);
+  --color-scrim: var(--scrim);
 }
 
 @theme {

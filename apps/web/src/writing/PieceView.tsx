@@ -19,7 +19,7 @@ export function PieceView({ open, onWrite, ...page }: Props) {
 
   return (
     <>
-      {!page.wide && (
+      {page.showMenuButton && (
         <div className="flex h-[52px] shrink-0 items-center pl-1">
           <button
             type="button"

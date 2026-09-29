@@ -91,3 +91,22 @@ export const listPiecesQuery = z.object({
 export type ListPiecesQuery = z.infer<typeof listPiecesQuery>;
 
 export type ListPiecesResponse = { items: PieceSummary[]; nextCursor: string | null };
+
+// The writer's whole library in one light list (no paging): each piece's first two lines,
+// newest first. Seasons are worked out on the device from `createdAt`.
+export type LibraryItem = Pick<Piece, "id" | "title" | "language" | "isFragment" | "createdAt" | "updatedAt"> & {
+  lines: string[];
+};
+export type LibraryResponse = { items: LibraryItem[] };
+
+export const searchQuery = z.object({ q: z.string().trim().min(1).max(200) });
+export type SearchQuery = z.infer<typeof searchQuery>;
+
+/** A line of the writer's own words, with the found words marked as [start, end) offsets. */
+export type MarkedLine = { text: string; marks: [number, number][] };
+export type SearchResult = Pick<Piece, "id" | "language" | "isFragment" | "createdAt" | "updatedAt"> & {
+  firstLine: MarkedLine;
+  /** The line the words were found in, when it is not the first line. */
+  match: MarkedLine | null;
+};
+export type SearchResponse = { items: SearchResult[] };

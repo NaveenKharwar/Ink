@@ -5,6 +5,7 @@ import { fromBase64, toBase64, type Piece } from "@ink/schemas";
 import * as Y from "yjs";
 import { buildApp } from "../app.js";
 import type { VerifyToken } from "../auth.js";
+import { searchText, searchWords } from "./fold.js";
 import { mergeYdoc } from "./merge.js";
 import type { PiecesRepo } from "./repo.js";
 import { decodeCursor, encodeCursor } from "./routes.js";
@@ -61,6 +62,25 @@ function memoryRepo(): PiecesRepo {
     async get(userId, id) {
       const row = rows.get(id);
       return row && row.userId === userId ? strip(row) : null;
+    },
+    async library(userId) {
+      return [...rows.values()]
+        .filter((row) => row.userId === userId)
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id))
+        .map((row) => summary(strip(row)));
+    },
+    // Matches the way the database does: every word in one of the two copies.
+    async search(userId, words, limit) {
+      const all = (list: string[], stored: string) => list.length > 0 && list.every((w) => w && stored.includes(w));
+      return [...rows.values()]
+        .filter((row) => row.userId === userId)
+        .filter((row) => {
+          const stored = searchText(row.title, row.text);
+          return all(words.even, stored) || all(words.latin, stored);
+        })
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+        .slice(0, limit)
+        .map((row) => summary(strip(row)));
     },
     async update(userId, id, patch) {
       const row = rows.get(id);
@@ -380,6 +400,53 @@ test("the docs page and its OpenAPI document load when docs are on", async () =>
   const spec = await app.inject({ method: "GET", url: "/docs/json" });
   assert.equal(spec.statusCode, 200);
   const doc = spec.json();
-  assert.deepEqual(Object.keys(doc.paths).sort(), ["/api/pieces", "/api/pieces/{id}", "/api/pieces/{id}/sync", "/health"]);
+  assert.deepEqual(Object.keys(doc.paths).sort(), ["/api/library", "/api/pieces", "/api/pieces/{id}", "/api/pieces/{id}/sync", "/api/search", "/health"]);
   assert.ok(doc.paths["/api/pieces/{id}/sync"].post.requestBody.content["application/json"].schema.properties.stateVector);
+});
+
+test("the library lists every piece's first two lines, newest first, only the writer's own", async () => {
+  const ctx = await setup();
+  const d1 = device();
+  d1.write(["The kettle clicks off", "and for a second the house"], ["remembers you"]);
+  await syncFrom(ctx, ASHA, randomUUID(), d1, null);
+  const d2 = device();
+  d2.write(["बारिश के बाद"]);
+  d2.setMeta({ language: "hi" });
+  await syncFrom(ctx, ASHA, randomUUID(), d2, null);
+  const other = device();
+  other.write(["not yours"]);
+  await syncFrom(ctx, RAVI, randomUUID(), other, null);
+
+  const res = await ctx.app.inject({ method: "GET", url: "/api/library", headers: ctx.as(ASHA) });
+  assert.equal(res.statusCode, 200);
+  const items = res.json().items;
+  assert.deepEqual(items.map((i: { lines: string[] }) => i.lines), [["बारिश के बाद"], ["The kettle clicks off", "and for a second the house"]]);
+  assert.equal(items[0].language, "hi");
+  assert.equal("text" in items[0], false);
+});
+
+test("search finds the writer's own pieces by the words they remember", async () => {
+  const ctx = await setup();
+  const poem = device();
+  poem.write(["पहली पंक्ति"], ["छत पर बैठा चाँद देखता रहा"]);
+  const poemId = randomUUID();
+  await syncFrom(ctx, ASHA, poemId, poem, null);
+  const theirs = device();
+  theirs.write(["चाँद chand moon"]);
+  await syncFrom(ctx, RAVI, randomUUID(), theirs, null);
+
+  const search = (q: string, user = ASHA) =>
+    ctx.app.inject({ method: "GET", url: `/api/search?q=${encodeURIComponent(q)}`, headers: ctx.as(user) });
+
+  const found = (await search("chaand")).json().items;
+  assert.equal(found.length, 1);
+  assert.equal(found[0].id, poemId);
+  assert.equal(found[0].firstLine.text, "पहली पंक्ति");
+  assert.deepEqual(found[0].match, { text: "छत पर बैठा चाँद देखता रहा", marks: [[11, 15]] });
+
+  assert.equal((await search("चांद देख")).json().items.length, 1);
+  assert.deepEqual((await search("moon")).json().items, []);
+  assert.deepEqual((await search("!!")).json().items, []);
+  assert.equal((await search("   ")).statusCode, 400);
+  assert.equal((await ctx.app.inject({ method: "GET", url: "/api/search", headers: ctx.as(ASHA) })).statusCode, 400);
 });

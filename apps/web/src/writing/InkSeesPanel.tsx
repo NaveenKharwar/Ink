@@ -1,12 +1,13 @@
 import { CloseIcon } from "./icons";
 
 // Related writing arrives in Phase 2; until then the panel shows its empty state.
+// Desktop: a side sheet from the right edge. Phone: the right side of the sliding track.
 export function InkSeesPanel({ phone = false, onClose }: { phone?: boolean; onClose: () => void }) {
   return (
     <aside
       aria-label="Ink sees this too"
-      className={`box-border flex shrink-0 flex-col overflow-hidden bg-surface ${
-        phone ? "h-full w-[300px] border-l border-line" : "w-[340px] rounded-panel border border-line"
+      className={`box-border flex h-full shrink-0 flex-col overflow-hidden bg-surface ${
+        phone ? "w-[300px] border-l border-line" : "w-[290px] rounded-l-panel border border-r-0 border-line"
       }`}
     >
       <div className="flex h-14 shrink-0 items-center justify-between border-b border-line pr-3 pl-4">

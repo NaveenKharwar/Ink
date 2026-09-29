@@ -7,13 +7,13 @@ const THEMES: Array<{ value: ThemeChoice; label: string }> = [
   { value: "dark", label: "Dark" }
 ];
 
-type Props = { email: string; onSignOut: () => void; compact?: boolean };
+type Props = { email: string; onSignOut: () => void };
 
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
 // Who is signed in, at the foot of the menu. Opens upward: the look (System, Light, Dark)
 // and Sign out. Profile joins it when it exists.
-export function AccountMenu({ email, onSignOut, compact = false }: Props) {
+export function AccountMenu({ email, onSignOut }: Props) {
   const [open, setOpen] = useState(false);
   const [theme, setTheme] = useTheme();
   const wrap = useRef<HTMLDivElement>(null);
@@ -33,11 +33,8 @@ export function AccountMenu({ email, onSignOut, compact = false }: Props) {
         type="button"
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label={compact ? `Account: ${email}` : undefined}
         onClick={() => setOpen(!open)}
-        className={`flex cursor-pointer items-center gap-2.5 rounded-md border-0 bg-transparent text-left text-ink hover:bg-surface-hover ${focusRing} ${
-          compact ? "h-10 w-10 justify-center p-0" : "h-9 w-full px-2"
-        }`}
+        className={`flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-md border-0 bg-transparent px-2 text-left text-ink hover:bg-surface-hover ${focusRing}`}
       >
         <span
           aria-hidden="true"
@@ -45,16 +42,14 @@ export function AccountMenu({ email, onSignOut, compact = false }: Props) {
         >
           {initial}
         </span>
-        {!compact && <span className="min-w-0 truncate text-[13px] text-ink-muted">{email}</span>}
+        <span className="min-w-0 truncate text-[13px] text-ink-muted">{email}</span>
       </button>
 
       {open && (
         <div
           role="menu"
           aria-label="Account"
-          className={`absolute bottom-11 z-20 w-[220px] rounded-md border border-line-strong bg-surface p-1 shadow-[0_8px_24px_rgba(0,0,0,0.10)] ${
-            compact ? "left-12 bottom-0" : "left-0"
-          }`}
+          className="absolute bottom-11 left-0 z-20 w-[220px] rounded-md border border-line-strong bg-surface p-1 shadow-[0_8px_24px_rgba(0,0,0,0.10)]"
         >
           <div className="px-2.5 pt-2 pb-1.5 text-[12px] text-ink-muted">Look</div>
           <div role="group" aria-label="Look" className="mx-1.5 mb-1.5 flex gap-1 rounded-md bg-ground p-1">
