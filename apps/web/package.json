@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "echo \"(lint not configured yet)\"",
-    "test": "tsx --test src/editor/editor.test.ts src/lib/seasons.test.ts src/lib/sync.test.ts src/editor/yjs.test.ts src/lib/route.test.ts src/lib/openPiece.test.ts"
+    "test": "tsx --test src/editor/editor.test.ts src/lib/seasons.test.ts src/lib/sync.test.ts src/editor/yjs.test.ts src/lib/route.test.ts src/lib/openPiece.test.ts src/lib/layout.test.ts"
   },
   "dependencies": {
     "@ink/schemas": "workspace:*",
@@ -33,6 +33,7 @@
     "loading-dev": "^0.3.4",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
+    "vara": "1.4.1",
     "yjs": "^13.6.33"
   },
   "devDependencies": {

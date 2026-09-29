@@ -4,7 +4,7 @@ import { sync } from "../lib/localSave";
 import { ALL_WRITING, PROFILE, parseRoute, pieceAddress } from "../lib/route";
 import { deviceTimeZone, groupBySeason, resolveSeasonSet, seasonText } from "../lib/seasons";
 import { supabase } from "../lib/supabase";
-import { useMediaQuery } from "../lib/useMediaQuery";
+import { useWide } from "../lib/layout";
 import { AllWriting } from "./AllWriting";
 import { InkSeesPanel } from "./InkSeesPanel";
 import { PieceView } from "./PieceView";
@@ -15,11 +15,12 @@ import { useLibrary } from "./useLibrary";
 
 type PhonePos = "menu" | "page" | "panel";
 
+// The track is menu · page · panel; each sheet is --phone-sheet-width wide (styles.css). The
+// panel sits flush with the right edge, mirroring the menu on the left.
 const PHONE_OFFSET: Record<PhonePos, string> = {
   menu: "0px",
-  page: "-300px",
-  // The panel slides in until only 90px of the page is left.
-  panel: "calc(-100vw - 210px)"
+  page: "calc(-1 * var(--phone-sheet-width))",
+  panel: "calc(-2 * var(--phone-sheet-width))"
 };
 
 const typingInPage = () => !!document.activeElement?.closest(".ProseMirror");
@@ -39,13 +40,43 @@ function viewFromAddress(): View {
   return blank();
 }
 
+// Desktop menu: open or closed is remembered on this device until the writer changes it
+// (closed the first time).
+function readRemembered(key: string, fallback: boolean): boolean {
+  try {
+    const value = localStorage.getItem(key);
+    return value === null ? fallback : value === "1";
+  } catch {
+    return fallback;
+  }
+}
+function remember(key: string, open: boolean) {
+  try {
+    localStorage.setItem(key, open ? "1" : "0");
+  } catch {
+    // Storage blocked: the menu just starts closed next time.
+  }
+}
+function useRememberedOpen(key: string, fallback: boolean) {
+  const [open, setOpen] = useState(() => readRemembered(key, fallback));
+  const set = (next: boolean | ((open: boolean) => boolean)) =>
+    setOpen((was) => {
+      const value = typeof next === "function" ? next(was) : next;
+      remember(key, value);
+      return value;
+    });
+  return [open, set] as const;
+}
+
 const SLIDE = "transition-[translate,opacity] duration-[360ms] ease-[cubic-bezier(0.2,0.7,0.2,1)] motion-reduce:transition-none";
 
 export function WritingScreen({ account, userId }: { account: Account; userId: string }) {
-  const wide = useMediaQuery("(min-width: 1024px)");
+  // Desktop or phone, from the app's one breakpoint (lib/layout.ts).
+  const wide = useWide();
   const [view, setView] = useState<View>(viewFromAddress);
-  // Desktop: the menu opens beside the page when asked; Ink sees this too starts open.
-  const [menuOpen, setMenuOpen] = useState(false);
+  // Desktop: the menu stays as the writer left it (until ☰). Ink sees this too opens on every
+  // load, so writers always meet it; × hides it for this visit only.
+  const [menuOpen, setMenuOpen] = useRememberedOpen("ink-menu-open", false);
   const [panelOpen, setPanelOpen] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
   const [pos, setPos] = useState<PhonePos>("page");
@@ -55,7 +86,6 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
   const go = (address: string, next: View) => {
     if (window.location.pathname !== address) window.history.pushState(null, "", address);
     setView(next);
-    setMenuOpen(false);
     setSearchOpen(false);
     setPos("page");
   };
@@ -82,11 +112,12 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
   }, []);
 
   // The list is fetched again whenever it is about to be seen, so a piece written a moment ago is in it.
+  // The desktop menu can stay open, so moving to another piece or screen fetches it too.
   const menuShown = wide ? menuOpen : pos === "menu";
   const { refresh } = library;
   useEffect(() => {
-    if (menuShown || view.kind === "all" || searchOpen) refresh();
-  }, [menuShown, view.kind, searchOpen, refresh]);
+    if (menuShown || view.kind === "all" || view.kind === "profile" || searchOpen) refresh();
+  }, [menuShown, view, searchOpen, refresh]);
 
   // Send what is still on the device before the token goes away (never wait more than 2s).
   const signOut = async () => {
@@ -115,13 +146,11 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
       } else if (mod && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setSearchOpen(true);
-      } else if (e.key === "Escape" && wide && menuOpen && !searchOpen) {
-        setMenuOpen(false);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [wide, menuOpen, searchOpen]);
+  }, [wide]);
 
   // Seasons follow the device's time zone unless the writer chose a set in Profile.
   const timeZone = deviceTimeZone();
@@ -143,11 +172,21 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
     return item ? seasonText(new Date(item.createdAt), new Date(), timeZone, seasonSet) : "Now";
   };
 
+  // The menu's dot marks the season on screen: the one All writing is narrowed to, or the open
+  // piece's season (a piece not in the list yet is new, so it belongs to Now).
+  const openPieceId = view.kind === "piece" ? view.target.id : null;
+  const menuSeason =
+    view.kind === "all"
+      ? view.season
+      : openPieceId
+        ? (groups?.find((g) => g.items.some((i) => i.id === openPieceId)) ?? groups?.find((g) => g.label === "Now"))?.key ?? null
+        : null;
+
   const sidebarProps = {
     name: account.penName ?? account.email,
     screen: view.kind === "all" ? ("all" as const) : ("write" as const),
     seasons,
-    activeSeason,
+    activeSeason: menuSeason,
     onSearch: () => setSearchOpen(true),
     onWrite: newPiece,
     onAll: () => openAll(),
@@ -159,7 +198,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
   const onMenu = () => (wide ? setMenuOpen(true) : setPos("menu"));
   const page =
     view.kind === "profile" ? (
-      <Profile account={account} wide={wide} onBack={leaveProfile} onSignOut={() => void signOut()} />
+      <Profile account={account} items={library.items} wide={wide} onBack={leaveProfile} onSignOut={() => void signOut()} />
     ) : view.kind === "all" ? (
       <AllWriting
         wide={wide}
@@ -196,22 +235,13 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
     const panelShown = panelOpen && view.kind === "piece";
     return (
       <div className="fixed inset-0 bg-ground">
-        <main className="relative mx-auto box-border flex h-full w-[820px] max-w-full flex-col overflow-hidden border-x border-line bg-surface">
+        <main className="relative mx-auto box-border flex h-full w-[var(--paper-width)] flex-col overflow-hidden border-x border-line bg-surface">
           {page}
         </main>
-        {menuOpen && (
-          <button
-            type="button"
-            tabIndex={-1}
-            aria-label="Close menu"
-            onClick={() => setMenuOpen(false)}
-            className="fixed inset-0 z-20 cursor-default border-0 bg-transparent p-0"
-          />
-        )}
         <div
           inert={!menuOpen}
           className={`fixed top-3 bottom-3 left-0 z-30 flex rounded-r-panel shadow-[8px_0_24px_rgba(0,0,0,0.08)] ${SLIDE} ${
-            menuOpen ? "translate-x-0 opacity-100" : "pointer-events-none -translate-x-[300px] opacity-0"
+            menuOpen ? "translate-x-0 opacity-100" : "pointer-events-none -translate-x-[calc(var(--sheet-width)+12px)] opacity-0"
           }`}
         >
           <Sidebar {...sidebarProps} onClose={() => setMenuOpen(false)} />
@@ -219,11 +249,12 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
         <div
           inert={!panelShown}
           className={`fixed top-3 right-0 bottom-3 z-30 flex rounded-l-panel shadow-[-8px_0_24px_rgba(0,0,0,0.08)] ${SLIDE} ${
-            panelShown ? "translate-x-0 opacity-100" : "pointer-events-none translate-x-[320px] opacity-0"
+            panelShown ? "translate-x-0 opacity-100" : "pointer-events-none translate-x-[calc(var(--sheet-width)+12px)] opacity-0"
           }`}
         >
           <InkSeesPanel onClose={() => setPanelOpen(false)} />
         </div>
+
         {search}
       </div>
     );
@@ -248,7 +279,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
     <div className="fixed inset-0 touch-pan-y overflow-hidden bg-surface" onPointerDown={onPointerDown} onPointerUp={onPointerUp}>
       <div
         className="absolute top-0 left-0 flex h-full transition-transform duration-[360ms] ease-[cubic-bezier(0.2,0.7,0.2,1)] motion-reduce:transition-none"
-        style={{ width: "calc(100vw + 600px)", transform: `translateX(${PHONE_OFFSET[pos]})` }}
+        style={{ width: "calc(100vw + 2 * var(--phone-sheet-width))", transform: `translateX(${PHONE_OFFSET[pos]})` }}
       >
         <div inert={pos !== "menu"} className="h-full">
           <Sidebar phone {...sidebarProps} onClose={() => setPos("page")} />

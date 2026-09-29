@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/* Layout sizes, in one place. Desktop: the paper is centred and keeps room on each side for a
+   side sheet plus a gap, so a sheet never covers or touches it. Phone: sheets slide on a track. */
+:root {
+  --sheet-width: 290px;
+  --sheet-gap: 24px;
+  --paper-max: 820px;
+  --paper-width: min(var(--paper-max), calc(100vw - 2 * (var(--sheet-width) + var(--sheet-gap))));
+  --phone-sheet-width: 300px;
+}
+
 /* App colours: follow the system unless the writer picked Light or Dark (data-theme on <html>). */
 :root {
   --ground: #f4f4f3;
@@ -16,6 +26,12 @@
   --tooltip: #16181d;
   --tooltip-key: #2e323a;
   --scrim: rgba(20, 20, 20, 0.28);
+  --ad-line: #d6d6d4;
+  --season-winter: #5b7fa6;
+  --season-spring: #c2567e;
+  --season-summer: #b7791f;
+  --season-monsoon: #2f7d6d;
+  --season-autumn: #c0582b;
   color-scheme: light;
 }
 
@@ -35,6 +51,12 @@
     --tooltip: #2e3035;
     --tooltip-key: #3a3d43;
     --scrim: rgba(0, 0, 0, 0.5);
+    --ad-line: #3a3c40;
+    --season-winter: #8fb0d6;
+    --season-spring: #e58bae;
+    --season-summer: #e3b04b;
+    --season-monsoon: #5fb8a4;
+    --season-autumn: #e88b5a;
     color-scheme: dark;
   }
 }
@@ -54,6 +76,12 @@
   --tooltip: #2e3035;
   --tooltip-key: #3a3d43;
   --scrim: rgba(0, 0, 0, 0.5);
+  --ad-line: #3a3c40;
+  --season-winter: #8fb0d6;
+  --season-spring: #e58bae;
+  --season-summer: #e3b04b;
+  --season-monsoon: #5fb8a4;
+  --season-autumn: #e88b5a;
   color-scheme: dark;
 }
 
@@ -68,6 +96,12 @@
   --color-surface-hover: var(--surface-hover);
   --color-line-strong: var(--line-strong);
   --color-ink-subtle: var(--ink-subtle);
+  --color-ad-line: var(--ad-line);
+  --color-season-winter: var(--season-winter);
+  --color-season-spring: var(--season-spring);
+  --color-season-summer: var(--season-summer);
+  --color-season-monsoon: var(--season-monsoon);
+  --color-season-autumn: var(--season-autumn);
   --color-stanza: var(--stanza);
   --color-tooltip: var(--tooltip);
   --color-tooltip-key: var(--tooltip-key);
@@ -75,8 +109,10 @@
 }
 
 @theme {
-  /* Sign-in switches from the stacked phone layout to the side-by-side card here. */
-  --breakpoint-wide: 1100px;
+  /* The one breakpoint for the whole app: phone and tablet below, desktop from here (sign-in's
+     side-by-side card, the writing screen's centred paper and side sheets). lib/layout.ts uses
+     the same width for code, and a test keeps the two equal. */
+  --breakpoint-wide: 1200px;
 
   /* Sign-in is light only, so it uses the light values directly. */
   --color-auth-ink: #1a1a1a;
@@ -90,6 +126,8 @@
 
   --font-serif: "Source Serif 4", "Noto Serif Devanagari", Georgia, serif;
   --font-sans: Inter, "Noto Sans Devanagari", system-ui, sans-serif;
+  /* Handwriting for a Hindi pen name (the stroke-drawn signature font has Latin letters only). */
+  --font-hand: "Kalam", cursive;
 
   --radius-sm: 5px;
   --radius-md: 8px;
@@ -147,24 +185,23 @@ body {
   outline-offset: 2px;
 }
 
-/* The writing page. Stanzas are paragraphs, one line height apart; lines are hard breaks. */
+/* The writing page. Stanzas are paragraphs, one line height apart; lines are hard breaks.
+   Phone sizes first; desktop sizes from the app's one breakpoint. */
 .ink-editor .ProseMirror {
-  --lh: 33px;
-  --bar-gap: 29px;
+  --lh: 29px;
+  --bar-gap: 14px;
   outline: none;
   font-family: var(--font-serif);
-  font-size: 22px;
+  font-size: 19px;
   line-height: var(--lh);
   color: var(--ink);
   white-space: pre-wrap;
   tab-size: 4;
   min-height: calc(var(--lh) * 6);
-}
-@media (max-width: 1023px) {
-  .ink-editor .ProseMirror {
-    --lh: 29px;
-    --bar-gap: 14px;
-    font-size: 19px;
+  @variant wide {
+    --lh: 33px;
+    --bar-gap: 29px;
+    font-size: 22px;
   }
 }
 .ink-editor .ProseMirror > * + * { margin-top: var(--lh); }
@@ -237,6 +274,34 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .sky-roll-in, .sky-roll-out { animation: none; }
   .sky-roll-out { display: none; }
+}
+
+/* Profile: the pen name signs itself, left to right, after the note above it. */
+@keyframes signature-in {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+.signature-in { animation: signature-in 1200ms cubic-bezier(0.45, 0, 0.25, 1) 400ms both; }
+@media (prefers-reduced-motion: reduce) {
+  .signature-in { animation: none; }
+}
+
+/* All writing: the season label pinned to the top of the list rolls to the season being read. */
+@keyframes season-roll-in-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes season-roll-out-up {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(-100%); opacity: 0; }
+}
+.season-roll-in-up { animation: season-roll-in-up 500ms cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.season-roll-out-up { animation: season-roll-out-up 500ms cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.season-roll-in-down { animation: sky-roll-in 500ms cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.season-roll-out-down { animation: sky-roll-out 500ms cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .season-roll-in-up, .season-roll-out-up, .season-roll-in-down, .season-roll-out-down { animation: none; }
+  .season-roll-out-up, .season-roll-out-down { display: none; }
 }
 
 /* Plain pages (privacy): the browser's own default look, undoing the reset. */

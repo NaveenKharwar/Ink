@@ -89,6 +89,11 @@ export function seasonText(
   return place.year === current.year ? place.name : `${place.name} ${place.year}`;
 }
 
+/** The painting for a season, by the name in a group key ("2025-Monsoon" → /seasons/monsoon.webp). */
+export function seasonPainting(key: string): string {
+  return `/seasons/${(key.split("-")[1] ?? "").toLowerCase()}.webp`;
+}
+
 export type SeasonGroup<T> = {
   /** Stable id, e.g. "2025-Monsoon". */
   key: string;

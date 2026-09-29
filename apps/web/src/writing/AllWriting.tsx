@@ -1,9 +1,15 @@
 import type { LibraryItem, PieceLanguage } from "@ink/schemas";
+import { useEffect, useRef, useState } from "react";
 import { Loader } from "../lib/Loader";
 import type { SeasonGroup } from "../lib/seasons";
+import { AdSlot } from "./AdSlot";
 import { CloseIcon, MenuIcon } from "./icons";
+import { SeasonPainting } from "./SeasonPainting";
+import { PlaceLink, SideColumn } from "./SideColumn";
 
 const LANGUAGE: Record<PieceLanguage, string | null> = { en: "English", hi: "हिन्दी", "hi-Latn": "Hinglish", mixed: null };
+
+const ROLL_BAR_HEIGHT = 35;
 
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
@@ -24,6 +30,56 @@ type Props = {
 // Each row is the writer's own first lines, not a title.
 export function AllWriting({ wide, showMenuButton, onMenu, groups, failed, onRetry, season, onClearSeason, onOpen }: Props) {
   const total = groups?.reduce((n, g) => n + g.items.length, 0) ?? 0;
+
+  // Desktop: a column beside the paper lists the seasons and marks the one being read.
+  const scroller = useRef<HTMLDivElement>(null);
+  const sections = useRef(new Map<string, HTMLElement>());
+  const [reading, setReading] = useState<string | null>(null);
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el || !groups?.length) return;
+    let frame = 0;
+    const update = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        // A season is being read once its label has slid under the rolling label at the top.
+        const top = el.getBoundingClientRect().top + ROLL_BAR_HEIGHT + 1;
+        let current = groups[0]!.key;
+        for (const g of groups) {
+          const section = sections.current.get(g.key);
+          if (section && section.getBoundingClientRect().top <= top) current = g.key;
+        }
+        // At the very end, the last season is the one being read even if it's short.
+        if (el.scrollTop + el.clientHeight >= el.scrollHeight - 2) current = groups[groups.length - 1]!.key;
+        setReading(current);
+      });
+    };
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      el.removeEventListener("scroll", update);
+    };
+  }, [groups]);
+  // The seasons list in the column follows along: when the season being read is out of its
+  // view, the list scrolls just enough to show it.
+  const seasonList = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const list = seasonList.current;
+    const item = list?.querySelector<HTMLElement>('[aria-current="location"]');
+    if (!list || !item) return;
+    // The list is the item's positioned parent, so offsetTop is measured from the list's top.
+    const top = item.offsetTop;
+    const bottom = top + item.offsetHeight;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const to =
+      top < list.scrollTop + 8 ? top - 40 : bottom > list.scrollTop + list.clientHeight - 8 ? bottom - list.clientHeight + 40 : null;
+    if (to !== null) list.scrollTo({ top: Math.max(0, to), behavior: reduce ? "auto" : "smooth" });
+  }, [reading]);
+  const jumpTo = (key: string) => {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    sections.current.get(key)?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  };
 
   return (
     <>
@@ -47,8 +103,9 @@ export function AllWriting({ wide, showMenuButton, onMenu, groups, failed, onRet
         )}
       </div>
 
-      <div className={`grow overflow-y-auto ${wide ? "px-12 pt-7 pb-12" : "px-5 pt-4 pb-10"}`}>
-        <div className="mx-auto max-w-[680px]">
+      {/* No top padding on the scroll box itself, so season labels stick flush to its top edge. */}
+      <div ref={scroller} className={`grow overflow-y-auto ${wide ? "px-12 pb-12" : "px-5 pb-10"}`}>
+        <div className={`mx-auto max-w-[680px] ${wide ? "pt-7" : "pt-4"}`}>
           <h1 className={`m-0 font-serif font-normal ${wide ? "text-[30px] leading-9" : "text-[26px] leading-8"}`}>{season ?? "All writing"}</h1>
           {groups && (
             <div className="mt-1 text-[13px] text-ink-muted">
@@ -88,21 +145,41 @@ export function AllWriting({ wide, showMenuButton, onMenu, groups, failed, onRet
           )}
           {groups && total === 0 && <p className="mt-7 mb-0 text-ink-muted">Nothing here yet.</p>}
 
+          {groups && groups.length > 0 && (
+            <>
+              {groups[0]!.divider && <div className="mt-7 text-center text-[12px] text-ink-muted">{groups[0]!.divider}</div>}
+              <RollingSeason groups={groups} reading={reading ?? groups[0]!.key} first={!groups[0]!.divider} />
+            </>
+          )}
           {groups?.map((group, i) => (
-            <section key={group.key} aria-label={group.text}>
-              {group.divider && <div className="mt-7 text-center text-[12px] text-ink-muted">{group.divider}</div>}
-              <div
-                className={`flex items-baseline justify-between border-b border-line pb-2 ${i === 0 ? "mt-7" : group.divider ? "mt-3" : "mt-7"}`}
-              >
-                <h2 className="m-0 font-serif text-[19px] leading-[26px] font-normal">{group.label}</h2>
-                <span className="text-[13px] text-ink-muted">{group.items.length}</span>
-              </div>
+            <section
+              key={group.key}
+              aria-label={group.text}
+              ref={(el) => {
+                if (el) sections.current.set(group.key, el);
+                else sections.current.delete(group.key);
+              }}
+            >
+              {/* Ink's label, not the writer's words: small sans. The first season's label is the
+                  rolling one above; the others scroll up under it, and it rolls to their name. */}
+              {i === 0 ? (
+                <h2 className="sr-only">{group.text}</h2>
+              ) : (
+                <>
+                  {group.divider && <div className="mt-7 text-center text-[12px] text-ink-muted">{group.divider}</div>}
+                  <h2
+                    className={`m-0 border-b border-line pt-2 pb-2 text-[13px] leading-[18px] font-normal text-ink-muted ${group.divider ? "mt-1" : "mt-5"}`}
+                  >
+                    {group.text} · {group.items.length}
+                  </h2>
+                </>
+              )}
               {group.items.map((item) => (
                 <button
                   key={item.id}
                   type="button"
                   onClick={() => onOpen(item.id)}
-                  className={`block w-full cursor-pointer border-0 border-b border-surface-hover bg-transparent px-0 py-3 text-left text-ink ${focusRing}`}
+                  className={`block w-full cursor-pointer border-0 bg-transparent px-0 py-3 text-left text-ink ${focusRing}`}
                 >
                   <div className="font-serif text-[18px] leading-[25px]">
                     {item.lines.length ? item.lines.join(" ") : <span className="text-ink-muted">{item.title ?? "Untitled"}</span>}
@@ -114,7 +191,81 @@ export function AllWriting({ wide, showMenuButton, onMenu, groups, failed, onRet
           ))}
         </div>
       </div>
+
+      {/* Beside the paper, on the ground: the season's painting, the seasons on this page, then
+          the ad slot. The painting and the ad stay put; only the seasons list scrolls. */}
+      {wide && (
+        <SideColumn>
+          {groups && groups.length > 0 && (
+            <SeasonPainting reading={reading ?? groups[0]!.key} />
+          )}
+          {groups && groups.length > 0 && (
+            <nav aria-label="Seasons on this page" className="mt-6 flex min-h-0 flex-col">
+              <div className="shrink-0 pb-2 text-[13px] text-ink-muted">Seasons</div>
+              {/* A little room on each side so focus rings aren't clipped by the scroll box. */}
+              <div ref={seasonList} className="relative -mx-1 min-h-0 overflow-y-auto px-1">
+                <ul className="m-0 list-none border-l border-line p-0">
+                  {groups.map((g) => {
+                    const active = g.key === reading;
+                    return (
+                      <li key={g.key}>
+                        {g.divider && <div className="pt-2.5 pb-1 pl-4 text-[12px] leading-4 text-ink-muted">{g.divider}</div>}
+                        <PlaceLink label={g.label} active={active} onClick={() => jumpTo(g.key)} />
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </nav>
+          )}
+          {import.meta.env.DEV && (
+            <div className="mt-auto w-full max-w-[300px] shrink-0 pt-6">
+              <AdSlot />
+            </div>
+          )}
+        </SideColumn>
+      )}
     </>
+  );
+}
+
+// The season label pinned to the top of the list. When the season being read changes it rolls
+// to the new name (a later season comes up from below, an earlier one down from above), the
+// same roll as the sign-in line, then stays put. Reduced motion: it just changes.
+function RollingSeason({ groups, reading, first }: { groups: SeasonGroup<LibraryItem>[]; reading: string; first: boolean }) {
+  const [roll, setRoll] = useState<{ step: number; from: string | null; dir: "up" | "down" }>({ step: 0, from: null, dir: "up" });
+  const shown = useRef(reading);
+  useEffect(() => {
+    if (reading === shown.current) return;
+    const index = (key: string) => groups.findIndex((g) => g.key === key);
+    const dir = index(reading) > index(shown.current) ? "up" : "down";
+    setRoll((r) => ({ step: r.step + 1, from: shown.current, dir }));
+    shown.current = reading;
+  }, [reading, groups]);
+
+  const label = (key: string | null) => {
+    const g = groups.find((x) => x.key === key);
+    return g ? `${g.text} · ${g.items.length}` : "";
+  };
+
+  return (
+    <div
+      aria-hidden="true"
+      style={{ height: ROLL_BAR_HEIGHT }}
+      className={`sticky top-0 z-[1] box-border overflow-hidden border-b border-line bg-surface text-[13px] leading-[18px] text-ink-muted ${first ? "mt-5" : "mt-1"}`}
+    >
+      {roll.from && roll.step > 0 && (
+        <div key={`out-${roll.step}`} className={`absolute inset-x-0 top-2 ${roll.dir === "up" ? "season-roll-out-up" : "season-roll-out-down"}`}>
+          {label(roll.from)}
+        </div>
+      )}
+      <div
+        key={`in-${roll.step}`}
+        className={`absolute inset-x-0 top-2 ${roll.step > 0 ? (roll.dir === "up" ? "season-roll-in-up" : "season-roll-in-down") : ""}`}
+      >
+        {label(reading)}
+      </div>
+    </div>
   );
 }
 

@@ -7,7 +7,7 @@ export function InkSeesPanel({ phone = false, onClose }: { phone?: boolean; onCl
     <aside
       aria-label="Ink sees this too"
       className={`box-border flex h-full shrink-0 flex-col overflow-hidden bg-surface ${
-        phone ? "w-[300px] border-l border-line" : "w-[290px] rounded-l-panel border border-r-0 border-line"
+        phone ? "w-[var(--phone-sheet-width)] border-l border-line" : "w-[var(--sheet-width)] rounded-l-panel border border-r-0 border-line"
       }`}
     >
       <div className="flex h-14 shrink-0 items-center justify-between border-b border-line pr-3 pl-4">

@@ -1,4 +1,6 @@
 // Inline stroke icons on a 24px grid, drawn in the current text colour.
+import type { ReactNode } from "react";
+
 type P = { size?: number };
 
 export const MenuIcon = ({ size = 20 }: P) => (
@@ -73,5 +75,50 @@ export const DocumentIcon = ({ size = 17 }: P) => (
 export const ChevronIcon = ({ size = 14, up = false }: P & { up?: boolean }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d={up ? "M6 15l6-6 6 6" : "M6 9l6 6 6-6"} />
+  </svg>
+);
+
+// One small mark per season, beside its name in the menu.
+const seasonPaths: Record<string, ReactNode> = {
+  winter: <path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.5 12 7l2.5-2.5M9.5 19.5 12 17l2.5 2.5" />,
+  spring: (
+    <>
+      <circle cx="12" cy="12" r="2" />
+      <path d="M12 10c-1.6-2.4-1.6-4.6 0-6.5 1.6 1.9 1.6 4.1 0 6.5zM13.9 11.4c1.1-2.7 3-3.9 5.4-3.6-.3 2.4-2.1 3.8-5.4 3.6zM13.2 13.9c2.8.4 4.3 2 4.4 4.4-2.4.2-4.1-1.3-4.4-4.4zM10.8 13.9c-.3 3.1-2 4.6-4.4 4.4.1-2.4 1.6-4 4.4-4.4zM10.1 11.4c-3.3.2-5.1-1.2-5.4-3.6 2.4-.3 4.3.9 5.4 3.6z" />
+    </>
+  ),
+  summer: (
+    <>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" />
+    </>
+  ),
+  monsoon: <path d="M7 15.5a4 4 0 0 1-.4-8A5.5 5.5 0 0 1 17.2 8 3.8 3.8 0 0 1 17 15.5H7zM8.5 18.5l-1 2M12.5 18.5l-1 2M16.5 18.5l-1 2" />,
+  autumn: <path d="M5 19c0-8 5-13.5 14-14-.5 9-6 14-14 14zM5 19l7.5-7.5" />
+};
+
+// Each season's mark has its own colour, taken from its painting.
+const seasonColours: Record<string, string> = {
+  winter: "text-season-winter",
+  spring: "text-season-spring",
+  summer: "text-season-summer",
+  monsoon: "text-season-monsoon",
+  autumn: "text-season-autumn"
+};
+
+export const SeasonIcon = ({ name, size = 16 }: P & { name: string }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    className={seasonColours[name.toLowerCase()] ?? "text-ink-muted"}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.7"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    {seasonPaths[name.toLowerCase()] ?? <circle cx="12" cy="12" r="3" />}
   </svg>
 );

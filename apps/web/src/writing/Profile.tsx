@@ -1,9 +1,20 @@
+import type { LibraryItem, PieceLanguage } from "@ink/schemas";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { GoogleMark } from "../auth/parts";
 import { PEN_NAME_MAX, savePenName, saveSeasons, setPassword, type Account, type PasswordProblem } from "../lib/account";
-import { deviceTimeZone, seasonSetFor, type SeasonChoice, type SeasonSet } from "../lib/seasons";
+import { deviceTimeZone, resolveSeasonSet, seasonPlace, seasonSetFor, type SeasonChoice, type SeasonSet } from "../lib/seasons";
+import { SeasonPainting } from "./SeasonPainting";
+import { SideColumn } from "./SideColumn";
+import { Signature } from "./Signature";
 
-type Props = { account: Account; wide: boolean; onBack: () => void; onSignOut: () => void };
+type Props = {
+  account: Account;
+  /** The writer's pieces, for the few quiet facts beside the page (null while loading). */
+  items: LibraryItem[] | null;
+  wide: boolean;
+  onBack: () => void;
+  onSignOut: () => void;
+};
 
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 const plainButton = `h-11 cursor-pointer rounded-md border border-line-strong bg-surface px-[18px] font-medium text-ink hover:bg-surface-hover ${focusRing}`;
@@ -27,7 +38,13 @@ const SAVE_FAILED = "Ink couldn’t save that. Check your connection and try aga
 
 // The writer's account: pen name, seasons, how they sign in, an optional password, sign out.
 // A password is a way back in, never a security score: no nagging, no progress bars.
-export function Profile({ account, wide, onBack, onSignOut }: Props) {
+export function Profile({ account, items, wide, onBack, onSignOut }: Props) {
+  // The seasons choice lives here so the painting beside the page follows it as it changes.
+  const [seasons, setSeasons] = useState(account.seasons);
+  const timeZone = deviceTimeZone();
+  const set = resolveSeasonSet(seasons, timeZone);
+  const now = seasonPlace(new Date(), timeZone, set);
+
   return (
     <>
       <div className={`flex h-14 shrink-0 items-center border-b border-line ${wide ? "px-5" : "px-3"}`}>
@@ -44,11 +61,11 @@ export function Profile({ account, wide, onBack, onSignOut }: Props) {
       </div>
 
       <div className="grow overflow-y-auto">
-        <div className={wide ? "mx-auto max-w-[560px] pt-12 pb-12" : "px-5 pt-7 pb-10"}>
+        <div className={`mx-auto max-w-[560px] ${wide ? "pt-12 pb-12" : "box-content px-5 pt-7 pb-10"}`}>
           <h1 className={`m-0 font-serif font-normal leading-[1.2] ${wide ? "text-[30px]" : "text-[26px]"}`}>Profile</h1>
           <PenName initial={account.penName ?? ""} />
           <Section>
-            <Seasons initial={account.seasons} />
+            <Seasons initial={account.seasons} onChange={setSeasons} />
           </Section>
           <Section>
             <h2 className="m-0 text-[14px] leading-5 font-semibold">How you sign in</h2>
@@ -80,8 +97,78 @@ export function Profile({ account, wide, onBack, onSignOut }: Props) {
           </Section>
         </div>
       </div>
+
+      {/* Beside the paper: the painting of the season you're in (it changes with the Seasons
+          choice, so the setting shows what it does), with a short note signed over its lower part. */}
+      {wide && (
+        <SideColumn>
+          <SeasonPainting reading={`${now.year}-${now.name}`} frame="aspect-[4/5] max-h-[calc(100vh-80px)]">
+            <About account={account} items={items} timeZone={timeZone} set={set} />
+          </SeasonPainting>
+          <div className="mt-2 shrink-0 text-[13px] text-ink-muted">
+            {now.name} · {SET_NAMES[set]}
+          </div>
+        </SideColumn>
+      )}
     </>
   );
+}
+
+const LANGUAGE_NAMES: Partial<Record<PieceLanguage, string>> = { en: "English", hi: "हिन्दी", "hi-Latn": "Hinglish" };
+
+// Who is writing, in a few plain lines: name, email, since when, how many pieces, in which
+// languages. Facts only: no charts, no "this month", nothing that reads like a score.
+function About({ account, items, timeZone, set }: { account: Account; items: LibraryItem[] | null; timeZone: string; set: SeasonSet }) {
+  const oldest = items?.reduce<string | null>((min, i) => (!min || i.createdAt < min ? i.createdAt : min), null) ?? null;
+  const now = seasonPlace(new Date(), timeZone, set);
+  const since = oldest ? seasonPlace(new Date(oldest), timeZone, set) : null;
+  const byUse = new Map<string, number>();
+  for (const i of items ?? []) {
+    const name = i.language ? LANGUAGE_NAMES[i.language] : undefined;
+    if (name) byUse.set(name, (byUse.get(name) ?? 0) + 1);
+  }
+  const languages = [...byUse.entries()].sort((a, b) => b[1] - a[1]).map(([name]) => name);
+
+  const sinceText = since
+    ? since.year === now.year && since.name === now.name
+      ? { before: "Started writing with Ink this ", fact: now.name, after: "." }
+      : { before: "Writing with Ink since ", fact: `${since.name} ${since.year}`, after: "." }
+    : { before: "Your first piece is ", fact: "one blank page away", after: "." };
+  const count = items?.length ? (items.length === 1 ? "1 piece" : `${items.length} pieces`) : null;
+
+  // A short note written over the lower part of the painting, on a soft shade that rises from
+  // the bottom, then the pen name signed in white below it.
+  return (
+    <div className="absolute inset-x-0 bottom-0 bg-[linear-gradient(to_top,rgba(16,18,34,0.78)_0%,rgba(16,18,34,0.55)_55%,rgba(16,18,34,0)_100%)] px-7 pt-24 pb-6 text-white [text-shadow:0_1px_8px_rgba(10,12,28,0.45)]">
+      {items && (
+        <div className="flex flex-col gap-3 font-serif text-[15px] leading-[24px] text-white/85">
+          <p className="m-0">
+            {sinceText.before}
+            <span className="whitespace-nowrap text-white">{sinceText.fact}</span>
+            {sinceText.after}
+          </p>
+          {count && (
+            <p className="m-0">
+              <span className="whitespace-nowrap text-white">{count}</span>
+              {languages.length > 0 && <>, in {listOf(languages)}</>}.
+            </p>
+          )}
+        </div>
+      )}
+      {account.penName ? (
+        <div className="mt-5">
+          <Signature name={account.penName} tone="light" align="left" size={24} />
+        </div>
+      ) : (
+        <div className="mt-3 truncate text-[13px] text-white/85">{account.email}</div>
+      )}
+    </div>
+  );
+}
+
+// "English", "English and हिन्दी", "English, हिन्दी and Hinglish".
+function listOf(names: string[]): string {
+  return names.length < 3 ? names.join(" and ") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
 }
 
 function Section({ children }: { children: ReactNode }) {
@@ -169,16 +256,20 @@ function PenName({ initial }: { initial: string }) {
   );
 }
 
-function Seasons({ initial }: { initial: SeasonChoice }) {
+function Seasons({ initial, onChange }: { initial: SeasonChoice; onChange: (choice: SeasonChoice) => void }) {
   const [choice, setChoice] = useState(initial);
   const [state, setState] = useState<SaveState>("idle");
 
   const pick = async (next: SeasonChoice) => {
     const before = choice;
     setChoice(next);
+    onChange(next);
     setState("saving");
     const ok = await saveSeasons(next);
-    if (!ok) setChoice(before);
+    if (!ok) {
+      setChoice(before);
+      onChange(before);
+    }
     setState(ok ? "saved" : "failed");
   };
 

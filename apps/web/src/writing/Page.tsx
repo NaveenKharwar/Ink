@@ -73,7 +73,7 @@ export function Page({ pieceId, userId, opened, wide, season, showMenuButton, sh
         onMenu={onMenu}
       />
       <div className={`ink-editor grow overflow-y-auto ${wide ? "pt-9 pr-10 pb-[110px] pl-[72px]" : "pt-5 pr-5 pb-[90px] pl-[33px]"}`}>
-        <div className={`max-w-[640px] ${wide ? "mx-auto" : ""}`}>
+        <div className="mx-auto max-w-[640px]">
           <EditorContent editor={editor} />
         </div>
       </div>
