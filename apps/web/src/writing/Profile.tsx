@@ -1,7 +1,7 @@
 import type { LibraryItem, PieceLanguage } from "@ink/schemas";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { GoogleMark } from "../auth/parts";
-import { PEN_NAME_MAX, savePenName, saveSeasons, setPassword, type Account, type PasswordProblem } from "../lib/account";
+import { PEN_NAME_MAX, savePenName, saveSeasons, sendPasswordCode, setPassword, type Account } from "../lib/account";
+import type { PasswordProblem } from "../lib/password";
 import { deviceTimeZone, resolveSeasonSet, seasonPlace, seasonSetFor, type SeasonChoice, type SeasonSet } from "../lib/seasons";
 import { MenuIcon } from "./icons";
 import { SeasonPainting } from "./SeasonPainting";
@@ -32,8 +32,9 @@ const SEASON_OPTIONS: Array<{ value: SeasonChoice; label: string; sub: string }>
 ];
 
 const PASSWORD_TEXT: Record<PasswordProblem, string> = {
+  "wrong-code": "That code doesn’t match. Check the newest email from Ink and try again.",
   same: "That’s already your password. Choose a new one.",
-  "sign-in-again": "For your safety, sign out and sign in again, then change your password.",
+  "rate-limited": "Ink can’t send another email just yet. Try again in a minute.",
   offline: "You seem to be offline. Check your connection and try again.",
   unknown: "Something went wrong on our side. Your writing is safe. Try again in a moment."
 };
@@ -82,33 +83,12 @@ export function Profile({ account, items, wide, showMenuButton, onMenu, onBack, 
             <Seasons initial={account.seasons} onChange={setSeasons} />
           </Section>
           <Section>
-            <h2 className="m-0 text-[14px] leading-5 font-semibold">How you sign in</h2>
-            <div className="mt-3 flex items-center gap-3">
-              {account.via === "google" ? (
-                <GoogleMark />
-              ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" className="shrink-0" aria-hidden="true">
-                  <rect x="3.5" y="5.5" width="17" height="13" rx="2" />
-                  <path d="M4 7l8 6 8-6" />
-                </svg>
-              )}
-              <div className="min-w-0">
-                <div className="truncate font-medium">{account.email}</div>
-                <div className="text-[13px] leading-[18px] text-ink-muted">
-                  {account.via === "google" ? "You sign in with Google." : "You sign in with a code sent to this email."}
-                </div>
-              </div>
-            </div>
-          </Section>
-          <Section>
-            <Password hasPassword={account.hasPassword} />
+            <SigningIn email={account.email} google={account.via === "google"} hasPassword={account.hasPassword} />
           </Section>
           <Section>
             <button type="button" onClick={onSignOut} className={plainButton}>
               Sign out
-            </button>
-            <div className="mt-2 text-[13px] leading-[18px] text-ink-muted">Your writing stays saved. Sign in again any time.</div>
-          </Section>
+            </button>          </Section>
         </div>
       </div>
 
@@ -259,12 +239,8 @@ function PenName({ initial }: { initial: string }) {
           timer.current = setTimeout(() => void save(next), 800);
         }}
         onBlur={() => void save(value)}
-        aria-describedby="pen-name-help"
         className="mt-2 box-border h-12 w-full rounded-md border border-line-strong bg-surface px-3.5 font-serif text-[18px] text-ink placeholder:text-ink-muted"
       />
-      <div id="pen-name-help" className="mt-1.5 text-[13px] leading-[18px] text-ink-muted">
-        Only you see this for now. Hindi works too.
-      </div>
       <SaveStatus state={state} />
     </section>
   );
@@ -319,44 +295,171 @@ function Seasons({ initial, onChange }: { initial: SeasonChoice; onChange: (choi
   );
 }
 
-function Password({ hasPassword }: { hasPassword: boolean }) {
+// Seconds before "Send a new code" appears, as on the sign-in code screen.
+const RESEND_AFTER = 20;
+
+// The ways this writer can get in (not how they signed in this time, which Ink can't tell):
+// Google once linked; a password once set; otherwise the email code. Adding or
+// changing the password happens here, behind an email code.
+function SigningIn({ email, google, hasPassword }: { email: string; google: boolean; hasPassword: boolean }) {
   const [has, setHas] = useState(hasPassword);
   const [form, setForm] = useState(false);
   const [changed, setChanged] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [code, setCode] = useState("");
+  const [codeFocused, setCodeFocused] = useState(false);
+  const [left, setLeft] = useState(RESEND_AFTER);
   const [pw, setPw] = useState("");
   const [shown, setShown] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [sending, setSending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [wrongCode, setWrongCode] = useState(false);
   const long = pw.length >= 8;
 
+  useEffect(() => {
+    if (!form || left <= 0) return;
+    const t = setTimeout(() => setLeft((n) => n - 1), 1000);
+    return () => clearTimeout(t);
+  }, [form, left]);
+
+  // One email per click: the code goes out when the writer opens the form (or asks again).
+  const send = async (again: boolean) => {
+    if (sending) return;
+    setSending(true);
+    const result = await sendPasswordCode();
+    setSending(false);
+    setCode("");
+    setWrongCode(false);
+    if (!result.ok) return setMessage(PASSWORD_TEXT[result.problem]);
+    setLeft(RESEND_AFTER);
+    setMessage(again ? "New code sent. Only the newest code works." : null);
+  };
   const open = () => {
     setForm(true);
     setPw("");
     setMessage(null);
+    void send(false);
   };
   const save = async () => {
+    if (code.length < 6) return setMessage("Enter all 6 digits from the email.");
     if (!long) return setMessage("Make it at least 8 characters.");
     setBusy(true);
-    const result = await setPassword(pw);
+    const result = await setPassword(pw, code);
     setBusy(false);
-    if (!result.ok) return setMessage(PASSWORD_TEXT[result.problem]);
+    if (!result.ok) {
+      setWrongCode(result.problem === "wrong-code");
+      return setMessage(PASSWORD_TEXT[result.problem]);
+    }
     setChanged(has);
+    setSaved(true);
     setHas(true);
     setForm(false);
     setPw("");
+    setCode("");
   };
+  const active = Math.min(code.length, 5);
 
   return (
     <>
-      <h2 className="m-0 text-[14px] leading-5 font-semibold">Password</h2>
-      {form ? (
+      <h2 className="m-0 text-[14px] leading-5 font-semibold">Signing in</h2>
+      <div className="mt-1.5 truncate font-medium">{email}</div>
+      {!has && !google && <p className="mt-1 mb-0 text-ink-muted">You sign in with a code from your email.</p>}
+      <ul className="m-0 mt-3 list-none p-0">
+        {google && <WayIn>Google</WayIn>}
+        {has && (
+          <WayIn
+            action={
+              !form && (
+                <button type="button" onClick={open} className={linkButton}>
+                  Change password
+                </button>
+              )
+            }
+          >
+            Password
+          </WayIn>
+        )}
+      </ul>
+      {!has && !form && (
+        <button type="button" onClick={open} className={`mt-3 ${plainButton}`}>
+          Add a password
+        </button>
+      )}
+      {saved && !form && (
+        <p className="mt-2 mb-0 text-[13px] leading-[18px] text-ink-muted">
+          {changed ? "Password changed." : "Password added."} You’re signed out on your other devices.
+        </p>
+      )}
+      {form && (
         <form
+          className="mt-4"
           onSubmit={(e) => {
             e.preventDefault();
             void save();
           }}
         >
-          <label htmlFor="new-password" className="mt-3 block font-medium">
+          <p className="mt-2 mb-0 max-w-[440px] text-ink-muted">
+            {sending ? "Sending a code to " : "We sent a 6-digit code to "}
+            <span className="font-medium text-ink">{email}</span>.
+          </p>
+          <label htmlFor="password-code" className="mt-3 block font-medium">
+            Code
+          </label>
+          {/* One real numeric field, drawn as six cells (as on the sign-in code screen). */}
+          <div className="relative mt-1.5 h-12 max-w-[320px]">
+            <div aria-hidden="true" className="grid h-12 grid-cols-6 gap-1.5">
+              {Array.from({ length: 6 }, (_, i) => (
+                <div
+                  key={i}
+                  className={`box-border flex items-center justify-center rounded-md bg-surface text-[20px] font-medium ${
+                    wrongCode
+                      ? "border-[1.5px] border-ink"
+                      : codeFocused && i === active
+                        ? "border-2 border-accent"
+                        : "border border-line-strong"
+                  }`}
+                >
+                  {code[i] ?? ""}
+                </div>
+              ))}
+            </div>
+            <input
+              id="password-code"
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              autoFocus
+              maxLength={6}
+              value={code}
+              aria-invalid={wrongCode || undefined}
+              onChange={(e) => {
+                setCode(e.target.value.replace(/\D/g, "").slice(0, 6));
+                setWrongCode(false);
+                setMessage(null);
+              }}
+              onFocus={() => setCodeFocused(true)}
+              onBlur={() => setCodeFocused(false)}
+              className="absolute inset-0 h-full w-full cursor-text border-0 p-0 text-[16px] opacity-0"
+            />
+          </div>
+          <div className="mt-2 text-[13px] leading-[18px] text-ink-muted">
+            {left > 0 ? (
+              <>It can take a minute. You can ask for a new code in 0:{String(left).padStart(2, "0")}.</>
+            ) : (
+              <>
+                Didn’t get it? Check your spam folder too.{" "}
+                <button
+                  type="button"
+                  onClick={() => void send(true)}
+                  className={`cursor-pointer border-0 bg-transparent p-0 font-medium text-ink underline ${focusRing}`}
+                >
+                  Send a new code
+                </button>
+              </>
+            )}
+          </div>
+          <label htmlFor="new-password" className="mt-5 block font-medium">
             {has ? "New password" : "Password"}
           </label>
           <div className="relative mt-1.5">
@@ -364,7 +467,6 @@ function Password({ hasPassword }: { hasPassword: boolean }) {
               id="new-password"
               type={shown ? "text" : "password"}
               autoComplete="new-password"
-              autoFocus
               value={pw}
               onChange={(e) => {
                 setPw(e.target.value);
@@ -408,32 +510,21 @@ function Password({ hasPassword }: { hasPassword: boolean }) {
           </div>
           {message && <Note>{message}</Note>}
         </form>
-      ) : has ? (
-        <>
-          <div className="mt-2.5 flex items-start gap-2">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="mt-px shrink-0" aria-hidden="true">
-              <circle cx="12" cy="12" r="9" />
-              <path d="M8 12.5l2.7 2.7L16 9.8" />
-            </svg>
-            <p className="m-0 max-w-[440px] text-ink-muted">
-              <span className="font-medium text-ink">{changed ? "Password changed." : "Password added."}</span> If a code ever
-              doesn’t arrive, you can sign in with it.
-            </p>
-          </div>
-          <button type="button" onClick={open} className={`mt-3.5 ${plainButton}`}>
-            Change password
-          </button>
-        </>
-      ) : (
-        <>
-          <p className="mt-2 mb-0 max-w-[440px] text-ink-muted">
-            No password yet. Add one so you can always get back to your writing, even on a day you can’t open your email.
-          </p>
-          <button type="button" onClick={open} className={`mt-3.5 ${plainButton}`}>
-            Add a password
-          </button>
-        </>
       )}
     </>
+  );
+}
+
+const linkButton = `cursor-pointer border-0 bg-transparent p-0 text-[13px] font-medium text-ink underline underline-offset-2 ${focusRing}`;
+
+function WayIn({ children, action }: { children: ReactNode; action?: ReactNode }) {
+  return (
+    <li className="flex min-h-8 items-center gap-2.5">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-ink-muted" aria-hidden="true">
+        <path d="M5 12.5l4.5 4.5L19 7.5" />
+      </svg>
+      <span className="grow">{children}</span>
+      {action}
+    </li>
   );
 }

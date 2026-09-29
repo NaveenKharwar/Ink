@@ -1,4 +1,5 @@
 import type { User } from "@supabase/supabase-js";
+import { passwordProblemOf, type PasswordProblem } from "./password";
 import type { SeasonChoice } from "./seasons";
 import { supabase } from "./supabase";
 
@@ -39,15 +40,21 @@ export async function saveSeasons(choice: SeasonChoice): Promise<boolean> {
   return !error;
 }
 
-export type PasswordProblem = "same" | "sign-in-again" | "offline" | "unknown";
+type PasswordResult = { ok: true } | { ok: false; problem: PasswordProblem };
+
+// Adding or changing a password needs a 6-digit code from the writer's email first, so someone
+// at an unattended signed-in device can't take the account over.
+export async function sendPasswordCode(): Promise<PasswordResult> {
+  const { error } = await supabase.auth.reauthenticate();
+  return error ? { ok: false, problem: passwordProblemOf(error) } : { ok: true };
+}
 
 // Supabase keeps only a hash. has_password is our own note so Profile can say "Password added.";
-// Supabase itself doesn't tell the app whether an account has a password.
-export async function setPassword(password: string): Promise<{ ok: true } | { ok: false; problem: PasswordProblem }> {
-  const { error } = await supabase.auth.updateUser({ password, data: { has_password: true } });
-  if (!error) return { ok: true };
-  if (error.code === "same_password") return { ok: false, problem: "same" };
-  if (error.code === "reauthentication_needed") return { ok: false, problem: "sign-in-again" };
-  if (!error.status || error.name === "AuthRetryableFetchError") return { ok: false, problem: "offline" };
-  return { ok: false, problem: "unknown" };
+// Supabase itself doesn't tell the app whether an account has a password. Other devices are
+// signed out afterwards: if someone else was in, they're out.
+export async function setPassword(password: string, code: string): Promise<PasswordResult> {
+  const { error } = await supabase.auth.updateUser({ password, nonce: code, data: { has_password: true } });
+  if (error) return { ok: false, problem: passwordProblemOf(error) };
+  await supabase.auth.signOut({ scope: "others" });
+  return { ok: true };
 }

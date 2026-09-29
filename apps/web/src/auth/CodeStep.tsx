@@ -3,7 +3,7 @@ import { checkCode, sendCode, type AuthProblem } from "./actions";
 import { Heading, Label, LinkButton, MainButton, Message } from "./parts";
 import { problemText } from "./problems";
 
-const RESEND_AFTER = 60;
+const RESEND_AFTER = 20;
 
 type Note = "wrong" | "short" | "resent" | { problem: Exclude<AuthProblem, "wrong">; sending: boolean } | null;
 
