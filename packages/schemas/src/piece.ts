@@ -6,6 +6,11 @@ export type PieceStatus = z.infer<typeof pieceStatus>;
 export const pieceLanguage = z.enum(["hi", "hi-Latn", "en", "mixed"]);
 export type PieceLanguage = z.infer<typeof pieceLanguage>;
 
+// How a piece is written: a poem (lines and stanzas), a story (paragraphs like a book) or
+// notes (headings, lists, links). Chosen by the writer; a piece without one is a poem.
+export const pieceStyle = z.enum(["poem", "story", "notes"]);
+export type PieceStyle = z.infer<typeof pieceStyle>;
+
 // Editor (TipTap / ProseMirror) JSON. The editor owns the node types, so this only
 // checks the shape. A stanza is a paragraph; a line inside it is a hardBreak.
 export type EditorMark = { type: string; attrs?: Record<string, unknown> };
@@ -74,6 +79,7 @@ export const piece = z.object({
   text: z.string(),
   status: pieceStatus,
   language: pieceLanguage.nullable(),
+  style: pieceStyle.nullable(),
   isFragment: z.boolean(),
   includeInMemory: z.boolean(),
   createdAt: z.string().datetime(),
@@ -94,7 +100,7 @@ export type ListPiecesResponse = { items: PieceSummary[]; nextCursor: string | n
 
 // The writer's whole library in one light list (no paging): each piece's first two lines,
 // newest first. Seasons are worked out on the device from `createdAt`.
-export type LibraryItem = Pick<Piece, "id" | "title" | "language" | "isFragment" | "createdAt" | "updatedAt"> & {
+export type LibraryItem = Pick<Piece, "id" | "title" | "language" | "style" | "isFragment" | "createdAt" | "updatedAt"> & {
   lines: string[];
 };
 export type LibraryResponse = { items: LibraryItem[] };
@@ -104,7 +110,7 @@ export type SearchQuery = z.infer<typeof searchQuery>;
 
 /** A line of the writer's own words, with the found words marked as [start, end) offsets. */
 export type MarkedLine = { text: string; marks: [number, number][] };
-export type SearchResult = Pick<Piece, "id" | "language" | "isFragment" | "createdAt" | "updatedAt"> & {
+export type SearchResult = Pick<Piece, "id" | "language" | "style" | "isFragment" | "createdAt" | "updatedAt"> & {
   firstLine: MarkedLine;
   /** The line the words were found in, when it is not the first line. */
   match: MarkedLine | null;

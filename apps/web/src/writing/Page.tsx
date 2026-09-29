@@ -1,10 +1,12 @@
-import { docToPlainText, META_FIELD, type EditorDoc } from "@ink/schemas";
+import { docToPlainText, META_FIELD, type EditorDoc, type PieceStyle } from "@ink/schemas";
 import Collaboration from "@tiptap/extension-collaboration";
 import { EditorContent, useEditor } from "@tiptap/react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import * as Y from "yjs";
 import { countWords } from "../editor/counts";
 import { writingExtensions } from "../editor/extensions";
+import { LinkCard } from "./LinkCard";
+import { StyleCards } from "./StyleCards";
 import type { OpenedPiece } from "../lib/openPiece";
 import { pieceAddress } from "../lib/route";
 import { Toolbar } from "./Toolbar";
@@ -41,22 +43,51 @@ export function Page({ pieceId, userId, opened, wide, season, showMenuButton, sh
   const onStart = useCallback(() => window.history.replaceState(null, "", pieceAddress(pieceId)), [pieceId]);
   const save = usePieceSave(pieceId, userId, ydoc, { initial: opened ?? undefined, onStart });
   const [words, setWords] = useState(0);
-  const { title, language, setTitle, setLanguage } = usePieceMeta(ydoc);
+  const [empty, setEmpty] = useState(true);
+  const { title, language, style: chosen, setTitle, setLanguage, setStyle } = usePieceMeta(ydoc);
+  // A piece nobody has given a style reads as a poem.
+  const style: PieceStyle = chosen ?? "poem";
   const [firstLine, setFirstLine] = useState("");
 
-  const refresh = (doc: EditorDoc) => {
+  // Typing on the blank page without picking a style makes the piece a poem. (An older piece
+  // with words but no style just reads as one; opening it writes nothing.)
+  const chosenRef = useRef(chosen);
+  useEffect(() => {
+    chosenRef.current = chosen;
+  }, [chosen]);
+  const wasEmpty = useRef(false);
+  const refresh = (doc: EditorDoc, typed: boolean) => {
     const text = docToPlainText(doc);
+    const hasWords = Boolean(text.trim());
     setWords(countWords(text));
     setFirstLine(openingLine(text));
+    setEmpty(!hasWords);
+    if (typed && hasWords && wasEmpty.current && !chosenRef.current) setStyle("poem");
+    wasEmpty.current = !hasWords;
   };
 
   const editor = useEditor({
     extensions: [...writingExtensions, Collaboration.configure({ document: ydoc })],
     autofocus: "end",
     editorProps: { attributes: { "aria-label": "Your writing", spellcheck: "false" } },
-    onCreate: ({ editor: e }) => refresh(e.getJSON() as EditorDoc),
-    onUpdate: ({ editor: e }) => refresh(e.getJSON() as EditorDoc)
+    onCreate: ({ editor: e }) => refresh(e.getJSON() as EditorDoc, false),
+    onUpdate: ({ editor: e }) => refresh(e.getJSON() as EditorDoc, true)
   });
+
+  // The editor's keys and input rules follow the style, including a change from another device.
+  useEffect(() => {
+    (editor.storage as unknown as { stanzaKeys: { style: PieceStyle } }).stanzaKeys.style = style;
+  }, [editor, style]);
+
+  // The writer picks or switches a style. Only the look, the keys and the tool bar change: what
+  // is written stays exactly as it is (a list in a poem is still a list), so switching back
+  // loses nothing.
+  const changeStyle = (next: PieceStyle) => {
+    (editor.storage as unknown as { stanzaKeys: { style: PieceStyle } }).stanzaKeys.style = next;
+    setStyle(next);
+    editor.commands.focus();
+  };
+  const showCards = chosen === null && empty;
 
   return (
     <>
@@ -68,19 +99,26 @@ export function Page({ pieceId, userId, opened, wide, season, showMenuButton, sh
         onRename={setTitle}
         language={language}
         onLanguage={setLanguage}
+        style={showCards ? null : style}
+        onStyle={changeStyle}
         save={save.state}
         showSparkle={showSparkle}
         onSparkle={onSparkle}
         showMenuButton={showMenuButton}
         onMenu={onMenu}
       />
-      <div className={`ink-editor grow overflow-y-auto ${wide ? "pt-9 pr-10 pb-[110px] pl-[72px]" : "pt-5 pr-5 pb-[140px] pl-[33px]"}`}>
+      <div
+        className={`ink-editor style-${style} ${showCards ? "is-blank" : ""} grow overflow-y-auto ${wide ? "pt-9 pr-10 pb-[110px] pl-[72px]" : "pt-5 pr-5 pb-[140px] pl-[33px]"}`}
+      >
         <div className="mx-auto max-w-[640px]">
           <EditorContent editor={editor} />
+          <LinkCard editor={editor} />
+          <StyleCards shown={showCards} wide={wide} onPick={changeStyle} />
         </div>
       </div>
       <Toolbar
         editor={editor}
+        style={style}
         wide={wide}
         words={words}
         language={language}

@@ -61,21 +61,23 @@ test("the result is the same after the bytes travel and merge", () => {
   assert.deepEqual(ydocToEditorDoc(copy), ydocToEditorDoc(build()));
 });
 
-test("title and language are read from the meta map", () => {
+test("title, language and style are read from the meta map", () => {
   const ydoc = new Y.Doc();
   const meta = ydoc.getMap("meta");
   meta.set("title", "  Kettle  ");
   meta.set("language", "hi");
-  assert.deepEqual(ydocToMeta(ydoc), { title: "Kettle", language: "hi" });
+  meta.set("style", "story");
+  assert.deepEqual(ydocToMeta(ydoc), { title: "Kettle", language: "hi", style: "story" });
 });
 
 test("missing or invalid settings read as empty", () => {
-  assert.deepEqual(ydocToMeta(new Y.Doc()), { title: null, language: null });
+  assert.deepEqual(ydocToMeta(new Y.Doc()), { title: null, language: null, style: null });
   const ydoc = new Y.Doc();
   const meta = ydoc.getMap("meta");
   meta.set("title", 42);
   meta.set("language", "klingon");
-  assert.deepEqual(ydocToMeta(ydoc), { title: null, language: null });
+  meta.set("style", "sonnet");
+  assert.deepEqual(ydocToMeta(ydoc), { title: null, language: null, style: null });
   meta.set("title", "x".repeat(500));
   assert.equal(ydocToMeta(ydoc).title?.length, 200);
 });
@@ -90,5 +92,5 @@ test("two devices renaming: each key merges on its own, the later edit of a key 
   Y.applyUpdate(a, Y.encodeStateAsUpdate(b));
   Y.applyUpdate(b, Y.encodeStateAsUpdate(a));
   assert.deepEqual(ydocToMeta(a), ydocToMeta(b));
-  assert.deepEqual(ydocToMeta(a), { title: "From the laptop", language: "hi" });
+  assert.deepEqual(ydocToMeta(a), { title: "From the laptop", language: "hi", style: null });
 });

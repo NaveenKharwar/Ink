@@ -32,6 +32,10 @@
   --season-summer: #b7791f;
   --season-monsoon: #2f7d6d;
   --season-autumn: #c0582b;
+  --notes-dot: rgba(26, 26, 26, 0.09);
+  /* The faint sunset under a style card's name. */
+  --card-warmth: rgba(248, 225, 206, 0.8);
+  --card-warmth-firm: rgba(250, 234, 221, 0.94);
   /* The loader: sunset, from the sign-in painting. Deeper on light grounds, peach on dark ones. */
   --loader: #c8683f;
   --loader-on-ink: #f2b99a;
@@ -60,6 +64,9 @@
     --season-summer: #e3b04b;
     --season-monsoon: #5fb8a4;
     --season-autumn: #e88b5a;
+    --notes-dot: rgba(237, 237, 236, 0.08);
+    --card-warmth: rgba(38, 30, 27, 0.8);
+    --card-warmth-firm: rgba(30, 25, 23, 0.94);
     --loader: #f2b99a;
     --loader-on-ink: #c8683f;
     color-scheme: dark;
@@ -87,6 +94,9 @@
   --season-summer: #e3b04b;
   --season-monsoon: #5fb8a4;
   --season-autumn: #e88b5a;
+  --notes-dot: rgba(237, 237, 236, 0.08);
+  --card-warmth: rgba(38, 30, 27, 0.8);
+  --card-warmth-firm: rgba(30, 25, 23, 0.94);
   --loader: #f2b99a;
   --loader-on-ink: #c8683f;
   color-scheme: dark;
@@ -215,9 +225,12 @@ body {
   }
 }
 .ink-editor .ProseMirror > * + * { margin-top: var(--lh); }
+/* The blank page with the style cards: the empty editor takes two lines, leaving room for the
+   cards' fade to rise into the page under "Start writing…". */
+.ink-editor.is-blank .ProseMirror { min-height: calc(var(--lh) * 2); }
 .ink-editor .ProseMirror p { position: relative; }
-/* The stanza bar, once a stanza has text. */
-.ink-editor .ProseMirror p.has-text::before {
+/* The stanza bar, once a stanza has text (poems only). */
+.ink-editor.style-poem .ProseMirror p.has-text::before {
   content: "";
   position: absolute;
   left: calc(-3px - var(--bar-gap));
@@ -261,6 +274,158 @@ body {
   transform: translate(-50%, -50%) rotate(45deg);
 }
 .ink-editor .ProseMirror hr.ProseMirror-selectednode { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Story: paragraphs like a book. No gap between them; each opens with an indent, except the
+   first one of a piece, a chapter or a scene. */
+.ink-editor.style-story .ProseMirror > p + p { margin-top: 0; }
+.ink-editor.style-story .ProseMirror > p { text-indent: 1.5em; }
+.ink-editor.style-story .ProseMirror > p:first-child,
+.ink-editor.style-story .ProseMirror > h1 + p,
+.ink-editor.style-story .ProseMirror > hr + p { text-indent: 0; }
+
+/* Notes: half-line gaps, three heading levels, lists and links, on a quiet dot grid that
+   scrolls with the writing. */
+.ink-editor.style-notes {
+  background-image: radial-gradient(circle, var(--notes-dot) 0.6px, transparent 0.9px);
+  background-size: 22px 22px;
+  background-position: 11px 11px;
+  background-attachment: local;
+}
+.ink-editor.style-notes .ProseMirror > * + * { margin-top: calc(var(--lh) / 2); }
+.ink-editor.style-notes .ProseMirror h1 {
+  font-size: 30px;
+  line-height: 36px;
+  font-weight: 500;
+  @variant wide { font-size: 34px; line-height: 40px; }
+}
+/* The two smaller headings come from Notes, but they keep their look in any style (switching
+   style never changes what is written). */
+.ink-editor .ProseMirror h2 { font-size: 24px; line-height: 31px; font-weight: 500; }
+.ink-editor .ProseMirror h3 { font-family: var(--font-sans); font-size: 16px; line-height: 24px; font-weight: 600; }
+.ink-editor.style-notes .ProseMirror > :is(h1, h2, h3):not(:first-child) { margin-top: var(--lh); }
+.ink-editor .ProseMirror :is(ul, ol) { margin: 0; padding-left: 1.4em; }
+.ink-editor .ProseMirror ul { list-style: disc; }
+.ink-editor .ProseMirror ol { list-style: decimal; }
+.ink-editor .ProseMirror li::marker { color: var(--ink-muted); }
+.ink-editor .ProseMirror a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+
+/* The blank page's style cards: a painting with no box around it. The painting rests a little
+   quiet and comes fully alive on hover or focus, when its moving part moves; the name and hint
+   always stay at full strength so they read. The paintings are 4:5 with their subject near the
+   middle, so the card trims only a little from the sides and the moving parts stay on it. */
+.style-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.style-card-art {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  opacity: 0.8;
+  transition: opacity 300ms ease;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  /* Only the top melts away (sky into the page); the bottom keeps a soft, real edge so the card
+     stands on something. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent, black 30%);
+  mask-image: linear-gradient(to bottom, transparent, black 30%);
+}
+.style-card:is(:hover, :focus-visible, .is-live) .style-card-art { opacity: 1; }
+/* The painting's lower part turns into sunset peach (the painting still shows through), firmest
+   right under the name so it reads. */
+.style-card-art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 50%, var(--card-warmth) 76%, var(--card-warmth-firm) 100%);
+}
+.style-card-label { margin-top: auto; }
+.style-card-art > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* The moving parts only move while the card is hovered or focused; they rest otherwise. */
+.style-card-art :is(.style-card-piece, .style-card-glow, .style-card-steam path) { animation-play-state: paused; }
+.style-card:is(:hover, :focus-visible, .is-live) .style-card-art :is(.style-card-piece, .style-card-glow, .style-card-steam path) {
+  animation-play-state: running;
+}
+
+/* Poem: the flower sways in the air, pivoting at its stem. */
+@keyframes art-sway {
+  0%, 100% { rotate: 0deg; }
+  25% { rotate: 5deg; }
+  75% { rotate: -4.5deg; }
+}
+.motion-sway .style-card-piece {
+  transform-origin: var(--at-x) var(--at-y);
+  animation: art-sway 2.6s ease-in-out infinite;
+}
+
+/* Story: the lamp's flame flickers and its warm glow breathes. */
+@keyframes art-flicker {
+  0%, 100% { opacity: 0.55; scale: 1; }
+  20% { opacity: 0.8; scale: 1.06; }
+  35% { opacity: 0.6; scale: 0.97; }
+  60% { opacity: 0.9; scale: 1.08; }
+  80% { opacity: 0.65; scale: 1; }
+}
+.style-card-glow {
+  position: absolute;
+  left: var(--at-x);
+  top: var(--at-y);
+  width: 95%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 196, 120, 0.85), rgba(255, 170, 90, 0.3) 40%, transparent 70%);
+  mix-blend-mode: screen;
+  opacity: 0;
+  transition: opacity 600ms ease;
+  animation: art-flicker 2.4s ease-in-out infinite;
+}
+.style-card:is(:hover, :focus-visible, .is-live) .style-card-glow { opacity: 1; }
+/* The flame itself stays lit at rest and only wavers a little. */
+@keyframes art-flame {
+  0%, 100% { opacity: 1; scale: 1; }
+  20% { opacity: 0.75; scale: 0.92 1.1; }
+  45% { opacity: 1; scale: 1.06 0.95; }
+  70% { opacity: 0.8; scale: 0.95 1.14; }
+}
+.motion-flicker .style-card-piece {
+  transform-origin: var(--at-x) var(--at-y);
+  animation: art-flame 1.1s ease-in-out infinite;
+}
+
+/* Notes: steam rises from the cup in three soft wisps, one after another. */
+@keyframes art-steam {
+  0% { opacity: 0; translate: 0 14px; scale: 0.9 1; }
+  30% { opacity: 1; }
+  100% { opacity: 0; translate: 0 -34px; scale: 1.3 1.2; }
+}
+.style-card-steam {
+  position: absolute;
+  left: var(--at-x);
+  top: var(--at-y);
+  width: 30%;
+  translate: -50% -100%;
+  color: rgba(255, 255, 255, 0.95);
+  filter: blur(1.6px);
+  opacity: 0;
+  transition: opacity 500ms ease;
+}
+.style-card:is(:hover, :focus-visible, .is-live) .style-card-steam { opacity: 1; }
+.style-card-steam path { animation: art-steam 2.4s ease-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
+.style-card-steam path:nth-child(2) { animation-delay: 0.8s; }
+.style-card-steam path:nth-child(3) { animation-delay: 1.6s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .style-card { transition: none; }
+  .style-card-art :is(.style-card-piece, .style-card-glow, .style-card-steam path) { animation: none; }
+}
+
 .ink-editor .ProseMirror p.is-editor-empty:first-child::after {
   content: attr(data-placeholder);
   position: absolute;

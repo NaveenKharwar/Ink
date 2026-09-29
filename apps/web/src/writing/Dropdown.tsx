@@ -83,8 +83,8 @@ export function Dropdown<T extends string>({ label, value, options, onChange, pl
             setOpen(true);
           }
         }}
-        className={`flex h-9 cursor-pointer items-center gap-1.5 rounded-md border-0 bg-transparent px-2.5 text-[14px] text-ink hover:bg-surface-hover ${focusRing} ${
-          open ? "bg-surface-hover" : ""
+        className={`flex h-9 cursor-pointer items-center gap-1.5 rounded-md border-0 bg-transparent px-2.5 text-[14px] transition-colors duration-150 motion-reduce:transition-none ${focusRing} ${
+          open ? "text-ink" : "text-ink/75 hover:text-ink"
         }`}
       >
         <span>{display ?? chosen?.label ?? value}</span>
@@ -119,8 +119,8 @@ export function Dropdown<T extends string>({ label, value, options, onChange, pl
                     pick(o.value);
                   }
                 }}
-                className={`flex cursor-pointer items-center justify-between gap-3 rounded-[6px] px-2.5 py-2 text-[13px] text-ink outline-none hover:bg-surface-hover focus:bg-surface-hover ${
-                  selected ? "font-semibold" : ""
+                className={`flex cursor-pointer items-center justify-between gap-3 rounded-[6px] px-2.5 py-2 text-[13px] outline-none transition-colors duration-150 hover:text-ink focus:text-ink motion-reduce:transition-none ${
+                  selected ? "font-semibold text-ink" : "text-ink/70"
                 }`}
               >
                 {o.label}

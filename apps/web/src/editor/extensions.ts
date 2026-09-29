@@ -1,4 +1,7 @@
-import { Extension, type Editor } from "@tiptap/core";
+import type { PieceStyle } from "@ink/schemas";
+import { Extension, InputRule, type Editor } from "@tiptap/core";
+import Link from "@tiptap/extension-link";
+import { BulletList, ListItem, OrderedList } from "@tiptap/extension-list";
 import Blockquote from "@tiptap/extension-blockquote";
 import Bold from "@tiptap/extension-bold";
 import Document from "@tiptap/extension-document";
@@ -64,6 +67,8 @@ function shiftLines(editor: Editor, direction: 1 | -1): boolean {
  * and starts a new one (the empty line is removed).
  */
 function enter(editor: Editor): boolean {
+  // Stories and notes are written in paragraphs: Enter simply starts the next one.
+  if (styleOf(editor) !== "poem") return false;
   const { state, view } = editor;
   const { $from, empty } = state.selection;
   if (!empty || $from.parent.type.name !== "paragraph") return false;
@@ -90,13 +95,28 @@ function enter(editor: Editor): boolean {
   return true;
 }
 
-const StanzaKeys = Extension.create({
+/** The piece's writing style, kept on the editor so its keys and input rules can follow it. */
+export function styleOf(editor: Editor): PieceStyle {
+  return (editor.storage as { stanzaKeys?: { style?: PieceStyle } }).stanzaKeys?.style ?? "poem";
+}
+
+// Tab indents a poem's lines. In a list (Notes) it nests the item instead, which the list's
+// own keys do, so it is left to them; elsewhere in stories and notes it does nothing.
+function tab(editor: Editor, direction: 1 | -1): boolean {
+  if (editor.isActive("listItem")) return false;
+  return styleOf(editor) === "poem" ? shiftLines(editor, direction) : true;
+}
+
+const StanzaKeys = Extension.create<Record<string, never>, { style: PieceStyle }>({
   name: "stanzaKeys",
+  addStorage() {
+    return { style: "poem" };
+  },
   addKeyboardShortcuts() {
     return {
       Enter: () => enter(this.editor),
-      Tab: () => shiftLines(this.editor, 1),
-      "Shift-Tab": () => shiftLines(this.editor, -1)
+      Tab: () => tab(this.editor, 1),
+      "Shift-Tab": () => tab(this.editor, -1)
     };
   },
   addCommands() {
@@ -172,6 +192,29 @@ const PlainPaste = Extension.create({
   }
 });
 
+// Typing "- " or "1. " starts a list only in Notes: in a poem a line may well begin that way.
+function onlyInNotes(editor: Editor, rules: InputRule[]): InputRule[] {
+  return rules.map(
+    (rule) =>
+      new InputRule({
+        find: rule.find,
+        handler: (props) => (styleOf(editor) === "notes" ? rule.handler(props) : null)
+      })
+  );
+}
+const NotesBulletList = BulletList.extend({
+  addInputRules() {
+    return onlyInNotes(this.editor, this.parent?.() ?? []);
+  }
+});
+const NotesOrderedList = OrderedList.extend({
+  addInputRules() {
+    return onlyInNotes(this.editor, this.parent?.() ?? []);
+  }
+});
+
+// Every style shares one set of nodes, so a piece can change style (and merge across devices)
+// without losing anything; what each style offers is decided by its keys, tool bar and look.
 // Undo and redo come from the Yjs collaboration extension (it only undoes your own changes).
 export const writingExtensions = [
   Document,
@@ -180,9 +223,15 @@ export const writingExtensions = [
   HardBreak,
   Bold,
   Italic,
-  Heading.configure({ levels: [1] }),
+  Heading.configure({ levels: [1, 2, 3] }),
   Blockquote,
   HorizontalRule,
+  NotesBulletList,
+  NotesOrderedList,
+  ListItem,
+  // Links are added from the tool bar (Notes) and open only on purpose, never by a click
+  // while writing.
+  Link.configure({ openOnClick: false, autolink: false, linkOnPaste: false, defaultProtocol: "https" }),
   TrailingNode,
   Placeholder.configure({ placeholder: "Start writing…" }),
   StanzaKeys,

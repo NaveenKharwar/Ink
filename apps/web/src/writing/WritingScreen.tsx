@@ -285,7 +285,10 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
   };
 
   return (
-    <div className="fixed inset-0 touch-pan-y overflow-hidden bg-surface" onPointerDown={onPointerDown} onPointerUp={onPointerUp}>
+    // `overflow-clip`, not `hidden`: a hidden box can still be scrolled by the browser (it does,
+    // to show the cursor when a new piece's editor takes focus), which would shift the track
+    // off its sheets. A clipped box can't scroll at all; only the slide moves it.
+    <div className="fixed inset-0 touch-pan-y overflow-clip bg-surface" onPointerDown={onPointerDown} onPointerUp={onPointerUp}>
       <div
         className="absolute top-0 left-0 flex h-full transition-transform duration-[360ms] ease-[cubic-bezier(0.2,0.7,0.2,1)] motion-reduce:transition-none"
         style={{ width: "calc(100vw + 2 * var(--phone-sheet-width))", transform: `translateX(${PHONE_OFFSET[pos]})` }}
@@ -293,7 +296,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
         <div inert={pos !== "menu"} className="h-full">
           <Sidebar phone {...sidebarProps} onClose={() => setPos("page")} />
         </div>
-        <main className="relative flex h-full w-screen shrink-0 flex-col overflow-hidden bg-surface">
+        <main className="relative flex h-full w-screen shrink-0 flex-col overflow-clip bg-surface">
           <div inert={pos !== "page"} className="flex h-full flex-col">
             {page}
           </div>

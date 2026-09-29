@@ -178,11 +178,20 @@ export function AllWriting({ wide, showMenuButton, onMenu, groups, failed, onRet
                   key={item.id}
                   type="button"
                   onClick={() => onOpen(item.id)}
-                  className={`block w-full cursor-pointer border-0 bg-transparent px-0 py-3 text-left text-ink ${focusRing}`}
+                  className={`group block w-full cursor-pointer border-0 bg-transparent px-0 py-3 text-left text-ink ${focusRing}`}
                 >
-                  <div className="font-serif text-[18px] leading-[25px]">
-                    {item.lines.length ? item.lines.join(" ") : <span className="text-ink-muted">{item.title ?? "Untitled"}</span>}
+                  {/* Every row has the same shape: one headline line, one quiet line under it. The
+                      headline darkens under the pointer, so you can see which one you're on. */}
+                  <div
+                    className={`truncate font-serif text-[18px] leading-[25px] transition-colors duration-150 motion-reduce:transition-none ${
+                      headline(item) ? "text-ink/75 group-hover:text-ink group-focus-visible:text-ink" : "text-ink-muted"
+                    }`}
+                  >
+                    {headline(item) ?? "Untitled"}
                   </div>
+                  {excerpt(item) && (
+                    <div className="mt-0.5 truncate font-serif text-[15px] leading-[21px] text-ink-muted">{excerpt(item)}</div>
+                  )}
                   <div className="mt-1 text-[12px] leading-4 text-ink-muted">{meta(item)}</div>
                 </button>
               ))}
@@ -266,6 +275,19 @@ function RollingSeason({ groups, reading, first }: { groups: SeasonGroup<Library
       </div>
     </div>
   );
+}
+
+// A row's headline: the writer's title, else the piece's first line.
+function headline(item: LibraryItem): string | null {
+  return item.title ?? item.lines[0] ?? null;
+}
+
+// The quiet line under it: the next line of the piece (a notes page whose first line is its
+// title heading moves on to the line after).
+function excerpt(item: LibraryItem): string | null {
+  const title = item.title?.trim();
+  const rest = title ? item.lines.filter((line) => line.trim() !== title) : item.lines.slice(1);
+  return rest[0] ?? null;
 }
 
 // "Today · English", "Aug · हिन्दी".

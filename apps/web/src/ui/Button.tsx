@@ -4,7 +4,7 @@ import { Loader } from "./Loader";
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 const LOOKS = {
   main: "border-0 bg-ink text-on-ink",
-  plain: "border border-line-strong bg-surface text-ink hover:bg-surface-hover"
+  plain: "border border-line-strong bg-surface text-ink transition-colors duration-150 hover:border-ink motion-reduce:transition-none"
 };
 
 // The app's one button, shared by every screen. While busy, the label gives way to the loader

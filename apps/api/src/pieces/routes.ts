@@ -95,8 +95,8 @@ export function registerPieceRoutes(app: FastifyInstance, repo: PiecesRepo) {
   app.get("/api/library", async (request) => {
     const rows = await repo.library(request.userId);
     const response: LibraryResponse = {
-      items: rows.map(({ id, title, text, language, isFragment, createdAt, updatedAt }) => ({
-        id, title, lines: openingLines(text), language, isFragment, createdAt, updatedAt
+      items: rows.map(({ id, title, text, language, style, isFragment, createdAt, updatedAt }) => ({
+        id, title, lines: openingLines(text), language, style, isFragment, createdAt, updatedAt
       }))
     };
     return response;
@@ -109,8 +109,8 @@ export function registerPieceRoutes(app: FastifyInstance, repo: PiecesRepo) {
     const words = searchWords(query.data.q);
     const rows = words.even.length ? await repo.search(request.userId, words, SEARCH_LIMIT) : [];
     const response: SearchResponse = {
-      items: rows.map(({ id, text, language, isFragment, createdAt, updatedAt }) => ({
-        id, language, isFragment, createdAt, updatedAt, ...describeMatch(text, query.data.q)
+      items: rows.map(({ id, text, language, style, isFragment, createdAt, updatedAt }) => ({
+        id, language, style, isFragment, createdAt, updatedAt, ...describeMatch(text, query.data.q)
       }))
     };
     return response;

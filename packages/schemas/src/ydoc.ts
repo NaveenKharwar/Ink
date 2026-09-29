@@ -1,5 +1,13 @@
 import * as Y from "yjs";
-import { pieceLanguage, type EditorDoc, type EditorMark, type EditorNode, type PieceLanguage } from "./piece.js";
+import {
+  pieceLanguage,
+  pieceStyle,
+  type EditorDoc,
+  type EditorMark,
+  type EditorNode,
+  type PieceLanguage,
+  type PieceStyle
+} from "./piece.js";
 
 // The name the editor's Yjs binding stores the document under.
 export const EDITOR_FIELD = "default";
@@ -8,7 +16,7 @@ export const EDITOR_FIELD = "default";
 export const META_FIELD = "meta";
 export const TITLE_MAX = 200;
 
-export type PieceMeta = { title: string | null; language: PieceLanguage | null };
+export type PieceMeta = { title: string | null; language: PieceLanguage | null; style: PieceStyle | null };
 
 function textNodes(text: Y.XmlText): EditorNode[] {
   const nodes: EditorNode[] = [];
@@ -55,8 +63,10 @@ export function ydocToMeta(ydoc: Y.Doc): PieceMeta {
   const meta = ydoc.getMap(META_FIELD);
   const title = meta.get("title");
   const language = pieceLanguage.safeParse(meta.get("language"));
+  const style = pieceStyle.safeParse(meta.get("style"));
   return {
     title: typeof title === "string" && title.trim() ? title.trim().slice(0, TITLE_MAX) : null,
-    language: language.success ? language.data : null
+    language: language.success ? language.data : null,
+    style: style.success ? style.data : null
   };
 }

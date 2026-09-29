@@ -51,6 +51,27 @@ export const IndentIcon = ({ size = 18 }: P) => (
   </svg>
 );
 
+export const BulletListIcon = ({ size = 18 }: P) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true">
+    <path d="M10 7h10M10 12h10M10 17h10" />
+    <circle cx="5" cy="7" r="1.2" fill="currentColor" stroke="none" />
+    <circle cx="5" cy="12" r="1.2" fill="currentColor" stroke="none" />
+    <circle cx="5" cy="17" r="1.2" fill="currentColor" stroke="none" />
+  </svg>
+);
+
+export const NumberedListIcon = ({ size = 18 }: P) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M10 7h10M10 12h10M10 17h10M4.5 5.5L6 4.5v4.5M4.5 13.5a1.4 1.4 0 0 1 2.6.6c0 .9-2.6 2-2.6 3h2.8" />
+  </svg>
+);
+
+export const LinkIcon = ({ size = 18 }: P) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />
+  </svg>
+);
+
 // A plain note: something needs the writer's attention (never red).
 export const NoteIcon = ({ size = 20 }: P) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">

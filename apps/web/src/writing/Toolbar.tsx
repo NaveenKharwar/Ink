@@ -1,9 +1,20 @@
-import type { PieceLanguage } from "@ink/schemas";
+import type { PieceLanguage, PieceStyle } from "@ink/schemas";
 import type { Editor } from "@tiptap/core";
 import { useEditorState } from "@tiptap/react";
 import { Fragment, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Dropdown } from "./Dropdown";
-import { CheckCircleIcon, ChevronIcon, IndentIcon, NoteIcon, QuoteIcon, SceneBreakIcon } from "./icons";
+import {
+  BulletListIcon,
+  CheckCircleIcon,
+  ChevronIcon,
+  IndentIcon,
+  LinkIcon,
+  NoteIcon,
+  NumberedListIcon,
+  QuoteIcon,
+  SceneBreakIcon
+} from "./icons";
+import { LinkField } from "./LinkField";
 import type { SaveState } from "./usePieceSave";
 
 export const LANGUAGES: Array<{ value: PieceLanguage; label: string }> = [
@@ -14,6 +25,7 @@ export const LANGUAGES: Array<{ value: PieceLanguage; label: string }> = [
 
 type Props = {
   editor: Editor;
+  style: PieceStyle;
   wide: boolean;
   words: number;
   language: PieceLanguage;
@@ -62,7 +74,7 @@ function Tool({
 const SAVE_SHORT = { idle: "", saving: "Saving", saved: "Saved", device: "On this device", refused: "Not saved" } as const;
 
 // The one floating tool bar: a little formatting, then word count, language and save state.
-export function Toolbar({ editor, wide, words, language, onLanguage, save }: Props) {
+export function Toolbar({ editor, style, wide, words, language, onLanguage, save }: Props) {
   // The writer can slide the bar down with the tab on its top edge; it stays down until they
   // tap the tab left at the bottom. Nothing hides it on its own.
   const [tucked, setTucked] = useState(false);
@@ -71,11 +83,48 @@ export function Toolbar({ editor, wide, words, language, onLanguage, save }: Pro
     selector: ({ editor: e }) => ({
       bold: e.isActive("bold"),
       italic: e.isActive("italic"),
-      heading: e.isActive("heading", { level: 1 }),
-      quote: e.isActive("blockquote")
+      h1: e.isActive("heading", { level: 1 }),
+      h2: e.isActive("heading", { level: 2 }),
+      h3: e.isActive("heading", { level: 3 }),
+      quote: e.isActive("blockquote"),
+      bullets: e.isActive("bulletList"),
+      numbers: e.isActive("orderedList"),
+      link: e.isActive("link")
     })
   });
   const run = () => editor.chain().focus();
+  const [linking, setLinking] = useState(false);
+
+  // Each writing style has its own tools (see WritingStyles in the design system).
+  const bold = { key: "bold", label: "Bold", active: active.bold, onClick: () => run().toggleBold().run(), icon: <span className="font-serif text-[19px] font-semibold">B</span> };
+  const italic = { key: "italic", label: "Italic", active: active.italic, onClick: () => run().toggleItalic().run(), icon: <span className="font-serif text-[19px] italic">I</span> };
+  const heading = (level: 1 | 2 | 3, label: string, text: string) => ({
+    key: `h${level}`,
+    label,
+    active: active[`h${level}` as const],
+    onClick: () => run().toggleHeading({ level }).run(),
+    icon: <span className="text-[15px] font-semibold">{text}</span>
+  });
+  const quote = { key: "quote", label: "Quote", active: active.quote, onClick: () => run().toggleBlockquote().run(), icon: <QuoteIcon /> };
+  const scene = { key: "scene", label: "Scene break", active: false, onClick: () => run().setHorizontalRule().run(), icon: <SceneBreakIcon /> };
+  const indent = { key: "indent", label: "Indent line", active: false, onClick: () => run().indentLines().run(), icon: <IndentIcon /> };
+  type ToolDef = { key: string; label: string; active: boolean; onClick: () => void; icon: ReactNode };
+  const toolsFor: Record<PieceStyle, ToolDef[]> = {
+    poem: [bold, italic, quote, scene, indent],
+    story: [bold, italic, heading(1, "Chapter heading", "H"), quote, scene],
+    notes: [
+      heading(1, "Heading 1", "H1"),
+      heading(2, "Heading 2", "H2"),
+      heading(3, "Heading 3", "H3"),
+      bold,
+      italic,
+      { key: "bullets", label: "Bullet list", active: active.bullets, onClick: () => run().toggleBulletList().run(), icon: <BulletListIcon /> },
+      { key: "numbers", label: "Numbered list", active: active.numbers, onClick: () => run().toggleOrderedList().run(), icon: <NumberedListIcon /> },
+      { key: "link", label: "Link", active: active.link || linking, onClick: () => setLinking(!linking), icon: <LinkIcon /> },
+      quote,
+      scene
+    ]
+  };
 
   // When the tools and the words/save group don't fit on one line (a narrow phone), the bar
   // becomes two rows: the tools spread evenly on top, then a thin line, then word count and
@@ -104,7 +153,7 @@ export function Toolbar({ editor, wide, words, language, onLanguage, save }: Pro
     const observer = new ResizeObserver(measure);
     observer.observe(el);
     return () => observer.disconnect();
-  }, [words, save, wide]);
+  }, [words, save, wide, style]);
 
   // Word count, language (desktop; on phone it is in the top bar) and save state. Every gap is
   // the same, and the language button's own padding is pulled in so its text lines up with the
@@ -168,26 +217,23 @@ export function Toolbar({ editor, wide, words, language, onLanguage, save }: Pro
         >
           <ChevronIcon size={12} />
         </button>
-        <div ref={tools} className={`flex items-center ${twoRows ? "w-full justify-between" : ""}`}>
-          <Tool label="Bold" wide={wide} active={active.bold} onClick={() => run().toggleBold().run()}>
-            <span className="font-serif text-[19px] font-semibold">B</span>
-          </Tool>
-          <Tool label="Italic" wide={wide} active={active.italic} onClick={() => run().toggleItalic().run()}>
-            <span className="font-serif text-[19px] italic">I</span>
-          </Tool>
-          <Tool label="Heading" wide={wide} active={active.heading} onClick={() => run().toggleHeading({ level: 1 }).run()}>
-            <span className="text-[16px] font-semibold">H</span>
-          </Tool>
-          <Tool label="Quote" wide={wide} active={active.quote} onClick={() => run().toggleBlockquote().run()}>
-            <QuoteIcon />
-          </Tool>
-          <Tool label="Scene break" wide={wide} onClick={() => run().setHorizontalRule().run()}>
-            <SceneBreakIcon />
-          </Tool>
-          <Tool label="Indent line" wide={wide} onClick={() => run().indentLines().run()}>
-            <IndentIcon />
-          </Tool>
+        {/* In two rows the tools spread across the top; when even that is too narrow (Notes on a
+            small phone), the row scrolls sideways and fades at its edges to show there's more. */}
+        <div
+          ref={tools}
+          className={`flex items-center ${
+            twoRows
+              ? "w-full justify-between overflow-x-auto [scrollbar-width:none] [mask-image:linear-gradient(to_right,transparent,black_12px,black_calc(100%-20px),transparent)] [&::-webkit-scrollbar]:hidden"
+              : ""
+          }`}
+        >
+          {toolsFor[style].map((t) => (
+            <Tool key={t.key} label={t.label} wide={wide} active={t.active} onClick={t.onClick}>
+              {t.icon}
+            </Tool>
+          ))}
         </div>
+        {linking && style === "notes" && <LinkField editor={editor} onDone={() => setLinking(false)} />}
         {!twoRows && <div className="grow" />}
         <div
           ref={meta}

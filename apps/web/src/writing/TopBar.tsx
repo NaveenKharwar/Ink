@@ -1,7 +1,8 @@
-import type { PieceLanguage } from "@ink/schemas";
+import type { PieceLanguage, PieceStyle } from "@ink/schemas";
 import { useEffect, useRef, useState } from "react";
 import { CloudIcon, MenuIcon, SparkleIcon } from "./icons";
 import { Dropdown } from "./Dropdown";
+import { STYLES } from "./StyleCards";
 import { LANGUAGES } from "./Toolbar";
 import type { SaveState } from "./usePieceSave";
 
@@ -24,6 +25,9 @@ type Props = {
   /** The piece's language: on phone it is chosen here (the tool bar has no room for it). */
   language: PieceLanguage;
   onLanguage: (language: PieceLanguage) => void;
+  /** The piece's writing style, switchable any time; null while the blank page offers the cards. */
+  style: PieceStyle | null;
+  onStyle: (style: PieceStyle) => void;
   save: SaveState;
   showSparkle: boolean;
   onSparkle: () => void;
@@ -43,6 +47,8 @@ export function TopBar({
   onRename,
   language,
   onLanguage,
+  style,
+  onStyle,
   save,
   showSparkle,
   onSparkle,
@@ -57,8 +63,13 @@ export function TopBar({
             <MenuIcon />
           </button>
         )}
-        <span className={`whitespace-nowrap ${showMenuButton ? "" : "pl-2.5"}`}>{season}</span>
-        <span className="text-ink-muted">/</span>
+        {/* Phone: no room for the season, so the name gets it all (the menu still shows it). */}
+        {wide && (
+          <>
+            <span className={`whitespace-nowrap ${showMenuButton ? "" : "pl-2.5"}`}>{season}</span>
+            <span className="text-ink-muted">/</span>
+          </>
+        )}
         <PieceName title={title} firstLine={firstLine} onRename={onRename} />
       </div>
       <div className="flex shrink-0 items-center gap-2 text-[13px] text-ink-muted">
@@ -69,6 +80,17 @@ export function TopBar({
               <CloudIcon />
             </span>
           </>
+        )}
+        {style && (
+          <Dropdown
+            label="Writing style"
+            value={style}
+            options={STYLES}
+            onChange={onStyle}
+            placement="down"
+            align="end"
+            display={<span className="font-medium text-ink">{STYLES.find((s) => s.value === style)?.label}</span>}
+          />
         )}
         {/* Phone: the tool bar has no room for the language, so it is chosen here, shown short. */}
         {!wide && (
@@ -133,7 +155,7 @@ function PieceName({
           cancelled.current = false;
           setEditing(true);
         }}
-        className="min-w-0 cursor-text truncate rounded-md border-0 bg-transparent px-1 py-0.5 text-left text-ink hover:bg-surface-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        className="min-w-0 cursor-text truncate rounded-md border-0 bg-transparent px-1 py-0.5 text-left text-ink decoration-line-strong underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
         {shown}
       </button>

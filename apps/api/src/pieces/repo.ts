@@ -34,6 +34,7 @@ type PieceRow = {
   text: string;
   status: Piece["status"];
   language: Piece["language"];
+  style: Piece["style"];
   is_fragment: boolean;
   include_in_memory: boolean;
   created_at: Date;
@@ -41,7 +42,7 @@ type PieceRow = {
   updated_at_raw?: string;
 };
 
-const SUMMARY_COLUMNS = "id, title, text, status, language, is_fragment, include_in_memory, created_at, updated_at";
+const SUMMARY_COLUMNS = "id, title, text, status, language, style, is_fragment, include_in_memory, created_at, updated_at";
 const COLUMNS = `${SUMMARY_COLUMNS}, content`;
 
 function toSummary(row: PieceRow): PieceSummary {
@@ -51,6 +52,7 @@ function toSummary(row: PieceRow): PieceSummary {
     text: row.text,
     status: row.status,
     language: row.language,
+    style: row.style,
     isFragment: row.is_fragment,
     includeInMemory: row.include_in_memory,
     createdAt: row.created_at.toISOString(),
@@ -105,9 +107,10 @@ export function pgPiecesRepo(db: pg.Pool): PiecesRepo {
           set("ydoc", Buffer.from(merged.state));
           set("content", JSON.stringify(merged.content), "::jsonb");
           set("text", merged.text);
-          // Title and language are part of the document; these columns are copies.
+          // Title, language and style are part of the document; these columns are copies.
           set("title", merged.meta.title);
           set("language", merged.meta.language);
+          set("style", merged.meta.style);
           set("search_text", searchText(merged.meta.title, merged.text));
         }
         if (sets.length) sets.push("updated_at = now()");
@@ -159,7 +162,7 @@ export function pgPiecesRepo(db: pg.Pool): PiecesRepo {
     async library(userId) {
       // Only the start of the words: a list shows each piece's first two lines.
       const { rows } = await db.query<PieceRow>(
-        `select id, title, left(text, 1000) as text, status, language, is_fragment, include_in_memory, created_at, updated_at
+        `select id, title, left(text, 1000) as text, status, language, style, is_fragment, include_in_memory, created_at, updated_at
          from pieces
          where user_id = $1
          order by created_at desc, id desc

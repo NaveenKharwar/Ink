@@ -66,7 +66,7 @@ export function Profile({ account, items, wide, showMenuButton, onMenu, onBack, 
         <button
           type="button"
           onClick={onBack}
-          className={`flex h-10 cursor-pointer items-center gap-2 rounded-md border-0 bg-transparent px-2 text-ink hover:bg-surface-hover ${focusRing}`}
+          className={`flex h-10 cursor-pointer items-center gap-2 rounded-md border-0 bg-transparent px-2 text-ink/75 transition-colors duration-150 hover:text-ink motion-reduce:transition-none ${focusRing}`}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M15 6l-6 6 6 6" />
@@ -497,7 +497,7 @@ function SigningIn({ email, google, hasPassword }: { email: string; google: bool
             <button
               type="button"
               onClick={() => setForm(false)}
-              className={`h-11 cursor-pointer rounded-md border-0 bg-transparent px-3.5 text-ink hover:bg-surface-hover ${focusRing}`}
+              className={`h-11 cursor-pointer rounded-md border-0 bg-transparent px-3.5 text-ink/75 transition-colors duration-150 hover:text-ink motion-reduce:transition-none ${focusRing}`}
             >
               Cancel
             </button>

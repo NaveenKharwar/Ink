@@ -162,7 +162,7 @@ export function SearchDialog({ wide, recent, seasonSet, onOpen, onClose }: Props
                 aria-selected={i === active}
                 onClick={() => onOpen(r.id)}
                 onMouseMove={() => active !== i && setActive(i)}
-                className={`-mx-2.5 cursor-pointer rounded-md border-b border-surface-hover px-2.5 py-3 ${i === active ? "bg-surface-hover" : ""}`}
+                className={`cursor-pointer border-b border-surface-hover py-3 transition-colors duration-150 motion-reduce:transition-none ${i === active ? "text-ink" : "text-ink/75"}`}
               >
                 <Marked line={r.first} className="font-serif text-[18px] leading-[25px]" />
                 {r.match && <Marked line={r.match} className="mt-1 font-serif text-[16px] leading-[23px] text-ink-muted" />}
