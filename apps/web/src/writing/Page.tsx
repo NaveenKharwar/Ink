@@ -4,7 +4,7 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as Y from "yjs";
 import { countWords } from "../editor/counts";
-import { writingExtensions } from "../editor/extensions";
+import { setEditorStyle, writingExtensions } from "../editor/extensions";
 import { LinkCard } from "./LinkCard";
 import { StyleCards } from "./StyleCards";
 import type { OpenedPiece } from "../lib/openPiece";
@@ -76,14 +76,14 @@ export function Page({ pieceId, userId, opened, wide, season, showMenuButton, sh
 
   // The editor's keys and input rules follow the style, including a change from another device.
   useEffect(() => {
-    (editor.storage as unknown as { stanzaKeys: { style: PieceStyle } }).stanzaKeys.style = style;
+    setEditorStyle(editor, style);
   }, [editor, style]);
 
   // The writer picks or switches a style. Only the look, the keys and the tool bar change: what
   // is written stays exactly as it is (a list in a poem is still a list), so switching back
   // loses nothing.
   const changeStyle = (next: PieceStyle) => {
-    (editor.storage as unknown as { stanzaKeys: { style: PieceStyle } }).stanzaKeys.style = next;
+    setEditorStyle(editor, next);
     setStyle(next);
     editor.commands.focus();
   };

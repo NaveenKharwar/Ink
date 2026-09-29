@@ -312,8 +312,8 @@ body {
    quiet and comes fully alive on hover or focus, when its moving part moves; the name and hint
    always stay at full strength so they read. The paintings are 4:5 with their subject near the
    middle, so the card trims only a little from the sides and the moving parts stay on it. */
+/* Placed by its container: `relative` in the row, `absolute` in the phone stack. */
 .style-card {
-  position: relative;
   isolation: isolate;
   overflow: hidden;
 }

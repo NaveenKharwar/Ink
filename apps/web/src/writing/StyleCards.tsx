@@ -85,7 +85,7 @@ export function StyleCards({ shown, wide, onPick }: { shown: boolean; wide: bool
       ) : (
         <div className={`grid grid-cols-3 ${wide ? "gap-5" : "gap-3"}`}>
           {STYLES.map((s) => (
-            <button key={s.value} type="button" onClick={() => onPick(s.value)} className={`${cardClass} ${wide ? "h-[320px]" : "h-[280px]"}`}>
+            <button key={s.value} type="button" onClick={() => onPick(s.value)} className={`${cardClass} relative bg-transparent ${wide ? "h-[320px]" : "h-[280px]"}`}>
               <StyleCardFace style={s} />
             </button>
           ))}
@@ -100,11 +100,7 @@ export function StyleCards({ shown, wide, onPick }: { shown: boolean; wide: bool
 const ROW_MIN_PX = 460;
 
 const cardClass =
-  "style-card flex cursor-pointer flex-col rounded-md border-0 bg-transparent p-0 text-left text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
-
-// In the stack a card needs a solid page-coloured base: its painting fades out at the top, and
-// the card underneath must not show through there.
-const deckCardClass = cardClass.replace("bg-transparent", "bg-surface");
+  "style-card flex cursor-pointer flex-col rounded-md border-0 p-0 text-left text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
 function StyleCardFace({ style }: { style: (typeof STYLES)[number] }) {
   return (
@@ -130,6 +126,7 @@ function StyleDeck({ onPick }: { onPick: (style: PieceStyle) => void }) {
   const [dx, setDx] = useState(0);
   const [flying, setFlying] = useState<0 | 1 | -1>(0);
   const start = useRef<{ x: number; y: number } | null>(null);
+  const [dragging, setDragging] = useState(false);
   const moved = useRef(false);
 
   const next = (direction: 1 | -1) => {
@@ -148,6 +145,7 @@ function StyleDeck({ onPick }: { onPick: (style: PieceStyle) => void }) {
     e.stopPropagation();
     start.current = { x: e.clientX, y: e.clientY };
     moved.current = false;
+    setDragging(true);
     e.currentTarget.setPointerCapture(e.pointerId);
   };
   const onPointerMove = (e: React.PointerEvent) => {
@@ -160,6 +158,7 @@ function StyleDeck({ onPick }: { onPick: (style: PieceStyle) => void }) {
     e.stopPropagation();
     if (!start.current) return;
     start.current = null;
+    setDragging(false);
     if (Math.abs(dx) > SWIPE_PX) next(dx > 0 ? 1 : -1);
     else setDx(0);
   };
@@ -197,8 +196,6 @@ function StyleDeck({ onPick }: { onPick: (style: PieceStyle) => void }) {
               onPointerUp={isTop ? onPointerUp : undefined}
               onPointerCancel={isTop ? onPointerUp : undefined}
               style={{
-                // Inline, because the card's own CSS (.style-card) sets position: relative.
-                position: "absolute",
                 translate: `${x}px 0px`,
                 rotate: `${isTop ? x * 0.05 : 0}deg`,
                 scale: `${size}`,
@@ -207,11 +204,13 @@ function StyleDeck({ onPick }: { onPick: (style: PieceStyle) => void }) {
                 // Following the finger: no easing. The card that just flew off jumps straight to the
                 // back of the stack (hidden behind the others) instead of sliding back across.
                 transition:
-                  start.current || depth === STYLES.length - 1
+                  dragging || depth === STYLES.length - 1
                     ? "none"
                     : `translate ${FLY_MS}ms ease, rotate ${FLY_MS}ms ease, scale ${FLY_MS}ms ease, opacity ${FLY_MS}ms ease`
               }}
-              className={`${deckCardClass} absolute inset-x-0 top-0 h-[320px] origin-center touch-pan-y ${isTop ? "is-live" : ""}`}
+              // A solid page-coloured base: the painting fades out at the top, and the card underneath
+              // must not show through there.
+              className={`${cardClass} absolute inset-x-0 top-0 h-[320px] origin-center touch-pan-y bg-surface ${isTop ? "is-live" : ""}`}
             >
               <StyleCardFace style={s} />
             </button>

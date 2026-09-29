@@ -97,7 +97,7 @@ function enter(editor: Editor): boolean {
 
 /** The piece's writing style, kept on the editor so its keys and input rules can follow it. */
 export function styleOf(editor: Editor): PieceStyle {
-  return (editor.storage as { stanzaKeys?: { style?: PieceStyle } }).stanzaKeys?.style ?? "poem";
+  return editor.storage.stanzaKeys.style;
 }
 
 // Tab indents a poem's lines. In a list (Notes) it nests the item instead, which the list's
@@ -133,6 +133,14 @@ declare module "@tiptap/core" {
   interface Commands<ReturnType> {
     stanzaKeys: { indentLines: () => ReturnType };
   }
+  interface Storage {
+    stanzaKeys: { style: PieceStyle };
+  }
+}
+
+/** Tells the editor's keys and input rules which style the piece is written in. */
+export function setEditorStyle(editor: Editor, style: PieceStyle) {
+  editor.storage.stanzaKeys.style = style;
 }
 
 function stanzaBars(doc: PMNode): DecorationSet {
