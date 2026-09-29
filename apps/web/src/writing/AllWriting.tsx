@@ -1,6 +1,7 @@
 import type { LibraryItem, PieceLanguage } from "@ink/schemas";
 import { useEffect, useRef, useState } from "react";
 import { Loader } from "../lib/Loader";
+import { prefersReducedMotion } from "../lib/motion";
 import type { SeasonGroup } from "../lib/seasons";
 import { AdSlot } from "./AdSlot";
 import { CloseIcon, MenuIcon } from "./icons";
@@ -71,13 +72,13 @@ export function AllWriting({ wide, showMenuButton, onMenu, groups, failed, onRet
     // The list is the item's positioned parent, so offsetTop is measured from the list's top.
     const top = item.offsetTop;
     const bottom = top + item.offsetHeight;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduce = prefersReducedMotion();
     const to =
       top < list.scrollTop + 8 ? top - 40 : bottom > list.scrollTop + list.clientHeight - 8 ? bottom - list.clientHeight + 40 : null;
     if (to !== null) list.scrollTo({ top: Math.max(0, to), behavior: reduce ? "auto" : "smooth" });
   }, [reading]);
   const jumpTo = (key: string) => {
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduce = prefersReducedMotion();
     sections.current.get(key)?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
   };
 

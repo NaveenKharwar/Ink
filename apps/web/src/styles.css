@@ -124,8 +124,9 @@
   --color-auth-muted: #6b665e;
   --color-auth-backdrop: #e6d9c6;
 
-  --font-serif: "Source Serif 4", "Noto Serif Devanagari", Georgia, serif;
-  --font-sans: Inter, "Noto Sans Devanagari", system-ui, sans-serif;
+  /* Fonts are served by Ink itself (src/fonts.ts), never loaded from a third party. */
+  --font-serif: "Source Serif 4 Variable", "Noto Serif Devanagari", Georgia, serif;
+  --font-sans: "Inter Variable", "Noto Sans Devanagari Variable", system-ui, sans-serif;
   /* Handwriting for a Hindi pen name (the stroke-drawn signature font has Latin letters only). */
   --font-hand: "Kalam", cursive;
 

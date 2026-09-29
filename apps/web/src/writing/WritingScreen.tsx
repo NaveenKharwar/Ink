@@ -59,13 +59,8 @@ function remember(key: string, open: boolean) {
 }
 function useRememberedOpen(key: string, fallback: boolean) {
   const [open, setOpen] = useState(() => readRemembered(key, fallback));
-  const set = (next: boolean | ((open: boolean) => boolean)) =>
-    setOpen((was) => {
-      const value = typeof next === "function" ? next(was) : next;
-      remember(key, value);
-      return value;
-    });
-  return [open, set] as const;
+  useEffect(() => remember(key, open), [key, open]);
+  return [open, setOpen] as const;
 }
 
 const SLIDE = "transition-[translate,opacity] duration-[360ms] ease-[cubic-bezier(0.2,0.7,0.2,1)] motion-reduce:transition-none";
@@ -167,6 +162,12 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
 
   const activeSeason = view.kind === "all" ? view.season : null;
   const seasonGroup = activeSeason ? groups?.find((g) => g.key === activeSeason) : null;
+  // What All writing lists: every season, or only the chosen one (under its full name). Kept
+  // stable between renders so the list's scroll tracking isn't rebuilt each time.
+  const shownGroups = useMemo(
+    () => (seasonGroup ? [{ ...seasonGroup, divider: null, label: seasonGroup.text }] : activeSeason && groups ? [] : groups),
+    [seasonGroup, activeSeason, groups]
+  );
   const pieceSeason = (id: string) => {
     const item = library.items?.find((i) => i.id === id);
     return item ? seasonText(new Date(item.createdAt), new Date(), timeZone, seasonSet) : "Now";
@@ -184,7 +185,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
 
   const sidebarProps = {
     name: account.penName ?? account.email,
-    screen: view.kind === "all" ? ("all" as const) : ("write" as const),
+    screen: view.kind === "piece" ? ("write" as const) : view.kind,
     seasons,
     activeSeason: menuSeason,
     onSearch: () => setSearchOpen(true),
@@ -204,7 +205,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
         wide={wide}
         showMenuButton={!wide || !menuOpen}
         onMenu={onMenu}
-        groups={seasonGroup ? [{ ...seasonGroup, divider: null, label: seasonGroup.text }] : activeSeason && groups ? [] : groups}
+        groups={shownGroups}
         failed={library.failed}
         onRetry={refresh}
         season={seasonGroup?.text ?? null}

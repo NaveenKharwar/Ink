@@ -19,6 +19,7 @@ export function CodeStep({ email, onUsePassword, onChangeEmail }: Props) {
   const [left, setLeft] = useState(RESEND_AFTER);
   const [note, setNote] = useState<Note>(null);
   const [busy, setBusy] = useState(false);
+  const [resending, setResending] = useState(false);
 
   useEffect(() => {
     if (left <= 0) return;
@@ -38,7 +39,11 @@ export function CodeStep({ email, onUsePassword, onChangeEmail }: Props) {
   }
 
   async function resend() {
+    // One request at a time, so a double click doesn't send two emails.
+    if (resending) return;
+    setResending(true);
     const result = await sendCode(email);
+    setResending(false);
     if (result.ok) {
       setCode("");
       setLeft(RESEND_AFTER);

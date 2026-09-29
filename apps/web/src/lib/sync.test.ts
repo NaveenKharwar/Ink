@@ -160,3 +160,26 @@ test("one writer never sees or sends another writer's leftovers", async () => {
   assert.equal(textOf(server.doc), "mine");
   assert.equal((await buffer.unsynced("u2")).length, 1);
 });
+
+test("a piece the server refuses for good is kept on the device and reported as refused", async () => {
+  const buffer = fresh();
+  const tooLarge = Object.assign(new Error("too large"), { status: 413 });
+  const server = fakeServer({ sync: async () => Promise.reject(tooLarge) });
+  const { ydoc } = piece("hello");
+  await buffer.put(record("u1", ydoc));
+  const r = await createSync(buffer, server.api).syncPiece(bufferKey("u1", ID));
+  assert.equal(r.status, "refused");
+  assert.ok(await buffer.get(bufferKey("u1", ID)));
+});
+
+test("signed out for a moment or rate limited is only a failure, tried again later", async () => {
+  for (const status of [401, 429, 503]) {
+    const buffer = fresh();
+    const err = Object.assign(new Error("later"), { status });
+    const server = fakeServer({ sync: async () => Promise.reject(err) });
+    const { ydoc } = piece("hello");
+    await buffer.put(record("u1", ydoc));
+    const r = await createSync(buffer, server.api).syncPiece(bufferKey("u1", ID));
+    assert.equal(r.status, "failed", `status ${status}`);
+  }
+});

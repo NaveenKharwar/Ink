@@ -5,7 +5,8 @@ import { bufferKey } from "../lib/buffer";
 import { buffer, sync } from "../lib/localSave";
 
 // "idle" until there is something to save. "device" = safe on this device, not on the server yet.
-export type SaveState = "idle" | "saving" | "saved" | "device";
+// "refused" = the server won't take it as it is (e.g. too large); still safe on this device.
+export type SaveState = "idle" | "saving" | "saved" | "device" | "refused";
 
 // Marks changes that came from the server, so they are not sent back as new writing.
 export const REMOTE = "remote";
@@ -48,6 +49,9 @@ export function usePieceSave(pieceId: string, userId: string, ydoc: Y.Doc, { ini
   const version = useRef(0);
   const failures = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  // Set when the writer leaves the piece: the last send still goes, but nothing is retried or
+  // shown here any more (unsent writing goes up on the next visit or when back online).
+  const left = useRef(false);
 
   const persist = useCallback(() => {
     dirty.current = true;
@@ -80,10 +84,16 @@ export function usePieceSave(pieceId: string, userId: string, ydoc: Y.Doc, { ini
     const sentVersion = version.current;
     while (writing.current) await writing.current;
     if (!navigator.onLine) {
-      setState("device");
+      if (!left.current) setState("device");
       return;
     }
     const result = await sync.syncPiece(key);
+    if (left.current) return;
+    if (result.status === "refused") {
+      // Trying again won't help; the next change tries again, in case it fixed the problem.
+      setState("refused");
+      return;
+    }
     if (result.status === "failed") {
       failures.current++;
       setState("device");
@@ -128,10 +138,13 @@ export function usePieceSave(pieceId: string, userId: string, ydoc: Y.Doc, { ini
     const onOnline = () => void flush();
     document.addEventListener("visibilitychange", onHide);
     window.addEventListener("online", onOnline);
+    left.current = false;
     return () => {
       document.removeEventListener("visibilitychange", onHide);
       window.removeEventListener("online", onOnline);
+      // Leaving: one last send, then no more retries from this page.
       void flush();
+      left.current = true;
     };
   }, [flush]);
 

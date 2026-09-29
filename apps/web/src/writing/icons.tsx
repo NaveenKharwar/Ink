@@ -51,6 +51,14 @@ export const IndentIcon = ({ size = 18 }: P) => (
   </svg>
 );
 
+// A plain note: something needs the writer's attention (never red).
+export const NoteIcon = ({ size = 20 }: P) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7.5v5.5M12 16.5v.01" />
+  </svg>
+);
+
 export const CheckCircleIcon = ({ size = 20, saving = false }: P & { saving?: boolean }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <circle cx="12" cy="12" r="9" />

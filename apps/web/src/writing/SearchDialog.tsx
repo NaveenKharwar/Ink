@@ -27,6 +27,14 @@ export function SearchDialog({ wide, recent, seasonSet, onOpen, onClose }: Props
   const listId = useId();
   const dialog = useRef<HTMLDivElement>(null);
 
+  // A modal dialog: focus goes back to where the writer was when it closes.
+  useEffect(() => {
+    const before = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    return () => {
+      if (before?.isConnected) before.focus();
+    };
+  }, []);
+
   const query = q.trim();
   useEffect(() => {
     if (!query) {
@@ -63,7 +71,19 @@ export function SearchDialog({ wide, recent, seasonSet, onOpen, onClose }: Props
       }));
 
   const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") onClose();
+    if (e.key === "Tab") {
+      // Keep Tab inside the dialog: from the last control back to the first, and the other way.
+      const focusable = [...(dialog.current?.querySelectorAll<HTMLElement>("input, button") ?? [])];
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (first && last && e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (first && last && !e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    } else if (e.key === "Escape") onClose();
     else if (e.key === "ArrowDown" && results.length) {
       e.preventDefault();
       setActive((a) => (a + 1) % results.length);

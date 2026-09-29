@@ -12,6 +12,11 @@
     "test": "tsx --test src/editor/editor.test.ts src/lib/seasons.test.ts src/lib/sync.test.ts src/editor/yjs.test.ts src/lib/route.test.ts src/lib/openPiece.test.ts src/lib/layout.test.ts"
   },
   "dependencies": {
+    "@fontsource-variable/inter": "5.3.0",
+    "@fontsource-variable/noto-sans-devanagari": "5.3.0",
+    "@fontsource-variable/source-serif-4": "5.3.0",
+    "@fontsource/kalam": "5.3.0",
+    "@fontsource/noto-serif-devanagari": "5.3.0",
     "@ink/schemas": "workspace:*",
     "@supabase/supabase-js": "^2.117.2",
     "@tiptap/core": "^3.31.3",

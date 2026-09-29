@@ -17,6 +17,8 @@ export function AccountMenu({ name, onProfile, onSignOut }: Props) {
   const [open, setOpen] = useState(false);
   const [theme, setTheme] = useTheme();
   const wrap = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const menu = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -25,11 +27,35 @@ export function AccountMenu({ name, onProfile, onSignOut }: Props) {
     return () => document.removeEventListener("mousedown", close);
   }, [open]);
 
+  // A menu, by keyboard: it opens with the first item focused, the arrow keys (and Home/End)
+  // move between items, and Escape closes it and returns to the button.
+  useEffect(() => {
+    if (open) menu.current?.querySelector<HTMLElement>("[role^='menuitem']")?.focus();
+  }, [open]);
+  const items = () => [...(menu.current?.querySelectorAll<HTMLElement>("[role^='menuitem']") ?? [])];
+  const onMenuKey = (e: React.KeyboardEvent) => {
+    const list = items();
+    const at = list.indexOf(document.activeElement as HTMLElement);
+    const move = (i: number) => {
+      e.preventDefault();
+      list[(i + list.length) % list.length]?.focus();
+    };
+    if (e.key === "ArrowDown") move(at + 1);
+    else if (e.key === "ArrowUp") move(at - 1);
+    else if (e.key === "Home") move(0);
+    else if (e.key === "End") move(list.length - 1);
+  };
+  const close = () => {
+    setOpen(false);
+    trigger.current?.focus();
+  };
+
   const initial = ([...name.trim()][0] ?? "?").toUpperCase();
 
   return (
-    <div ref={wrap} className="relative" onKeyDown={(e) => e.key === "Escape" && setOpen(false)}>
+    <div ref={wrap} className="relative" onKeyDown={(e) => e.key === "Escape" && open && close()}>
       <button
+        ref={trigger}
         type="button"
         aria-haspopup="menu"
         aria-expanded={open}
@@ -47,8 +73,10 @@ export function AccountMenu({ name, onProfile, onSignOut }: Props) {
 
       {open && (
         <div
+          ref={menu}
           role="menu"
           aria-label="Account"
+          onKeyDown={onMenuKey}
           className="absolute bottom-11 left-0 z-20 w-[220px] rounded-md border border-line-strong bg-surface p-1 shadow-[0_8px_24px_rgba(0,0,0,0.10)]"
         >
           <div className="px-2.5 pt-2 pb-1.5 text-[12px] text-ink-muted">Look</div>

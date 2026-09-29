@@ -66,13 +66,15 @@ export function Page({ pieceId, userId, opened, wide, season, showMenuButton, sh
         title={title}
         firstLine={firstLine}
         onRename={setTitle}
+        language={language}
+        onLanguage={setLanguage}
         save={save.state}
         showSparkle={showSparkle}
         onSparkle={onSparkle}
         showMenuButton={showMenuButton}
         onMenu={onMenu}
       />
-      <div className={`ink-editor grow overflow-y-auto ${wide ? "pt-9 pr-10 pb-[110px] pl-[72px]" : "pt-5 pr-5 pb-[90px] pl-[33px]"}`}>
+      <div className={`ink-editor grow overflow-y-auto ${wide ? "pt-9 pr-10 pb-[110px] pl-[72px]" : "pt-5 pr-5 pb-[140px] pl-[33px]"}`}>
         <div className="mx-auto max-w-[640px]">
           <EditorContent editor={editor} />
         </div>

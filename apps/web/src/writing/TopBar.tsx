@@ -1,8 +1,17 @@
+import type { PieceLanguage } from "@ink/schemas";
 import { useEffect, useRef, useState } from "react";
 import { CloudIcon, MenuIcon, SparkleIcon } from "./icons";
+import { Dropdown } from "./Dropdown";
+import { LANGUAGES } from "./Toolbar";
 import type { SaveState } from "./usePieceSave";
 
-const SAVE_LONG = { idle: "", saving: "Saving…", saved: "Saved just now", device: "Saved on this device" } as const;
+const SAVE_LONG = {
+  idle: "",
+  saving: "Saving…",
+  saved: "Saved just now",
+  device: "Saved on this device",
+  refused: "Ink couldn’t save this piece. It’s kept on this device."
+} as const;
 
 type Props = {
   wide: boolean;
@@ -12,6 +21,9 @@ type Props = {
   /** The piece's opening line, shown while it has no title. */
   firstLine: string;
   onRename: (title: string | null) => void;
+  /** The piece's language: on phone it is chosen here (the tool bar has no room for it). */
+  language: PieceLanguage;
+  onLanguage: (language: PieceLanguage) => void;
   save: SaveState;
   showSparkle: boolean;
   onSparkle: () => void;
@@ -23,7 +35,20 @@ type Props = {
 const iconButton =
   "flex cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
-export function TopBar({ wide, season, title, firstLine, onRename, save, showSparkle, onSparkle, showMenuButton, onMenu }: Props) {
+export function TopBar({
+  wide,
+  season,
+  title,
+  firstLine,
+  onRename,
+  language,
+  onLanguage,
+  save,
+  showSparkle,
+  onSparkle,
+  showMenuButton,
+  onMenu
+}: Props) {
   return (
     <div className={`flex shrink-0 items-center justify-between gap-2 ${wide ? "h-14 pr-4 pl-4" : "h-[52px] pr-1.5 pl-1"}`}>
       <div className="flex min-w-0 items-center gap-2.5">
@@ -45,6 +70,18 @@ export function TopBar({ wide, season, title, firstLine, onRename, save, showSpa
             </span>
           </>
         )}
+        {/* Phone: the tool bar has no room for the language, so it is chosen here, shown short. */}
+        {!wide && (
+          <Dropdown
+            label="Language"
+            value={language}
+            options={LANGUAGES}
+            onChange={onLanguage}
+            placement="down"
+            align="end"
+            display={<span className="font-medium">{SHORT[language]}</span>}
+          />
+        )}
         {showSparkle && (
           <button type="button" onClick={onSparkle} aria-label="Show what Ink sees" className={`h-9 w-9 ${iconButton}`}>
             <SparkleIcon />
@@ -54,6 +91,9 @@ export function TopBar({ wide, season, title, firstLine, onRename, save, showSpa
     </div>
   );
 }
+
+// The language as it shows on the phone's top bar.
+const SHORT: Record<PieceLanguage, string> = { en: "EN", hi: "हि", "hi-Latn": "Hing", mixed: "Mix" };
 
 // The piece's name: click it and type, like editing text. Enter or clicking away keeps it,
 // Escape puts it back, and an empty name falls back to the first line.

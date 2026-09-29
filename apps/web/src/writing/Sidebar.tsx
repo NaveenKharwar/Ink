@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { ApiCheck } from "../dev/ApiCheck";
 import { AccountMenu } from "./AccountMenu";
 import { ChevronIcon, DocumentIcon, MenuIcon, PencilIcon, SearchIcon, SeasonIcon } from "./icons";
 
-export type Screen = "write" | "all";
+// Which screen is open; Profile has no item of its own in the menu, so nothing is marked there.
+export type Screen = "write" | "all" | "profile";
 
 export type SeasonLink = { key: string; label: string; divider: string | null; count: number };
 
@@ -138,11 +138,8 @@ export function Sidebar(props: Props) {
         )}
       </div>
 
-      <div className="shrink-0 pt-2">
-        {import.meta.env.DEV && <ApiCheck />}
-        <div className="mt-3">
-          <AccountMenu name={name} onProfile={onProfile} onSignOut={onSignOut} />
-        </div>
+      <div className="shrink-0 pt-3">
+        <AccountMenu name={name} onProfile={onProfile} onSignOut={onSignOut} />
       </div>
     </nav>
   );

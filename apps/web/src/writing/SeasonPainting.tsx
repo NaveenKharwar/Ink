@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from "react";
+import { prefersReducedMotion } from "../lib/motion";
 import { seasonPainting } from "../lib/seasons";
 
 const DURATION = 1400;
@@ -126,7 +127,7 @@ export function SeasonPainting({
           return;
         }
 
-        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const reduce = prefersReducedMotion();
         const noise = cloudNoise(Math.floor(Math.random() * 1000));
         const mask = document.createElement("canvas");
         mask.width = MASK_W;

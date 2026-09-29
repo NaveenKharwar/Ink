@@ -54,8 +54,14 @@ export function PrivacyPage() {
 
       <h2>On your device</h2>
       <p>
-        Your browser keeps a sign-in token so you stay signed in. It is removed when you sign out. Ink sets no other
+        Your browser keeps a sign-in token so you stay signed in. It is removed when you sign out. Ink sets no
         cookies.
+      </p>
+      <p>
+        So that nothing you write is lost, each change is first kept in your browser&rsquo;s own storage on this device,
+        then sent to Ink. Once Ink has it, the copy on the device is removed. If you are offline or sign out before it
+        is sent, it waits there and is sent the next time you sign in on this device. Your Light or Dark choice and
+        whether the menu is open are remembered there too. Nothing else is stored on your device.
       </p>
 
       <h2>Who is involved</h2>
@@ -65,8 +71,8 @@ export function PrivacyPage() {
           <strong>Supabase</strong> stores your account and your writing, in a data centre in Mumbai, India.
         </li>
         <li>
-          <strong>Google</strong>, only if you choose Continue with Google, to confirm who you are. The page's fonts
-          are also loaded from Google Fonts, which sees your network address when the page loads.
+          <strong>Google</strong>, only if you choose Continue with Google, to confirm who you are. Ink&rsquo;s fonts are
+          served by Ink itself, not by Google or anyone else.
         </li>
         <li>
           <strong>An email service</strong> sends your 6-digit sign-in codes. [Which one, once Ink has its own

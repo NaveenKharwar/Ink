@@ -6,7 +6,9 @@ import type { Buffer, BufferedPiece } from "./buffer";
 export type SyncApi = { sync(id: string, input: SyncPieceInput): Promise<SyncPieceOutput> };
 
 export type SyncResult = {
-  status: "synced" | "gone" | "failed";
+  // "failed" = try again later (offline, server trouble); "refused" = the server said no for good
+  // (e.g. the piece is too large), so trying again won't help.
+  status: "synced" | "gone" | "failed" | "refused";
   // What other devices wrote that this one was missing (Yjs data); apply it to the open piece.
   remote?: Uint8Array;
   // What the server has now.
@@ -15,6 +17,14 @@ export type SyncResult = {
 
 const NOTHING = Y.encodeStateVector(new Y.Doc());
 const isEmpty = (update: Uint8Array) => update.length === 2 && update[0] === 0 && update[1] === 0;
+
+// A 4xx answer is final, except for the ones that pass: signed out for a moment (401), too slow
+// (408) or too many requests (429).
+const RETRYABLE = new Set([401, 408, 429]);
+export function isRefusal(err: unknown): boolean {
+  const status = (err as { status?: unknown })?.status;
+  return typeof status === "number" && status >= 400 && status < 500 && !RETRYABLE.has(status);
+}
 
 export function createSync(buffer: Buffer, api: SyncApi) {
   const inFlight = new Map<string, Promise<SyncResult>>();
@@ -47,9 +57,9 @@ export function createSync(buffer: Buffer, api: SyncApi) {
           // Only forget it if nothing was typed while the request was out.
           if (await buffer.removeIfUnchanged(key, piece.updatedAt)) return done(remotes, serverVector);
           await buffer.setServerVector(key, out.serverVector);
-        } catch {
-          // Keep the writing on this device; it is not lost, just not accepted yet.
-          return { status: "failed" };
+        } catch (err) {
+          // Keep the writing on this device either way; it is not lost, just not accepted.
+          return { status: isRefusal(err) ? "refused" : "failed" };
         }
       }
       return { status: "failed" };
@@ -71,7 +81,7 @@ export function createSync(buffer: Buffer, api: SyncApi) {
     for (const piece of await buffer.unsynced(userId)) {
       const r = await syncPiece(piece.key);
       if (r.status === "synced") synced++;
-      else if (r.status === "failed") failed++;
+      else if (r.status === "failed" || r.status === "refused") failed++;
     }
     return { synced, failed };
   }

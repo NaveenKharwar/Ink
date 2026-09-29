@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef } from "react";
 import Vara from "vara";
+import { prefersReducedMotion } from "../lib/motion";
 
 // Single-stroke handwriting (Shadows Into Light, OFL), drawn by Vara stroke by stroke like a pen.
 const FONT = "/fonts/signature.json";
@@ -34,7 +35,7 @@ export function Signature({
   useEffect(() => {
     const el = box.current;
     if (!el || hindi) return;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduce = prefersReducedMotion();
     let svg: SVGSVGElement | null = null;
     let natural = { width: 0, height: 0 };
 
