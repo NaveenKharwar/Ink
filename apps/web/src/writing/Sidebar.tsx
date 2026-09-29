@@ -9,7 +9,8 @@ export type SeasonLink = { key: string; label: string; divider: string | null; c
 
 type Props = {
   phone?: boolean;
-  email: string;
+  /** Who is signed in: the pen name, else the email. */
+  name: string;
   screen: Screen;
   seasons: SeasonLink[];
   /** The season All writing is narrowed to, marked with the accent dot. */
@@ -19,6 +20,7 @@ type Props = {
   onWrite: () => void;
   onAll: () => void;
   onSeason: (key: string) => void;
+  onProfile: () => void;
   onSignOut: () => void;
 };
 
@@ -29,7 +31,7 @@ const SEASONS_SHOWN = 7;
 // The menu: search, Write, All writing and the seasons, with the account at the foot.
 // Desktop: a side sheet from the left edge. Phone: the left side of the sliding track.
 export function Sidebar(props: Props) {
-  const { phone = false, email, screen, seasons, activeSeason, onClose, onSearch, onWrite, onAll, onSeason, onSignOut } = props;
+  const { phone = false, name, screen, seasons, activeSeason, onClose, onSearch, onWrite, onAll, onSeason, onProfile, onSignOut } = props;
   const [allSeasons, setAllSeasons] = useState(false);
   const shown = allSeasons ? seasons : seasons.slice(0, SEASONS_SHOWN);
 
@@ -130,7 +132,7 @@ export function Sidebar(props: Props) {
       <div className="grow" />
       {import.meta.env.DEV && <ApiCheck />}
       <div className="mt-3">
-        <AccountMenu email={email} onSignOut={onSignOut} />
+        <AccountMenu name={name} onProfile={onProfile} onSignOut={onSignOut} />
       </div>
     </nav>
   );

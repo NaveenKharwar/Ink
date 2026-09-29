@@ -7,7 +7,7 @@ export function PrivacyPage() {
       </p>
 
       <h1>Privacy</h1>
-      <p>Draft · last updated 28 September 2026</p>
+      <p>Draft · last updated 29 September 2026</p>
 
       <p>
         Ink is a private place for your writing. This page says, in plain words, what Ink keeps, why, and who else is
@@ -29,8 +29,12 @@ export function PrivacyPage() {
           and profile picture with Ink; Ink does not use them for anything yet.
         </li>
         <li>
-          <strong>Your writing:</strong> each piece you write, its title if you give one, its language, whether it is a
-          draft or finished, and when you created and last changed it.
+          <strong>Your settings, only if you choose them:</strong> a pen name, and which seasons Ink groups your writing
+          by. Ink never stores your time zone or location; it reads the time zone on your device only.
+        </li>
+        <li>
+          <strong>Your writing:</strong> each piece you write, its title if you give one, its language, and when you
+          created and last changed it.
         </li>
         <li>
           <strong>A password, only if you add one:</strong> it is stored scrambled (hashed), never as you typed it.

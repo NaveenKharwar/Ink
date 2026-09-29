@@ -1,7 +1,7 @@
 import type { LibraryItem, MarkedLine } from "@ink/schemas";
 import { useEffect, useId, useRef, useState } from "react";
 import { pieces } from "../lib/api";
-import { seasonText } from "../lib/seasons";
+import { deviceTimeZone, seasonText, type SeasonSet } from "../lib/seasons";
 import { CloseIcon, SearchIcon } from "./icons";
 
 type Result = { id: string; first: MarkedLine; match: MarkedLine | null; season: string };
@@ -10,6 +10,7 @@ type Props = {
   wide: boolean;
   /** Shown before anything is typed: the pieces worked on most recently. */
   recent: LibraryItem[];
+  seasonSet: SeasonSet;
   onOpen: (id: string) => void;
   onClose: () => void;
 };
@@ -17,7 +18,8 @@ type Props = {
 const WAIT_MS = 200;
 
 // Search your writing by its words. ⌘K or Search opens it; a result opens the piece.
-export function SearchDialog({ wide, recent, onOpen, onClose }: Props) {
+export function SearchDialog({ wide, recent, seasonSet, onOpen, onClose }: Props) {
+  const season = (createdAt: string) => seasonText(new Date(createdAt), new Date(), deviceTimeZone(), seasonSet);
   const [q, setQ] = useState("");
   const [found, setFound] = useState<Result[] | null>(null);
   const [failed, setFailed] = useState(false);
@@ -37,7 +39,7 @@ export function SearchDialog({ wide, recent, onOpen, onClose }: Props) {
       pieces.search(query, abort.signal).then(
         (res) => {
           setFound(
-            res.items.map((r) => ({ id: r.id, first: r.firstLine, match: r.match, season: seasonText(new Date(r.createdAt)) }))
+            res.items.map((r) => ({ id: r.id, first: r.firstLine, match: r.match, season: season(r.createdAt) }))
           );
           setFailed(false);
           setActive(0);
@@ -57,7 +59,7 @@ export function SearchDialog({ wide, recent, onOpen, onClose }: Props) {
         id: item.id,
         first: { text: item.lines[0] ?? item.title ?? "Untitled", marks: [] },
         match: null,
-        season: seasonText(new Date(item.createdAt))
+        season: season(item.createdAt)
       }));
 
   const onKeyDown = (e: React.KeyboardEvent) => {

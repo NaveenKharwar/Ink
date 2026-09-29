@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { groupBySeason, seasonPlace, seasonSetFor, seasonText } from "./seasons.ts";
+import { groupBySeason, resolveSeasonSet, seasonPlace, seasonSetFor, seasonText } from "./seasons.ts";
 
 const d = (iso: string) => new Date(iso);
 const place = (iso: string, tz: string) => {
@@ -68,4 +68,12 @@ test("pieces group by the season they were written in, with a divider for each e
       ["Winter", "Winter 2025", null, 1]
     ]
   );
+});
+
+test("a set the writer chose wins over the time zone", () => {
+  assert.equal(resolveSeasonSet("auto", "Asia/Kolkata"), "south-asia");
+  assert.equal(resolveSeasonSet("north", "Asia/Kolkata"), "north");
+  // August in India: Monsoon by the time zone, Summer when the writer says north.
+  assert.equal(seasonPlace(d("2026-08-10T12:00:00Z"), "Asia/Kolkata").name, "Monsoon");
+  assert.equal(seasonPlace(d("2026-08-10T12:00:00Z"), "Asia/Kolkata", "north").name, "Summer");
 });

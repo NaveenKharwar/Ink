@@ -7,13 +7,13 @@ const THEMES: Array<{ value: ThemeChoice; label: string }> = [
   { value: "dark", label: "Dark" }
 ];
 
-type Props = { email: string; onSignOut: () => void };
+type Props = { name: string; onProfile: () => void; onSignOut: () => void };
 
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
-// Who is signed in, at the foot of the menu. Opens upward: the look (System, Light, Dark)
-// and Sign out. Profile joins it when it exists.
-export function AccountMenu({ email, onSignOut }: Props) {
+// Who is signed in (pen name, else email), at the foot of the menu. Opens upward: the look
+// (System, Light, Dark), Profile and Sign out.
+export function AccountMenu({ name, onProfile, onSignOut }: Props) {
   const [open, setOpen] = useState(false);
   const [theme, setTheme] = useTheme();
   const wrap = useRef<HTMLDivElement>(null);
@@ -25,7 +25,7 @@ export function AccountMenu({ email, onSignOut }: Props) {
     return () => document.removeEventListener("mousedown", close);
   }, [open]);
 
-  const initial = (email.trim()[0] ?? "?").toUpperCase();
+  const initial = ([...name.trim()][0] ?? "?").toUpperCase();
 
   return (
     <div ref={wrap} className="relative" onKeyDown={(e) => e.key === "Escape" && setOpen(false)}>
@@ -42,7 +42,7 @@ export function AccountMenu({ email, onSignOut }: Props) {
         >
           {initial}
         </span>
-        <span className="min-w-0 truncate text-[13px] text-ink-muted">{email}</span>
+        <span className="min-w-0 truncate text-[13px] text-ink-muted">{name}</span>
       </button>
 
       {open && (
@@ -69,6 +69,17 @@ export function AccountMenu({ email, onSignOut }: Props) {
             ))}
           </div>
           <div className="my-1 h-px bg-line" />
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              onProfile();
+            }}
+            className={`block w-full cursor-pointer rounded-[6px] border-0 bg-transparent px-2.5 py-2 text-left text-[13px] text-ink hover:bg-surface-hover ${focusRing}`}
+          >
+            Profile
+          </button>
           <button
             type="button"
             role="menuitem"

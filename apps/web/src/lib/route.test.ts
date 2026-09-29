@@ -26,3 +26,9 @@ test("/all is All writing", () => {
   assert.deepEqual(parseRoute("/all/"), { kind: "all" });
   assert.deepEqual(parseRoute("/allx"), { kind: "new" });
 });
+
+test("/profile is the writer's Profile", () => {
+  assert.deepEqual(parseRoute("/profile"), { kind: "profile" });
+  assert.deepEqual(parseRoute("/profile/"), { kind: "profile" });
+  assert.deepEqual(parseRoute("/profiles"), { kind: "new" });
+});

@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
+import type { Account } from "../lib/account";
 import { sync } from "../lib/localSave";
-import { ALL_WRITING, parseRoute, pieceAddress } from "../lib/route";
-import { groupBySeason, seasonText } from "../lib/seasons";
+import { ALL_WRITING, PROFILE, parseRoute, pieceAddress } from "../lib/route";
+import { deviceTimeZone, groupBySeason, resolveSeasonSet, seasonText } from "../lib/seasons";
 import { supabase } from "../lib/supabase";
 import { useMediaQuery } from "../lib/useMediaQuery";
 import { AllWriting } from "./AllWriting";
 import { InkSeesPanel } from "./InkSeesPanel";
 import { PieceView } from "./PieceView";
+import { Profile } from "./Profile";
 import { SearchDialog } from "./SearchDialog";
 import { Sidebar } from "./Sidebar";
 import { useLibrary } from "./useLibrary";
@@ -25,12 +27,13 @@ const typingInPage = () => !!document.activeElement?.closest(".ProseMirror");
 // What the address says to show: a blank page, a piece to open, or All writing. A piece that
 // cannot exist (`/p/nonsense`) is shown as not found, like someone else's piece.
 type Target = { id: string; open: boolean };
-type View = { kind: "piece"; target: Target } | { kind: "all"; season: string | null };
+type View = { kind: "piece"; target: Target } | { kind: "all"; season: string | null } | { kind: "profile" };
 
 const blank = (): View => ({ kind: "piece", target: { id: crypto.randomUUID(), open: false } });
 function viewFromAddress(): View {
   const route = parseRoute(window.location.pathname);
   if (route.kind === "all") return { kind: "all", season: null };
+  if (route.kind === "profile") return { kind: "profile" };
   if (route.kind === "piece") return { kind: "piece", target: { id: route.id, open: true } };
   if (route.kind === "missing") return { kind: "piece", target: { id: crypto.randomUUID(), open: true } };
   return blank();
@@ -38,7 +41,7 @@ function viewFromAddress(): View {
 
 const SLIDE = "transition-[translate,opacity] duration-[360ms] ease-[cubic-bezier(0.2,0.7,0.2,1)] motion-reduce:transition-none";
 
-export function WritingScreen({ email, userId }: { email: string; userId: string }) {
+export function WritingScreen({ account, userId }: { account: Account; userId: string }) {
   const wide = useMediaQuery("(min-width: 1024px)");
   const [view, setView] = useState<View>(viewFromAddress);
   // Desktop: the menu opens beside the page when asked; Ink sees this too starts open.
@@ -59,6 +62,17 @@ export function WritingScreen({ email, userId }: { email: string; userId: string
   const newPiece = () => go("/", blank());
   const openPiece = (id: string) => go(pieceAddress(id), { kind: "piece", target: { id, open: true } });
   const openAll = (season: string | null = null) => go(ALL_WRITING, { kind: "all", season });
+  // Back to writing returns to where Profile was opened from (a blank page if opened directly).
+  const beforeProfile = useRef<{ address: string; view: View } | null>(null);
+  const openProfile = () => {
+    if (view.kind !== "profile") beforeProfile.current = { address: window.location.pathname, view };
+    go(PROFILE, { kind: "profile" });
+  };
+  const leaveProfile = () => {
+    const back = beforeProfile.current;
+    if (back) go(back.address, back.view);
+    else newPiece();
+  };
 
   // Back and forward move between pieces and All writing.
   useEffect(() => {
@@ -109,7 +123,13 @@ export function WritingScreen({ email, userId }: { email: string; userId: string
     return () => window.removeEventListener("keydown", onKey);
   }, [wide, menuOpen, searchOpen]);
 
-  const groups = useMemo(() => (library.items ? groupBySeason(library.items) : null), [library.items]);
+  // Seasons follow the device's time zone unless the writer chose a set in Profile.
+  const timeZone = deviceTimeZone();
+  const seasonSet = resolveSeasonSet(account.seasons, timeZone);
+  const groups = useMemo(
+    () => (library.items ? groupBySeason(library.items, new Date(), timeZone, seasonSet) : null),
+    [library.items, timeZone, seasonSet]
+  );
   const seasons = (groups ?? []).map((g) => ({ key: g.key, label: g.label, divider: g.divider, count: g.items.length }));
   const recent = useMemo(
     () => [...(library.items ?? [])].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 5),
@@ -120,11 +140,11 @@ export function WritingScreen({ email, userId }: { email: string; userId: string
   const seasonGroup = activeSeason ? groups?.find((g) => g.key === activeSeason) : null;
   const pieceSeason = (id: string) => {
     const item = library.items?.find((i) => i.id === id);
-    return item ? seasonText(new Date(item.createdAt)) : "Now";
+    return item ? seasonText(new Date(item.createdAt), new Date(), timeZone, seasonSet) : "Now";
   };
 
   const sidebarProps = {
-    email,
+    name: account.penName ?? account.email,
     screen: view.kind === "all" ? ("all" as const) : ("write" as const),
     seasons,
     activeSeason,
@@ -132,12 +152,15 @@ export function WritingScreen({ email, userId }: { email: string; userId: string
     onWrite: newPiece,
     onAll: () => openAll(),
     onSeason: (key: string) => openAll(key),
+    onProfile: openProfile,
     onSignOut: () => void signOut()
   };
 
   const onMenu = () => (wide ? setMenuOpen(true) : setPos("menu"));
   const page =
-    view.kind === "all" ? (
+    view.kind === "profile" ? (
+      <Profile account={account} wide={wide} onBack={leaveProfile} onSignOut={() => void signOut()} />
+    ) : view.kind === "all" ? (
       <AllWriting
         wide={wide}
         showMenuButton={!wide || !menuOpen}
@@ -166,7 +189,7 @@ export function WritingScreen({ email, userId }: { email: string; userId: string
     );
 
   const search = searchOpen && (
-    <SearchDialog wide={wide} recent={recent} onOpen={openPiece} onClose={() => setSearchOpen(false)} />
+    <SearchDialog wide={wide} recent={recent} seasonSet={seasonSet} onOpen={openPiece} onClose={() => setSearchOpen(false)} />
   );
 
   if (wide) {
@@ -207,8 +230,8 @@ export function WritingScreen({ email, userId }: { email: string; userId: string
   }
 
   // Phone: menu, page and panel on one track that slides; nothing overlays the page.
-  // All writing has no panel, so it moves between the menu and the page only.
-  const order: PhonePos[] = view.kind === "all" ? ["menu", "page"] : ["menu", "page", "panel"];
+  // All writing and Profile have no panel, so they move between the menu and the page only.
+  const order: PhonePos[] = view.kind === "piece" ? ["menu", "page", "panel"] : ["menu", "page"];
   const onPointerDown = (e: PointerEvent) => {
     swipeStart.current = e.pointerType === "touch" && !typingInPage() && !searchOpen ? e.clientX : null;
   };

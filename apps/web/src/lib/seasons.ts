@@ -1,7 +1,9 @@
 // Writing is grouped by season, not date. Which seasons a writer lives through is
-// read from the device's time zone, so nothing about location leaves the device.
+// read from the device's time zone, so nothing about location leaves the device,
+// unless the writer picks a set themselves in Profile (only the choice is saved).
 
 export type SeasonSet = "south-asia" | "north" | "south";
+export type SeasonChoice = "auto" | SeasonSet;
 
 type Season = { name: string; months: number[] };
 
@@ -45,6 +47,11 @@ export function seasonSetFor(timeZone: string): SeasonSet {
   return "north";
 }
 
+/** The set to use: the writer's own choice, else what the time zone says. */
+export function resolveSeasonSet(choice: SeasonChoice, timeZone: string = deviceTimeZone()): SeasonSet {
+  return choice === "auto" ? seasonSetFor(timeZone) : choice;
+}
+
 export function deviceTimeZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 }
@@ -59,9 +66,9 @@ function localYearMonth(date: Date, timeZone: string): { year: number; month: nu
 export type SeasonPlace = { name: string; year: number };
 
 /** Which season, and which year's list, a moment belongs to. */
-export function seasonPlace(date: Date, timeZone: string = deviceTimeZone()): SeasonPlace {
+export function seasonPlace(date: Date, timeZone: string = deviceTimeZone(), set: SeasonSet = seasonSetFor(timeZone)): SeasonPlace {
   const { year, month } = localYearMonth(date, timeZone);
-  const season = SETS[seasonSetFor(timeZone)].find((s) => s.months.includes(month))!;
+  const season = SETS[set].find((s) => s.months.includes(month))!;
   return { name: season.name, year: season.months[0] === 12 && month === 12 ? year + 1 : year };
 }
 
@@ -70,9 +77,14 @@ export function seasonPlace(date: Date, timeZone: string = deviceTimeZone()): Se
  * the season's name within this year, and name plus year for older years ("Winter 2024").
  * Lists group by year instead, so they show the name alone under a "— 2024 —" divider.
  */
-export function seasonText(date: Date, now: Date = new Date(), timeZone: string = deviceTimeZone()): string {
-  const place = seasonPlace(date, timeZone);
-  const current = seasonPlace(now, timeZone);
+export function seasonText(
+  date: Date,
+  now: Date = new Date(),
+  timeZone: string = deviceTimeZone(),
+  set: SeasonSet = seasonSetFor(timeZone)
+): string {
+  const place = seasonPlace(date, timeZone, set);
+  const current = seasonPlace(now, timeZone, set);
   if (place.year === current.year && place.name === current.name) return "Now";
   return place.year === current.year ? place.name : `${place.name} ${place.year}`;
 }
@@ -93,13 +105,14 @@ export type SeasonGroup<T> = {
 export function groupBySeason<T extends { createdAt: string }>(
   items: T[],
   now: Date = new Date(),
-  timeZone: string = deviceTimeZone()
+  timeZone: string = deviceTimeZone(),
+  set: SeasonSet = seasonSetFor(timeZone)
 ): SeasonGroup<T>[] {
-  const current = seasonPlace(now, timeZone);
+  const current = seasonPlace(now, timeZone, set);
   const sorted = [...items].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const groups: SeasonGroup<T>[] = [];
   for (const item of sorted) {
-    const place = seasonPlace(new Date(item.createdAt), timeZone);
+    const place = seasonPlace(new Date(item.createdAt), timeZone, set);
     const key = `${place.year}-${place.name}`;
     const last = groups[groups.length - 1];
     if (last?.key === key) {

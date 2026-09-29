@@ -1,5 +1,6 @@
 import { SignIn } from "./auth/SignIn";
 import { useSession } from "./auth/useSession";
+import { accountOf } from "./lib/account";
 import { Loader } from "./lib/Loader";
 import { PrivacyPage } from "./privacy/PrivacyPage";
 import { WritingScreen } from "./writing/WritingScreen";
@@ -21,5 +22,5 @@ function SignedInOrNot() {
     );
   }
   if (!session) return <SignIn />;
-  return <WritingScreen userId={session.user.id} email={session.user.email ?? ""} />;
+  return <WritingScreen userId={session.user.id} account={accountOf(session.user)} />;
 }
