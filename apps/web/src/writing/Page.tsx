@@ -1,10 +1,12 @@
 import { docToPlainText, type EditorDoc, type PieceLanguage } from "@ink/schemas";
 import Collaboration from "@tiptap/extension-collaboration";
 import { EditorContent, useEditor } from "@tiptap/react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import * as Y from "yjs";
 import { countWords } from "../editor/counts";
 import { writingExtensions } from "../editor/extensions";
+import type { OpenedPiece } from "../lib/openPiece";
+import { pieceAddress } from "../lib/route";
 import { Toolbar } from "./Toolbar";
 import { TopBar } from "./TopBar";
 import { usePieceSave } from "./usePieceSave";
@@ -12,6 +14,8 @@ import { usePieceSave } from "./usePieceSave";
 type Props = {
   pieceId: string;
   userId: string;
+  /** A piece that already exists (loaded before this page is shown); none for a new piece. */
+  opened: OpenedPiece | null;
   wide: boolean;
   showSparkle: boolean;
   onSparkle: () => void;
@@ -19,25 +23,34 @@ type Props = {
 };
 
 // The page panel: where the piece lives, the writing itself, and the tool bar.
-export function Page({ pieceId, userId, wide, showSparkle, onSparkle, onMenu }: Props) {
+export function Page({ pieceId, userId, opened, wide, showSparkle, onSparkle, onMenu }: Props) {
   // The piece is a Yjs document: it merges with what other devices write.
-  const [ydoc] = useState(() => new Y.Doc());
-  const save = usePieceSave(pieceId, userId, ydoc);
+  // Loaded before the editor exists, so the editor starts from the piece and adds nothing on top.
+  const [ydoc] = useState(() => {
+    const doc = new Y.Doc();
+    if (opened) Y.applyUpdate(doc, opened.state);
+    return doc;
+  });
+  // A new piece gets its address when it first has words; reloading then opens it.
+  const onStart = useCallback(() => window.history.replaceState(null, "", pieceAddress(pieceId)), [pieceId]);
+  const save = usePieceSave(pieceId, userId, ydoc, { initial: opened ?? undefined, onStart });
   const [words, setWords] = useState(0);
-  const [language, setLanguage] = useState<PieceLanguage>("en");
-  const [title, setTitle] = useState<string | null>(null);
+  const [language, setLanguage] = useState<PieceLanguage>(opened?.language ?? "en");
+  const [title, setTitle] = useState<string | null>(opened?.title ?? null);
   const [firstLine, setFirstLine] = useState("");
+
+  const refresh = (doc: EditorDoc) => {
+    const text = docToPlainText(doc);
+    setWords(countWords(text));
+    setFirstLine(openingLine(text));
+  };
 
   const editor = useEditor({
     extensions: [...writingExtensions, Collaboration.configure({ document: ydoc })],
     autofocus: "end",
     editorProps: { attributes: { "aria-label": "Your writing", spellcheck: "false" } },
-    onUpdate: ({ editor: e }) => {
-      const doc = e.getJSON() as EditorDoc;
-      const text = docToPlainText(doc);
-      setWords(countWords(text));
-      setFirstLine(openingLine(text));
-    }
+    onCreate: ({ editor: e }) => refresh(e.getJSON() as EditorDoc),
+    onUpdate: ({ editor: e }) => refresh(e.getJSON() as EditorDoc)
   });
 
   return (

@@ -3,7 +3,8 @@ import { sync } from "../lib/localSave";
 import { supabase } from "../lib/supabase";
 import { useMediaQuery } from "../lib/useMediaQuery";
 import { InkSeesPanel } from "./InkSeesPanel";
-import { Page } from "./Page";
+import { parseRoute } from "../lib/route";
+import { PieceView } from "./PieceView";
 import { Rail } from "./Rail";
 import { Sidebar } from "./Sidebar";
 
@@ -18,22 +19,43 @@ const PHONE_OFFSET: Record<PhonePos, string> = {
 
 const typingInPage = () => !!document.activeElement?.closest(".ProseMirror");
 
+// What the address says to show: a blank page, or a piece to open. A piece that cannot exist
+// (`/p/nonsense`) is shown as not found, like someone else's piece.
+type Target = { id: string; open: boolean };
+const blank = (): Target => ({ id: crypto.randomUUID(), open: false });
+function targetFromAddress(): Target {
+  const route = parseRoute(window.location.pathname);
+  if (route.kind === "piece") return { id: route.id, open: true };
+  if (route.kind === "missing") return { id: crypto.randomUUID(), open: true };
+  return blank();
+}
+
 export function WritingScreen({ email, userId }: { email: string; userId: string }) {
   const wide = useMediaQuery("(min-width: 1024px)");
-  const [pieceId, setPieceId] = useState(() => crypto.randomUUID());
+  const [target, setTarget] = useState<Target>(targetFromAddress);
   const [collapsed, setCollapsed] = useState(false);
   const [panelOpen, setPanelOpen] = useState(true);
   const [pos, setPos] = useState<PhonePos>("page");
   const swipeStart = useRef<number | null>(null);
 
   const newPiece = () => {
-    setPieceId(crypto.randomUUID());
+    if (window.location.pathname !== "/") window.history.pushState(null, "", "/");
+    setTarget(blank());
     setPos("page");
   };
+
+  // Back and forward move between pieces.
+  useEffect(() => {
+    const onPop = () => setTarget(targetFromAddress());
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
   // Send what is still on the device before the token goes away (never wait more than 2s).
   const signOut = async () => {
     await Promise.race([sync.syncAll(userId), new Promise((r) => setTimeout(r, 2000))]);
     await supabase.auth.signOut();
+    // The next writer must not land on this one's piece.
+    window.history.replaceState(null, "", "/");
   };
 
   // Writing left on this device by an earlier visit (a crash, a closed tab, no connection)
@@ -58,9 +80,11 @@ export function WritingScreen({ email, userId }: { email: string; userId: string
   }, [wide]);
 
   const page = (
-    <Page
-      key={pieceId}
-      pieceId={pieceId}
+    <PieceView
+      key={target.id}
+      open={target.open}
+      onWrite={newPiece}
+      pieceId={target.id}
       userId={userId}
       wide={wide}
       showSparkle={!wide || !panelOpen}

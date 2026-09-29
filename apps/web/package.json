@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "echo \"(lint not configured yet)\"",
-    "test": "tsx --test src/editor/editor.test.ts src/lib/seasons.test.ts src/lib/sync.test.ts src/editor/yjs.test.ts"
+    "test": "tsx --test src/editor/editor.test.ts src/lib/seasons.test.ts src/lib/sync.test.ts src/editor/yjs.test.ts src/lib/route.test.ts src/lib/openPiece.test.ts"
   },
   "dependencies": {
     "@ink/schemas": "workspace:*",

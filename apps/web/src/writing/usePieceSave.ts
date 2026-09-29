@@ -26,14 +26,25 @@ const hasContent = (nodes: EditorNode[] = []): boolean =>
  * The piece is a Yjs document, so what another device wrote comes back with every send
  * and is merged into the open page; neither device overwrites the other.
  */
-export function usePieceSave(pieceId: string, userId: string, ydoc: Y.Doc) {
+export type SaveOptions = {
+  /** A piece that already exists: its meta and what the server is known to have. */
+  initial?: { serverVector: Uint8Array | null; language: PieceLanguage; title: string | null };
+  /** Called once, when the piece first has something worth saving. */
+  onStart?: () => void;
+};
+
+export function usePieceSave(pieceId: string, userId: string, ydoc: Y.Doc, { initial, onStart }: SaveOptions = {}) {
   const key = bufferKey(userId, pieceId);
   const [state, setState] = useState<SaveState>("idle");
-  const meta = useRef<{ language: PieceLanguage; title: string | null }>({ language: "en", title: null });
-  const started = useRef(false);
+  const meta = useRef<{ language: PieceLanguage; title: string | null }>({
+    language: initial?.language ?? "en",
+    title: initial?.title ?? null
+  });
+  // An opened piece is already worth saving; a new one is not until it has words.
+  const started = useRef(!!initial);
   const stamp = useRef(0);
   // What the server is known to have, so a send only carries what is newer.
-  const serverVector = useRef<Uint8Array | null>(null);
+  const serverVector = useRef<Uint8Array | null>(initial?.serverVector ?? null);
   // Buffer writes are coalesced: while one is running, changes just mark it to run again.
   const writing = useRef<Promise<void> | null>(null);
   const dirty = useRef(false);
@@ -86,6 +97,8 @@ export function usePieceSave(pieceId: string, userId: string, ydoc: Y.Doc) {
       return;
     }
     failures.current = 0;
+    // Nothing was waiting (already sent elsewhere): only claim "Saved" if something was written here.
+    if (result.status === "gone" && version.current === 0) return;
     if (result.serverVector) serverVector.current = result.serverVector;
     // What another device wrote lands in the open page.
     if (result.remote) Y.applyUpdate(ydoc, result.remote, REMOTE);
@@ -95,13 +108,16 @@ export function usePieceSave(pieceId: string, userId: string, ydoc: Y.Doc) {
   const schedule = useCallback(() => {
     // An empty new piece is not saved anywhere.
     if (!started.current && !hasContent(ydocToEditorDoc(ydoc).content)) return;
-    started.current = true;
+    if (!started.current) {
+      started.current = true;
+      onStart?.();
+    }
     version.current++;
     setState("saving");
     persist();
     clearTimeout(timer.current);
     timer.current = setTimeout(() => void flush(), QUIET_MS);
-  }, [ydoc, persist, flush]);
+  }, [ydoc, persist, flush, onStart]);
 
   const changeLanguage = useCallback(
     (language: PieceLanguage) => {
