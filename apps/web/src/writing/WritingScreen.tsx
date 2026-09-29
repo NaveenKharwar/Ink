@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
+import { sync } from "../lib/localSave";
 import { supabase } from "../lib/supabase";
 import { useMediaQuery } from "../lib/useMediaQuery";
 import { InkSeesPanel } from "./InkSeesPanel";
@@ -17,7 +18,7 @@ const PHONE_OFFSET: Record<PhonePos, string> = {
 
 const typingInPage = () => !!document.activeElement?.closest(".ProseMirror");
 
-export function WritingScreen({ email }: { email: string }) {
+export function WritingScreen({ email, userId }: { email: string; userId: string }) {
   const wide = useMediaQuery("(min-width: 1024px)");
   const [pieceId, setPieceId] = useState(() => crypto.randomUUID());
   const [collapsed, setCollapsed] = useState(false);
@@ -29,7 +30,20 @@ export function WritingScreen({ email }: { email: string }) {
     setPieceId(crypto.randomUUID());
     setPos("page");
   };
-  const signOut = () => void supabase.auth.signOut();
+  // Send what is still on the device before the token goes away (never wait more than 2s).
+  const signOut = async () => {
+    await Promise.race([sync.syncAll(userId), new Promise((r) => setTimeout(r, 2000))]);
+    await supabase.auth.signOut();
+  };
+
+  // Writing left on this device by an earlier visit (a crash, a closed tab, no connection)
+  // goes up now, and again whenever the connection returns.
+  useEffect(() => {
+    const send = () => void sync.syncAll(userId);
+    send();
+    window.addEventListener("online", send);
+    return () => window.removeEventListener("online", send);
+  }, [userId]);
 
   // ⌘\ opens and closes the menu from anywhere. ⌘B is always Bold.
   useEffect(() => {
@@ -47,6 +61,7 @@ export function WritingScreen({ email }: { email: string }) {
     <Page
       key={pieceId}
       pieceId={pieceId}
+      userId={userId}
       wide={wide}
       showSparkle={!wide || !panelOpen}
       onSparkle={() => (wide ? setPanelOpen(true) : setPos("panel"))}
@@ -58,9 +73,9 @@ export function WritingScreen({ email }: { email: string }) {
     return (
       <div className="fixed inset-0 box-border flex gap-2 bg-ground p-3">
         {collapsed ? (
-          <Rail email={email} onExpand={() => setCollapsed(false)} onWrite={newPiece} onSignOut={signOut} />
+          <Rail email={email} onExpand={() => setCollapsed(false)} onWrite={newPiece} onSignOut={() => void signOut()} />
         ) : (
-          <Sidebar email={email} onCollapse={() => setCollapsed(true)} onWrite={newPiece} onSignOut={signOut} />
+          <Sidebar email={email} onCollapse={() => setCollapsed(true)} onWrite={newPiece} onSignOut={() => void signOut()} />
         )}
         <main className="relative flex min-w-0 grow flex-col overflow-hidden rounded-panel border border-line bg-surface">
           {page}
@@ -91,7 +106,7 @@ export function WritingScreen({ email }: { email: string }) {
         style={{ width: "calc(100vw + 600px)", transform: `translateX(${PHONE_OFFSET[pos]})` }}
       >
         <div inert={pos !== "menu"} className="h-full">
-          <Sidebar phone email={email} onCollapse={() => setPos("page")} onWrite={newPiece} onSignOut={signOut} />
+          <Sidebar phone email={email} onCollapse={() => setPos("page")} onWrite={newPiece} onSignOut={() => void signOut()} />
         </div>
         <main className="relative flex h-full w-screen shrink-0 flex-col overflow-hidden bg-surface">
           <div inert={pos !== "page"} className="flex h-full flex-col">

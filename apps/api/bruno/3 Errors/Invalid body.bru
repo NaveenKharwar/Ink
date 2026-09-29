@@ -5,7 +5,7 @@ meta {
 }
 
 post {
-  url: {{baseUrl}}/api/pieces
+  url: {{baseUrl}}/api/pieces/{{pieceId}}/sync
   body: json
   auth: bearer
 }
@@ -16,11 +16,11 @@ auth:bearer {
 
 body:json {
   {
-    "title": "no content",
-    "status": "published"
+    "title": "no state vector",
+    "language": "klingon"
   }
 }
 
 docs {
-  Expect 400 invalid_request with an `issues` list: content is required and status must be draft or finished.
+  Expect 400 invalid_request with an `issues` list: stateVector is required and language must be one of hi, hi-Latn, en, mixed.
 }

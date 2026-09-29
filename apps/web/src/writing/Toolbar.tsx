@@ -50,6 +50,8 @@ function Tool({
   );
 }
 
+const SAVE_SHORT = { idle: "", saving: "Saving", saved: "Saved", device: "On this device" } as const;
+
 // The one floating tool bar: a little formatting, then word count, language and save state.
 export function Toolbar({ editor, wide, words, language, onLanguage, save }: Props) {
   const active = useEditorState({
@@ -117,8 +119,8 @@ export function Toolbar({ editor, wide, words, language, onLanguage, save }: Pro
       {save !== "idle" && (
         <span className={`flex items-center gap-2.5 whitespace-nowrap ${wide ? "pl-5" : "pl-2"}`}>
           <CheckCircleIcon saving={save === "saving"} />
-          {wide && <span>{save === "saving" ? "Saving" : "Saved"}</span>}
-          {!wide && <span className="sr-only">{save === "saving" ? "Saving" : "Saved"}</span>}
+          {wide && <span>{SAVE_SHORT[save]}</span>}
+          {!wide && <span className="sr-only">{SAVE_SHORT[save]}</span>}
         </span>
       )}
     </div>

@@ -1,7 +1,7 @@
 meta {
-  name: Finish and title it
+  name: Finish it
   type: http
-  seq: 7
+  seq: 11
 }
 
 patch {
@@ -16,11 +16,11 @@ auth:bearer {
 
 body:json {
   {
-    "title": "Kettle",
     "status": "finished"
   }
 }
 
 docs {
-  Only the fields you send change. updatedAt moves forward. Send "title": null to clear the title.
+  PATCH changes everything except the words: title, status, language, isFragment, includeInMemory.
+  Only the fields you send change. updatedAt moves forward.
 }

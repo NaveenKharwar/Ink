@@ -1,9 +1,4 @@
-import type {
-  CreatePieceInput,
-  ListPiecesResponse,
-  Piece,
-  UpdatePieceInput
-} from "@ink/schemas";
+import type { ListPiecesResponse, Piece, SyncPieceInput, SyncPieceOutput, UpdatePieceInput } from "@ink/schemas";
 import { supabase } from "./supabase";
 
 export class ApiError extends Error {
@@ -37,8 +32,9 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 export const pieces = {
-  create: (input: Partial<CreatePieceInput> & Pick<CreatePieceInput, "content">) =>
-    request<Piece>("/api/pieces", { method: "POST", body: JSON.stringify(input) }),
+  // Writing goes through sync: it merges with what other devices wrote.
+  sync: (id: string, input: SyncPieceInput) =>
+    request<SyncPieceOutput>(`/api/pieces/${encodeURIComponent(id)}/sync`, { method: "POST", body: JSON.stringify(input) }),
   list: (params: { limit?: number; cursor?: string } = {}) => {
     const q = new URLSearchParams();
     if (params.limit) q.set("limit", String(params.limit));

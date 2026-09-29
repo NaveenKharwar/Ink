@@ -21,5 +21,5 @@ function SignedInOrNot() {
     );
   }
   if (!session) return <SignIn />;
-  return <WritingScreen email={session.user.email ?? ""} />;
+  return <WritingScreen userId={session.user.id} email={session.user.email ?? ""} />;
 }

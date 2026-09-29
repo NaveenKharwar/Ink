@@ -1,0 +1,28 @@
+meta {
+  name: Send it again (a retry)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/pieces/{{pieceId}}/sync
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "update": "AQnpBwAHAQdkZWZhdWx0AwlwYXJhZ3JhcGgHAOkHAAYEAOkHARVUaGUga2V0dGxlIGNsaWNrcyBvZmaH6QcBAwloYXJkQnJlYWuH6QcXBgQA6QcYGmFuZCBmb3IgYSBzZWNvbmQgdGhlIGhvdXNlh+kHGAMJaGFyZEJyZWFrh+kHMwYEAOkHNA1yZW1lbWJlcnMgeW91AA==",
+    "stateVector": "AA==",
+    "language": "en"
+  }
+}
+
+docs {
+  Exactly the same request. Expect 200 and the same text, no duplicate. Yjs updates are safe to repeat,
+  so a retry after a dropped connection changes nothing.
+}

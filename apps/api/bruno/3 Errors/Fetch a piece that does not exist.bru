@@ -1,0 +1,25 @@
+meta {
+  name: Fetch a piece that does not exist
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/api/pieces/00000000-0000-4000-8000-000000000000/sync
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "stateVector": "AA=="
+  }
+}
+
+docs {
+  Nothing to create it from, so expect 404 (and nothing is created).
+}

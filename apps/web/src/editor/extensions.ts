@@ -8,7 +8,7 @@ import HorizontalRule from "@tiptap/extension-horizontal-rule";
 import Italic from "@tiptap/extension-italic";
 import Paragraph from "@tiptap/extension-paragraph";
 import Text from "@tiptap/extension-text";
-import { Placeholder, TrailingNode, UndoRedo } from "@tiptap/extensions";
+import { Placeholder, TrailingNode } from "@tiptap/extensions";
 import { Slice, type Node as PMNode } from "@tiptap/pm/model";
 import { Plugin, PluginKey, TextSelection } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
@@ -172,12 +172,12 @@ const PlainPaste = Extension.create({
   }
 });
 
+// Undo and redo come from the Yjs collaboration extension (it only undoes your own changes).
 export const writingExtensions = [
   Document,
   Paragraph,
   Text,
   HardBreak,
-  UndoRedo,
   Bold,
   Italic,
   Heading.configure({ levels: [1] }),

@@ -1,0 +1,31 @@
+meta {
+  name: Write a piece (first sync)
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/pieces/{{pieceId}}/sync
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "update": "AQnpBwAHAQdkZWZhdWx0AwlwYXJhZ3JhcGgHAOkHAAYEAOkHARVUaGUga2V0dGxlIGNsaWNrcyBvZmaH6QcBAwloYXJkQnJlYWuH6QcXBgQA6QcYGmFuZCBmb3IgYSBzZWNvbmQgdGhlIGhvdXNlh+kHGAMJaGFyZEJyZWFrh+kHMwYEAOkHNA1yZW1lbWJlcnMgeW91AA==",
+    "stateVector": "AA==",
+    "language": "en"
+  }
+}
+
+docs {
+  The piece is created by its first sync, under the id in {{pieceId}}.
+  Look at `piece.text`: the API read the words out of the Yjs data.
+  `update` is what the server has that this device does not (empty here).
+  To start clean, change pieceId in collection.bru.
+  (These requests carry ready-made Yjs data, made by a script, as if a device typed it.)
+}

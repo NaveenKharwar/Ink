@@ -1,13 +1,24 @@
-import type { CreatePieceInput, Piece, PieceSummary, UpdatePieceInput } from "@ink/schemas";
+import type { Piece, PieceSummary, UpdatePieceInput } from "@ink/schemas";
 import type pg from "pg";
+import { mergeYdoc } from "./merge.js";
 
-export type NewPiece = CreatePieceInput & { text: string };
-export type PiecePatch = UpdatePieceInput & { text?: string };
+export type PiecePatch = UpdatePieceInput;
+export type SyncRequest = {
+  update: Uint8Array | null;
+  stateVector: Uint8Array;
+  title?: string | null;
+  language?: Piece["language"];
+};
+export type SyncOutcome = { piece: PieceSummary; update: Uint8Array; stateVector: Uint8Array };
 export type ListPage = { items: PieceSummary[]; next: { updatedAt: string; id: string } | null };
 
 export interface PiecesRepo {
-  /** Inserts the piece. Returns null when a piece with that id already exists. */
-  create(userId: string, input: NewPiece): Promise<Piece | null>;
+  /**
+   * Merges the writer's changes into the piece (creating it on the first sync) and
+   * returns what the writer is missing. Null when the piece is someone else's, or
+   * does not exist and there is nothing to create it from.
+   */
+  sync(userId: string, id: string, request: SyncRequest): Promise<SyncOutcome | null>;
   list(userId: string, options: { limit: number; after?: { updatedAt: string; id: string } }): Promise<ListPage>;
   get(userId: string, id: string): Promise<Piece | null>;
   update(userId: string, id: string, patch: PiecePatch): Promise<Piece | null>;
@@ -51,8 +62,6 @@ function toPiece(row: PieceRow): Piece {
 // Patch field → column. Only these can be written by an update.
 const PATCH_COLUMNS = {
   title: "title",
-  content: "content",
-  text: "text",
   status: "status",
   language: "language",
   isFragment: "is_fragment",
@@ -61,25 +70,59 @@ const PATCH_COLUMNS = {
 
 export function pgPiecesRepo(db: pg.Pool): PiecesRepo {
   return {
-    async create(userId, input) {
-      const { rows } = await db.query<PieceRow>(
-        `insert into pieces (id, user_id, title, content, text, status, language, is_fragment, include_in_memory)
-         values (coalesce($1::uuid, gen_random_uuid()), $2, $3, $4::jsonb, $5, $6, $7, $8, $9)
-         on conflict (id) do nothing
-         returning ${COLUMNS}`,
-        [
-          input.id ?? null,
-          userId,
-          input.title || null,
-          JSON.stringify(input.content),
-          input.text,
-          input.status,
-          input.language ?? null,
-          input.isFragment,
-          input.includeInMemory
-        ]
-      );
-      return rows[0] ? toPiece(rows[0]) : null;
+    async sync(userId, id, request) {
+      const client = await db.connect();
+      try {
+        await client.query("begin");
+        // Only a writer with something to write creates a piece. If the id is already
+        // someone else's, nothing is inserted and the select below finds nothing.
+        if (request.update) {
+          await client.query(
+            `insert into pieces (id, user_id, content, text, ydoc)
+             values ($1, $2, '{"type":"doc"}'::jsonb, '', ''::bytea)
+             on conflict (id) do nothing`,
+            [id, userId]
+          );
+        }
+        const { rows } = await client.query<{ ydoc: Buffer }>(
+          "select ydoc from pieces where id = $1 and user_id = $2 for update",
+          [id, userId]
+        );
+        if (!rows[0]) {
+          await client.query("rollback");
+          return null;
+        }
+        const merged = mergeYdoc(rows[0].ydoc, request.update, request.stateVector);
+
+        const values: unknown[] = [id, userId];
+        const sets: string[] = [];
+        const set = (column: string, value: unknown, cast = "") => {
+          values.push(value);
+          sets.push(`${column} = $${values.length}${cast}`);
+        };
+        if (request.update) {
+          set("ydoc", Buffer.from(merged.state));
+          set("content", JSON.stringify(merged.content), "::jsonb");
+          set("text", merged.text);
+        }
+        if (request.title !== undefined) set("title", request.title || null);
+        if (request.language !== undefined) set("language", request.language);
+        if (sets.length) sets.push("updated_at = now()");
+
+        const { rows: out } = sets.length
+          ? await client.query<PieceRow>(
+              `update pieces set ${sets.join(", ")} where id = $1 and user_id = $2 returning ${SUMMARY_COLUMNS}`,
+              values
+            )
+          : await client.query<PieceRow>(`select ${SUMMARY_COLUMNS} from pieces where id = $1 and user_id = $2`, [id, userId]);
+        await client.query("commit");
+        return { piece: toSummary(out[0]!), update: merged.diff, stateVector: merged.stateVector };
+      } catch (err) {
+        await client.query("rollback").catch(() => undefined);
+        throw err;
+      } finally {
+        client.release();
+      }
     },
 
     async list(userId, { limit, after }) {
@@ -116,8 +159,8 @@ export function pgPiecesRepo(db: pg.Pool): PiecesRepo {
       for (const [key, column] of Object.entries(PATCH_COLUMNS) as [keyof PiecePatch, string][]) {
         const value = patch[key];
         if (value === undefined) continue;
-        values.push(key === "content" ? JSON.stringify(value) : key === "title" && value === "" ? null : value);
-        sets.push(`${column} = $${values.length}${key === "content" ? "::jsonb" : ""}`);
+        values.push(key === "title" && value === "" ? null : value);
+        sets.push(`${column} = $${values.length}`);
       }
       const { rows } = await db.query<PieceRow>(
         `update pieces set ${[...sets, "updated_at = now()"].join(", ")}

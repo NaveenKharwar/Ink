@@ -1,6 +1,7 @@
-import { createPieceInput, docToPlainText, listPiecesQuery, updatePieceInput, type ListPiecesResponse } from "@ink/schemas";
+import { fromBase64, listPiecesQuery, syncPieceInput, toBase64, updatePieceInput, type ListPiecesResponse, type SyncPieceOutput } from "@ink/schemas";
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { z } from "zod";
+import { InvalidUpdateError } from "./merge.js";
 import type { PiecesRepo } from "./repo.js";
 
 const idParams = z.object({ id: z.string().uuid() });
@@ -35,19 +36,31 @@ function invalid(reply: FastifyReply, error: z.ZodError) {
 const notFound = (reply: FastifyReply) => reply.code(404).send({ error: "not_found", message: "This piece doesn't exist." });
 
 export function registerPieceRoutes(app: FastifyInstance, repo: PiecesRepo) {
-  app.post("/api/pieces", async (request, reply) => {
-    const body = createPieceInput.safeParse(request.body);
+  // Writing goes through here: the piece is created by its first sync, and two devices'
+  // edits merge (Yjs), so neither overwrites the other.
+  app.post("/api/pieces/:id/sync", async (request, reply) => {
+    const params = idParams.safeParse(request.params);
+    if (!params.success) return notFound(reply);
+    const body = syncPieceInput.safeParse(request.body);
     if (!body.success) return invalid(reply, body.error);
 
-    const input = { ...body.data, text: docToPlainText(body.data.content) };
-    const created = await repo.create(request.userId, input);
-    if (created) return reply.code(201).send(created);
-
-    // The id is taken. If it is this writer's own piece, the create was a retry:
-    // answer with what is stored so a sync after a dropped connection is safe.
-    const existing = input.id ? await repo.get(request.userId, input.id) : null;
-    if (existing) return reply.code(200).send(existing);
-    return reply.code(409).send({ error: "conflict", message: "This id is already in use." });
+    let outcome;
+    try {
+      outcome = await repo.sync(request.userId, params.data.id, {
+        update: body.data.update ? fromBase64(body.data.update) : null,
+        stateVector: fromBase64(body.data.stateVector),
+        title: body.data.title,
+        language: body.data.language
+      });
+    } catch (err) {
+      if (err instanceof InvalidUpdateError) {
+        return reply.code(400).send({ error: "invalid_request", message: "The update is not valid." });
+      }
+      throw err;
+    }
+    if (!outcome) return notFound(reply);
+    const response: SyncPieceOutput = { update: toBase64(outcome.update), stateVector: toBase64(outcome.stateVector), piece: outcome.piece };
+    return response;
   });
 
   app.get("/api/pieces", async (request, reply) => {
@@ -79,8 +92,7 @@ export function registerPieceRoutes(app: FastifyInstance, repo: PiecesRepo) {
     const body = updatePieceInput.safeParse(request.body);
     if (!body.success) return invalid(reply, body.error);
 
-    const patch = body.data.content ? { ...body.data, text: docToPlainText(body.data.content) } : body.data;
-    const updated = await repo.update(request.userId, params.data.id, patch);
+    const updated = await repo.update(request.userId, params.data.id, body.data);
     return updated ?? notFound(reply);
   });
 }

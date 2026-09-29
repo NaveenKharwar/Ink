@@ -5,17 +5,17 @@ meta {
 }
 
 post {
-  url: {{baseUrl}}/api/pieces
+  url: {{baseUrl}}/api/pieces/{{pieceId}}/sync
   body: text
   auth: bearer
 }
 
-headers {
-  content-type: application/json
-}
-
 auth:bearer {
   token: {{token}}
+}
+
+headers {
+  content-type: application/json
 }
 
 body:text {

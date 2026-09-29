@@ -1,0 +1,26 @@
+meta {
+  name: Not Yjs data
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/pieces/{{$randomUUID}}/sync
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "update": "/////wkJ",
+    "stateVector": "AA=="
+  }
+}
+
+docs {
+  Valid base64, but not a Yjs update. Expect 400 invalid_request: "The update is not valid."
+}

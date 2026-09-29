@@ -1,100 +1,145 @@
-import type { EditorDoc, EditorNode, PieceLanguage } from "@ink/schemas";
+import { ydocToEditorDoc, type EditorNode, type PieceLanguage } from "@ink/schemas";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { pieces } from "../lib/api";
+import * as Y from "yjs";
+import { bufferKey } from "../lib/buffer";
+import { buffer, sync } from "../lib/localSave";
 
-// "idle" until there is something to save.
-export type SaveState = "idle" | "saving" | "saved";
+// "idle" until there is something to save. "device" = safe on this device, not on the server yet.
+export type SaveState = "idle" | "saving" | "saved" | "device";
+
+// Marks changes that came from the server, so they are not sent back as new writing.
+export const REMOTE = "remote";
 
 const QUIET_MS = 900;
 const RETRY_MS = 4000;
+const RETRY_MAX_MS = 60000;
 
 const hasContent = (nodes: EditorNode[] = []): boolean =>
   nodes.some((n) => (n.type === "text" && !!n.text) || n.type === "horizontalRule" || hasContent(n.content));
 
 /**
- * Saves a piece to the API 900ms after the last change. The piece is created on its
- * first save with a client-made id, so a retried create cannot make a duplicate.
- * (The local IndexedDB buffer comes with autosave; this is the direct path.)
+ * Every change is written to this device straight away (IndexedDB), then sent to the
+ * API 900ms after the last change. If the send fails or the writer is offline, the
+ * writing stays on the device and goes up later: by retry, when the browser is back
+ * online, or on the next visit.
+ *
+ * The piece is a Yjs document, so what another device wrote comes back with every send
+ * and is merged into the open page; neither device overwrites the other.
  */
-export function usePieceSave(pieceId: string) {
+export function usePieceSave(pieceId: string, userId: string, ydoc: Y.Doc) {
+  const key = bufferKey(userId, pieceId);
   const [state, setState] = useState<SaveState>("idle");
-  const latest = useRef<{ doc: EditorDoc | null; language: PieceLanguage; title: string | null }>({
-    doc: null,
-    language: "en",
-    title: null
-  });
-  const created = useRef(false);
-  const inFlight = useRef(false);
-  // Changes not yet sent.
-  const pending = useRef(false);
+  const meta = useRef<{ language: PieceLanguage; title: string | null }>({ language: "en", title: null });
+  const started = useRef(false);
+  const stamp = useRef(0);
+  // What the server is known to have, so a send only carries what is newer.
+  const serverVector = useRef<Uint8Array | null>(null);
+  // Buffer writes are coalesced: while one is running, changes just mark it to run again.
+  const writing = useRef<Promise<void> | null>(null);
+  const dirty = useRef(false);
+  // Counts changes; a send that finishes after a newer change must not claim "Saved".
+  const version = useRef(0);
+  const failures = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  const persist = useCallback(() => {
+    dirty.current = true;
+    if (writing.current) return;
+    writing.current = (async () => {
+      try {
+        while (dirty.current) {
+          dirty.current = false;
+          stamp.current = Math.max(stamp.current + 1, Date.now());
+          await buffer.put({
+            key,
+            userId,
+            id: pieceId,
+            state: Y.encodeStateAsUpdate(ydoc),
+            serverVector: serverVector.current,
+            language: meta.current.language,
+            title: meta.current.title,
+            updatedAt: stamp.current
+          });
+        }
+      } catch {
+        // The device would not take it (private mode, full disk); the send below still tries.
+      } finally {
+        writing.current = null;
+      }
+    })();
+  }, [key, userId, pieceId, ydoc]);
 
   const flush = useCallback(async () => {
     clearTimeout(timer.current);
-    const { doc, language, title } = latest.current;
-    if (!doc || !pending.current || inFlight.current) return;
-    if (!created.current && !hasContent(doc.content)) {
-      pending.current = false;
-      setState("idle");
+    if (!started.current) return;
+    const sentVersion = version.current;
+    while (writing.current) await writing.current;
+    if (!navigator.onLine) {
+      setState("device");
       return;
     }
-    inFlight.current = true;
-    pending.current = false;
-    try {
-      if (created.current) await pieces.update(pieceId, { content: doc, language, title });
-      else await pieces.create({ id: pieceId, content: doc, language, ...(title ? { title } : {}) });
-      created.current = true;
-      inFlight.current = false;
-      // Changes typed while the request was out go in the next one.
-      if (pending.current) void flush();
-      else setState("saved");
-    } catch {
-      inFlight.current = false;
-      pending.current = true;
-      timer.current = setTimeout(() => void flush(), RETRY_MS);
+    const result = await sync.syncPiece(key);
+    if (result.status === "failed") {
+      failures.current++;
+      setState("device");
+      timer.current = setTimeout(() => void flush(), Math.min(RETRY_MS * 2 ** (failures.current - 1), RETRY_MAX_MS));
+      return;
     }
-  }, [pieceId]);
+    failures.current = 0;
+    if (result.serverVector) serverVector.current = result.serverVector;
+    // What another device wrote lands in the open page.
+    if (result.remote) Y.applyUpdate(ydoc, result.remote, REMOTE);
+    if (version.current === sentVersion) setState("saved");
+  }, [key, ydoc]);
 
   const schedule = useCallback(() => {
-    pending.current = true;
+    // An empty new piece is not saved anywhere.
+    if (!started.current && !hasContent(ydocToEditorDoc(ydoc).content)) return;
+    started.current = true;
+    version.current++;
     setState("saving");
+    persist();
     clearTimeout(timer.current);
     timer.current = setTimeout(() => void flush(), QUIET_MS);
-  }, [flush]);
-
-  const changeDoc = useCallback(
-    (doc: EditorDoc) => {
-      latest.current.doc = doc;
-      schedule();
-    },
-    [schedule]
-  );
+  }, [ydoc, persist, flush]);
 
   const changeLanguage = useCallback(
     (language: PieceLanguage) => {
-      latest.current.language = language;
-      if (latest.current.doc) schedule();
+      meta.current.language = language;
+      schedule();
     },
     [schedule]
   );
 
   const changeTitle = useCallback(
     (title: string | null) => {
-      latest.current.title = title;
-      if (latest.current.doc) schedule();
+      meta.current.title = title;
+      schedule();
     },
     [schedule]
   );
 
-  // Save straight away when the tab is hidden or the piece is left.
+  // Writing in the page (anything that is not from the server) is saved.
+  useEffect(() => {
+    const onChange = (_update: Uint8Array, origin: unknown) => {
+      if (origin !== REMOTE) schedule();
+    };
+    ydoc.on("update", onChange);
+    return () => ydoc.off("update", onChange);
+  }, [ydoc, schedule]);
+
+  // Send straight away when the tab is hidden, the piece is left, or the connection returns.
   useEffect(() => {
     const onHide = () => document.hidden && void flush();
+    const onOnline = () => void flush();
     document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("online", onOnline);
     return () => {
       document.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("online", onOnline);
       void flush();
     };
   }, [flush]);
 
-  return { state, changeDoc, changeLanguage, changeTitle };
+  return { state, changeLanguage, changeTitle };
 }

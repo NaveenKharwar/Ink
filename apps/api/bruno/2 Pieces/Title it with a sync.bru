@@ -1,0 +1,26 @@
+meta {
+  name: Title it with a sync
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/api/pieces/{{pieceId}}/sync
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "stateVector": "AusHKekHQg==",
+    "title": "Kettle"
+  }
+}
+
+docs {
+  Title and language travel with a sync. No `update`, so the words are not touched. Send "title": null to clear it.
+}

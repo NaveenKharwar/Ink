@@ -1,0 +1,27 @@
+meta {
+  name: Words cannot be patched
+  type: http
+  seq: 7
+}
+
+patch {
+  url: {{baseUrl}}/api/pieces/{{pieceId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "content": {
+      "type": "doc"
+    }
+  }
+}
+
+docs {
+  The words are only written by syncing. `content` is not a field here, so this is the same 400 as an empty patch.
+}

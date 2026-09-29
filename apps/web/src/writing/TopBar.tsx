@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { CloudIcon, MenuIcon, SparkleIcon } from "./icons";
 import type { SaveState } from "./usePieceSave";
 
+const SAVE_LONG = { idle: "", saving: "Saving…", saved: "Saved just now", device: "Saved on this device" } as const;
+
 type Props = {
   wide: boolean;
   season: string;
@@ -35,7 +37,7 @@ export function TopBar({ wide, season, title, firstLine, onRename, save, showSpa
       <div className="flex shrink-0 items-center gap-2 text-[13px] text-ink-muted">
         {wide && save !== "idle" && (
           <>
-            <span aria-live="polite">{save === "saving" ? "Saving…" : "Saved just now"}</span>
+            <span aria-live="polite">{SAVE_LONG[save]}</span>
             <span className="text-ink">
               <CloudIcon />
             </span>

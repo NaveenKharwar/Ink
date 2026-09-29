@@ -1,0 +1,26 @@
+meta {
+  name: Open it on a new device (fetch only)
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/pieces/{{pieceId}}/sync
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "stateVector": "AA=="
+  }
+}
+
+docs {
+  A device that has nothing sends no `update` and an empty state vector (AA==).
+  The answer's `update` holds the whole piece.
+}

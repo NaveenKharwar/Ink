@@ -9,9 +9,10 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "echo \"(lint not configured yet)\"",
-    "test": "tsx --test src/text.test.ts"
+    "test": "tsx --test src/text.test.ts src/ydoc.test.ts"
   },
   "dependencies": {
+    "yjs": "^13.6.33",
     "zod": "^3.23.0"
   },
   "devDependencies": {

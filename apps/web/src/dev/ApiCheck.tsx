@@ -1,7 +1,9 @@
+import { toBase64 } from "@ink/schemas";
 import { useState } from "react";
+import * as Y from "yjs";
 import { pieces } from "../lib/api";
 
-// Development only: create → list → get → edit one piece as the signed-in writer.
+// Development only: write → list → get → edit one piece as the signed-in writer.
 export function ApiCheck() {
   const [lines, setLines] = useState<string[]>([]);
   const [running, setRunning] = useState(false);
@@ -11,17 +13,23 @@ export function ApiCheck() {
     const log = (line: string) => setLines((prev) => [...prev, line]);
     setLines([]);
     try {
-      const content = {
-        type: "doc" as const,
-        content: [{ type: "paragraph", content: [{ type: "text", text: "The kettle clicks off" }] }]
-      };
-      const created = await pieces.create({ id: crypto.randomUUID(), content });
-      log(`Created ${created.id.slice(0, 8)}`);
+      const id = crypto.randomUUID();
+      const ydoc = new Y.Doc();
+      const paragraph = new Y.XmlElement("paragraph");
+      ydoc.getXmlFragment("default").push([paragraph]);
+      const text = new Y.XmlText();
+      paragraph.push([text]);
+      text.insert(0, "The kettle clicks off");
+      await pieces.sync(id, {
+        update: toBase64(Y.encodeStateAsUpdate(ydoc)),
+        stateVector: toBase64(Y.encodeStateVector(new Y.Doc()))
+      });
+      log(`Wrote ${id.slice(0, 8)}`);
       const list = await pieces.list({ limit: 5 });
       log(`Listed ${list.items.length}`);
-      const got = await pieces.get(created.id);
+      const got = await pieces.get(id);
       log(`Got back: "${got.text}"`);
-      const updated = await pieces.update(created.id, { status: "finished" });
+      const updated = await pieces.update(id, { status: "finished" });
       log(`Edited: ${updated.status}`);
       log("All four calls worked.");
     } catch (err) {

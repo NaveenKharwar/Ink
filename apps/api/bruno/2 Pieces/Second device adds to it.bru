@@ -1,0 +1,27 @@
+meta {
+  name: Second device adds to it
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/pieces/{{pieceId}}/sync
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "update": "AQHqBwCE6QdBFSAoYWRkZWQgb24gdGhlIHBob25lKQA=",
+    "stateVector": "AuoHFekHQg=="
+  }
+}
+
+docs {
+  Device B had the poem and added " (added on the phone)" to the last line. Expect the text to show it.
+  The answer's `update` is empty: B already had everything else.
+}

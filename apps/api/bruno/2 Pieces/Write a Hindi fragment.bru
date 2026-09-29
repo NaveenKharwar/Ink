@@ -1,0 +1,27 @@
+meta {
+  name: Write a Hindi fragment
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/pieces/{{$randomUUID}}/sync
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "update": "AQnsBwAHAQdkZWZhdWx0AwlwYXJhZ3JhcGgHAOwHAAYEAOwHAS3gpKrgpL/gpKTgpL4g4KSV4KWHIOCkueCkvuCkpeCli+CkgiDgpK7gpYfgpIKH7AcBAwloYXJkQnJlYWuH7AcTBgQA7AcUJeCksuCli+CkueClhyDgpJXgpYAg4KSX4KSC4KSnIOCkpeClgCyH7AcAAwlwYXJhZ3JhcGgHAOwHJAYEAOwHJSngpJTgpLAg4KS44KSw4KWN4KSm4KS/4KSv4KWL4KSCIOCkruClh+CkggA=",
+    "stateVector": "AA==",
+    "language": "hi"
+  }
+}
+
+docs {
+  A new piece (random id): two stanzas in Hindi. In `piece.text` the stanzas are separated by a blank line.
+}

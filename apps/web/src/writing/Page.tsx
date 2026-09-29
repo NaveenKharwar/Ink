@@ -1,6 +1,8 @@
 import { docToPlainText, type EditorDoc, type PieceLanguage } from "@ink/schemas";
+import Collaboration from "@tiptap/extension-collaboration";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { useState } from "react";
+import * as Y from "yjs";
 import { countWords } from "../editor/counts";
 import { writingExtensions } from "../editor/extensions";
 import { Toolbar } from "./Toolbar";
@@ -9,6 +11,7 @@ import { usePieceSave } from "./usePieceSave";
 
 type Props = {
   pieceId: string;
+  userId: string;
   wide: boolean;
   showSparkle: boolean;
   onSparkle: () => void;
@@ -16,15 +19,17 @@ type Props = {
 };
 
 // The page panel: where the piece lives, the writing itself, and the tool bar.
-export function Page({ pieceId, wide, showSparkle, onSparkle, onMenu }: Props) {
-  const save = usePieceSave(pieceId);
+export function Page({ pieceId, userId, wide, showSparkle, onSparkle, onMenu }: Props) {
+  // The piece is a Yjs document: it merges with what other devices write.
+  const [ydoc] = useState(() => new Y.Doc());
+  const save = usePieceSave(pieceId, userId, ydoc);
   const [words, setWords] = useState(0);
   const [language, setLanguage] = useState<PieceLanguage>("en");
   const [title, setTitle] = useState<string | null>(null);
   const [firstLine, setFirstLine] = useState("");
 
   const editor = useEditor({
-    extensions: writingExtensions,
+    extensions: [...writingExtensions, Collaboration.configure({ document: ydoc })],
     autofocus: "end",
     editorProps: { attributes: { "aria-label": "Your writing", spellcheck: "false" } },
     onUpdate: ({ editor: e }) => {
@@ -32,7 +37,6 @@ export function Page({ pieceId, wide, showSparkle, onSparkle, onMenu }: Props) {
       const text = docToPlainText(doc);
       setWords(countWords(text));
       setFirstLine(openingLine(text));
-      save.changeDoc(doc);
     }
   });
 

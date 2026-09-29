@@ -55,22 +55,10 @@ export const editorDoc: z.ZodType<EditorDoc, z.ZodTypeDef, unknown> = z
   .refine((value) => depthOf(value) <= MAX_DEPTH, { message: `Nested deeper than ${MAX_DEPTH} levels` })
   .pipe(z.object({ type: z.literal("doc"), content: z.array(editorNode).optional() }));
 
-export const createPieceInput = z.object({
-  // Set by the client so a piece written offline keeps its id when it syncs.
-  id: z.string().uuid().optional(),
-  title: z.string().trim().max(200).optional(),
-  content: editorDoc,
-  status: pieceStatus.default("draft"),
-  language: pieceLanguage.optional(),
-  isFragment: z.boolean().default(false),
-  includeInMemory: z.boolean().default(true)
-});
-export type CreatePieceInput = z.infer<typeof createPieceInput>;
-
+// Everything about a piece except its words, which are written by syncing (see sync.ts).
 export const updatePieceInput = z
   .object({
     title: z.string().trim().max(200).nullable(),
-    content: editorDoc,
     status: pieceStatus,
     language: pieceLanguage.nullable(),
     isFragment: z.boolean(),
