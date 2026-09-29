@@ -48,9 +48,7 @@ export function registerPieceRoutes(app: FastifyInstance, repo: PiecesRepo) {
     try {
       outcome = await repo.sync(request.userId, params.data.id, {
         update: body.data.update ? fromBase64(body.data.update) : null,
-        stateVector: fromBase64(body.data.stateVector),
-        title: body.data.title,
-        language: body.data.language
+        stateVector: fromBase64(body.data.stateVector)
       });
     } catch (err) {
       if (err instanceof InvalidUpdateError) {

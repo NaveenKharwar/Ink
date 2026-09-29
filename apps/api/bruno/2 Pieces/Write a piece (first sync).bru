@@ -16,15 +16,14 @@ auth:bearer {
 
 body:json {
   {
-    "update": "AQnpBwAHAQdkZWZhdWx0AwlwYXJhZ3JhcGgHAOkHAAYEAOkHARVUaGUga2V0dGxlIGNsaWNrcyBvZmaH6QcBAwloYXJkQnJlYWuH6QcXBgQA6QcYGmFuZCBmb3IgYSBzZWNvbmQgdGhlIGhvdXNlh+kHGAMJaGFyZEJyZWFrh+kHMwYEAOkHNA1yZW1lbWJlcnMgeW91AA==",
-    "stateVector": "AA==",
-    "language": "en"
+    "update": "AQrpBwAHAQdkZWZhdWx0AwlwYXJhZ3JhcGgHAOkHAAYEAOkHARVUaGUga2V0dGxlIGNsaWNrcyBvZmaH6QcBAwloYXJkQnJlYWuH6QcXBgQA6QcYGmFuZCBmb3IgYSBzZWNvbmQgdGhlIGhvdXNlh+kHGAMJaGFyZEJyZWFrh+kHMwYEAOkHNA1yZW1lbWJlcnMgeW91KAEEbWV0YQhsYW5ndWFnZQF3AmVuAA==",
+    "stateVector": "AA=="
   }
 }
 
 docs {
   The piece is created by its first sync, under the id in {{pieceId}}.
-  Look at `piece.text`: the API read the words out of the Yjs data.
+  Look at `piece.text` (the API read the words out of the Yjs data) and `piece.language` ("en": the language is in the document too).
   `update` is what the server has that this device does not (empty here).
   To start clean, change pieceId in collection.bru.
   (These requests carry ready-made Yjs data, made by a script, as if a device typed it.)

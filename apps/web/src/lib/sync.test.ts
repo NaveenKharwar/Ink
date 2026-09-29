@@ -23,7 +23,7 @@ function piece(text = "") {
 const textOf = (ydoc: Y.Doc) => docToPlainText(ydocToEditorDoc(ydoc));
 
 function record(userId: string, ydoc: Y.Doc, updatedAt = 1, serverVector: Uint8Array | null = null, id = ID): BufferedPiece {
-  return { key: bufferKey(userId, id), userId, id, state: Y.encodeStateAsUpdate(ydoc), serverVector, language: "en", title: null, updatedAt };
+  return { key: bufferKey(userId, id), userId, id, state: Y.encodeStateAsUpdate(ydoc), serverVector, updatedAt };
 }
 
 // A server that merges like the real one, and remembers what it was sent.

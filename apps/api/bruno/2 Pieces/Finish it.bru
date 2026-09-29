@@ -21,6 +21,6 @@ body:json {
 }
 
 docs {
-  PATCH changes everything except the words: title, status, language, isFragment, includeInMemory.
-  Only the fields you send change. updatedAt moves forward.
+  PATCH changes only the flags the server keeps: status, isFragment, includeInMemory.
+  The words, title and language are in the Yjs document and are written by syncing. Only the fields you send change. updatedAt moves forward.
 }

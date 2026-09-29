@@ -3,12 +3,7 @@ import type pg from "pg";
 import { mergeYdoc } from "./merge.js";
 
 export type PiecePatch = UpdatePieceInput;
-export type SyncRequest = {
-  update: Uint8Array | null;
-  stateVector: Uint8Array;
-  title?: string | null;
-  language?: Piece["language"];
-};
+export type SyncRequest = { update: Uint8Array | null; stateVector: Uint8Array };
 export type SyncOutcome = { piece: PieceSummary; update: Uint8Array; stateVector: Uint8Array };
 export type ListPage = { items: PieceSummary[]; next: { updatedAt: string; id: string } | null };
 
@@ -61,9 +56,7 @@ function toPiece(row: PieceRow): Piece {
 
 // Patch field → column. Only these can be written by an update.
 const PATCH_COLUMNS = {
-  title: "title",
   status: "status",
-  language: "language",
   isFragment: "is_fragment",
   includeInMemory: "include_in_memory"
 } as const satisfies Record<keyof PiecePatch, string>;
@@ -104,9 +97,10 @@ export function pgPiecesRepo(db: pg.Pool): PiecesRepo {
           set("ydoc", Buffer.from(merged.state));
           set("content", JSON.stringify(merged.content), "::jsonb");
           set("text", merged.text);
+          // Title and language are part of the document; these columns are copies.
+          set("title", merged.meta.title);
+          set("language", merged.meta.language);
         }
-        if (request.title !== undefined) set("title", request.title || null);
-        if (request.language !== undefined) set("language", request.language);
         if (sets.length) sets.push("updated_at = now()");
 
         const { rows: out } = sets.length
@@ -159,7 +153,7 @@ export function pgPiecesRepo(db: pg.Pool): PiecesRepo {
       for (const [key, column] of Object.entries(PATCH_COLUMNS) as [keyof PiecePatch, string][]) {
         const value = patch[key];
         if (value === undefined) continue;
-        values.push(key === "title" && value === "" ? null : value);
+        values.push(value);
         sets.push(`${column} = $${values.length}`);
       }
       const { rows } = await db.query<PieceRow>(

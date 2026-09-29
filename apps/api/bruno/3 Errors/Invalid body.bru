@@ -16,11 +16,10 @@ auth:bearer {
 
 body:json {
   {
-    "title": "no state vector",
-    "language": "klingon"
+    "update": 123
   }
 }
 
 docs {
-  Expect 400 invalid_request with an `issues` list: stateVector is required and language must be one of hi, hi-Latn, en, mixed.
+  Expect 400 invalid_request with an `issues` list: stateVector is required and update must be text (base64).
 }

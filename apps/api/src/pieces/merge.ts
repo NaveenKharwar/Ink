@@ -1,4 +1,4 @@
-import { docToPlainText, ydocToEditorDoc, type EditorDoc } from "@ink/schemas";
+import { docToPlainText, ydocToEditorDoc, ydocToMeta, type EditorDoc, type PieceMeta } from "@ink/schemas";
 import * as Y from "yjs";
 
 /** The bytes the client sent are not valid Yjs data. */
@@ -11,9 +11,10 @@ export type Merged = {
   diff: Uint8Array;
   /** What the server has now. */
   stateVector: Uint8Array;
-  /** Derived copies, kept next to the document for reading and search. */
+  /** Derived copies (words, title, language), kept next to the document for reading and search. */
   content: EditorDoc;
   text: string;
+  meta: PieceMeta;
 };
 
 /**
@@ -36,7 +37,8 @@ export function mergeYdoc(stored: Uint8Array | null, incoming: Uint8Array | null
     diff,
     stateVector: Y.encodeStateVector(doc),
     content,
-    text: docToPlainText(content)
+    text: docToPlainText(content),
+    meta: ydocToMeta(doc)
   };
   doc.destroy();
   return merged;

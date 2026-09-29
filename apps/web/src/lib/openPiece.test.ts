@@ -18,6 +18,11 @@ function piece(text: string) {
   t.insert(0, text);
   return { ydoc, t };
 }
+const metaOf = (bytes: Uint8Array) => {
+  const d = new Y.Doc();
+  Y.applyUpdate(d, bytes);
+  return d.getMap("meta").toJSON();
+};
 const textOf = (bytes: Uint8Array) => {
   const d = new Y.Doc();
   Y.applyUpdate(d, bytes);
@@ -35,19 +40,21 @@ function server(source: string | Y.Doc | null, fail?: "offline" | "404") {
       return {
         update: toBase64(Y.encodeStateAsUpdate(doc, fromBase64(input.stateVector))),
         stateVector: toBase64(Y.encodeStateVector(doc)),
-        piece: { title: "Kettle", language: "hi" } as never
+        piece: {} as never
       };
     }
   };
 }
 
-test("a piece on the server opens with its title and language", async () => {
-  const r = await openPiece(openBuffer(`open-${n++}`), server("The kettle clicks off"), "u1", ID);
+test("a piece on the server opens with its title and language, which are in the document", async () => {
+  const onServer = piece("The kettle clicks off").ydoc;
+  onServer.getMap("meta").set("title", "Kettle");
+  onServer.getMap("meta").set("language", "hi");
+  const r = await openPiece(openBuffer(`open-${n++}`), server(onServer), "u1", ID);
   assert.equal(r.status, "ok");
   if (r.status !== "ok") return;
   assert.equal(textOf(r.piece.state), "The kettle clicks off");
-  assert.equal(r.piece.title, "Kettle");
-  assert.equal(r.piece.language, "hi");
+  assert.deepEqual(metaOf(r.piece.state), { title: "Kettle", language: "hi" });
   assert.ok(r.piece.serverVector);
 });
 
@@ -59,22 +66,24 @@ test("writing still waiting on this device is merged with the server's copy", as
   Y.applyUpdate(mine, Y.encodeStateAsUpdate(onServer.ydoc));
   const t = (mine.getXmlFragment("default").get(0) as Y.XmlElement).get(0) as Y.XmlText;
   t.insert(t.length, " and for a second");
+  mine.getMap("meta").set("title", "Mine");
   await buffer.put({
     key: bufferKey("u1", ID), userId: "u1", id: ID, state: Y.encodeStateAsUpdate(mine),
-    serverVector: null, language: "en", title: "Mine", updatedAt: 5
+    serverVector: null, updatedAt: 5
   });
   const r = await openPiece(buffer, server(onServer.ydoc), "u1", ID);
   assert.equal(r.status, "ok");
   if (r.status !== "ok") return;
   assert.equal(textOf(r.piece.state), "The kettle clicks off and for a second");
-  assert.equal(r.piece.title, "Mine");
+  // A rename made here and not yet sent is kept.
+  assert.equal(metaOf(r.piece.state).title, "Mine");
 });
 
 test("offline, the copy on this device opens the piece", async () => {
   const buffer = openBuffer(`open-${n++}`);
   await buffer.put({
     key: bufferKey("u1", ID), userId: "u1", id: ID, state: Y.encodeStateAsUpdate(piece("only here").ydoc),
-    serverVector: null, language: "en", title: null, updatedAt: 1
+    serverVector: null, updatedAt: 1
   });
   const r = await openPiece(buffer, server(null, "offline"), "u1", ID);
   assert.equal(r.status, "ok");
@@ -91,7 +100,7 @@ test("another writer's device copy is never used", async () => {
   const buffer = openBuffer(`open-${n++}`);
   await buffer.put({
     key: bufferKey("u2", ID), userId: "u2", id: ID, state: Y.encodeStateAsUpdate(piece("theirs").ydoc),
-    serverVector: null, language: "en", title: null, updatedAt: 1
+    serverVector: null, updatedAt: 1
   });
   assert.deepEqual(await openPiece(buffer, server(null), "u1", ID), { status: "missing" });
 });

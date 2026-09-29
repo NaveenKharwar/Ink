@@ -1,8 +1,14 @@
 import * as Y from "yjs";
-import type { EditorDoc, EditorMark, EditorNode } from "./piece.js";
+import { pieceLanguage, type EditorDoc, type EditorMark, type EditorNode, type PieceLanguage } from "./piece.js";
 
 // The name the editor's Yjs binding stores the document under.
 export const EDITOR_FIELD = "default";
+// A piece's settings live in the same Yjs document, in a map of their own next to the text,
+// so they merge across devices and work offline just like the words do.
+export const META_FIELD = "meta";
+export const TITLE_MAX = 200;
+
+export type PieceMeta = { title: string | null; language: PieceLanguage | null };
 
 function textNodes(text: Y.XmlText): EditorNode[] {
   const nodes: EditorNode[] = [];
@@ -39,4 +45,18 @@ export function ydocToEditorDoc(ydoc: Y.Doc): EditorDoc {
     .toArray()
     .flatMap((child) => (child instanceof Y.XmlElement ? [elementNode(child)] : []));
   return content.length ? { type: "doc", content } : { type: "doc" };
+}
+
+/**
+ * The piece's settings from its Yjs document. Anything missing or not valid reads as
+ * empty, so a bad client cannot put nonsense in the database columns.
+ */
+export function ydocToMeta(ydoc: Y.Doc): PieceMeta {
+  const meta = ydoc.getMap(META_FIELD);
+  const title = meta.get("title");
+  const language = pieceLanguage.safeParse(meta.get("language"));
+  return {
+    title: typeof title === "string" && title.trim() ? title.trim().slice(0, TITLE_MAX) : null,
+    language: language.success ? language.data : null
+  };
 }

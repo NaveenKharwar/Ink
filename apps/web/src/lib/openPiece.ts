@@ -1,14 +1,13 @@
-import { fromBase64, toBase64, type PieceLanguage, type SyncPieceInput, type SyncPieceOutput } from "@ink/schemas";
+import { fromBase64, toBase64, type SyncPieceInput, type SyncPieceOutput } from "@ink/schemas";
 import * as Y from "yjs";
 import { bufferKey, type Buffer } from "./buffer";
 
-// What the page needs to show a piece that already exists.
+// What the page needs to show a piece that already exists. Title and language are in the
+// document itself.
 export type OpenedPiece = {
   state: Uint8Array;
   // What the server was known to have, so the next send only carries what is newer.
   serverVector: Uint8Array | null;
-  title: string | null;
-  language: PieceLanguage;
 };
 
 export type OpenResult = { status: "ok"; piece: OpenedPiece } | { status: "missing" } | { status: "error" };
@@ -53,12 +52,6 @@ export async function openPiece(
 
   return {
     status: "ok",
-    piece: {
-      state,
-      serverVector: server ? fromBase64(server.stateVector) : (local?.serverVector ?? null),
-      // Unsent changes on this device are newer than what the server holds.
-      title: local ? local.title : (server?.piece.title ?? null),
-      language: local ? local.language : (server?.piece.language ?? "en")
-    }
+    piece: { state, serverVector: server ? fromBase64(server.stateVector) : (local?.serverVector ?? null) }
   };
 }

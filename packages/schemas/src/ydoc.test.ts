@@ -3,7 +3,7 @@ import { test } from "node:test";
 import * as Y from "yjs";
 import { docToPlainText } from "./text.js";
 import { fromBase64, toBase64 } from "./bytes.js";
-import { ydocToEditorDoc } from "./ydoc.js";
+import { ydocToEditorDoc, ydocToMeta } from "./ydoc.js";
 
 // Builds a document the way the editor's Yjs binding stores it.
 function build() {
@@ -59,4 +59,36 @@ test("the result is the same after the bytes travel and merge", () => {
   const copy = new Y.Doc();
   Y.applyUpdate(copy, fromBase64(toBase64(Y.encodeStateAsUpdate(build()))));
   assert.deepEqual(ydocToEditorDoc(copy), ydocToEditorDoc(build()));
+});
+
+test("title and language are read from the meta map", () => {
+  const ydoc = new Y.Doc();
+  const meta = ydoc.getMap("meta");
+  meta.set("title", "  Kettle  ");
+  meta.set("language", "hi");
+  assert.deepEqual(ydocToMeta(ydoc), { title: "Kettle", language: "hi" });
+});
+
+test("missing or invalid settings read as empty", () => {
+  assert.deepEqual(ydocToMeta(new Y.Doc()), { title: null, language: null });
+  const ydoc = new Y.Doc();
+  const meta = ydoc.getMap("meta");
+  meta.set("title", 42);
+  meta.set("language", "klingon");
+  assert.deepEqual(ydocToMeta(ydoc), { title: null, language: null });
+  meta.set("title", "x".repeat(500));
+  assert.equal(ydocToMeta(ydoc).title?.length, 200);
+});
+
+test("two devices renaming: each key merges on its own, the later edit of a key wins", () => {
+  const a = new Y.Doc();
+  a.getMap("meta").set("language", "en");
+  const b = new Y.Doc();
+  Y.applyUpdate(b, Y.encodeStateAsUpdate(a));
+  a.getMap("meta").set("title", "From the laptop");
+  b.getMap("meta").set("language", "hi");
+  Y.applyUpdate(a, Y.encodeStateAsUpdate(b));
+  Y.applyUpdate(b, Y.encodeStateAsUpdate(a));
+  assert.deepEqual(ydocToMeta(a), ydocToMeta(b));
+  assert.deepEqual(ydocToMeta(a), { title: "From the laptop", language: "hi" });
 });

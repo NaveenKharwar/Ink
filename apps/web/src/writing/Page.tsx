@@ -1,4 +1,4 @@
-import { docToPlainText, type EditorDoc, type PieceLanguage } from "@ink/schemas";
+import { docToPlainText, META_FIELD, type EditorDoc } from "@ink/schemas";
 import Collaboration from "@tiptap/extension-collaboration";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { useCallback, useState } from "react";
@@ -9,6 +9,7 @@ import type { OpenedPiece } from "../lib/openPiece";
 import { pieceAddress } from "../lib/route";
 import { Toolbar } from "./Toolbar";
 import { TopBar } from "./TopBar";
+import { usePieceMeta } from "./usePieceMeta";
 import { usePieceSave } from "./usePieceSave";
 
 type Props = {
@@ -29,14 +30,15 @@ export function Page({ pieceId, userId, opened, wide, showSparkle, onSparkle, on
   const [ydoc] = useState(() => {
     const doc = new Y.Doc();
     if (opened) Y.applyUpdate(doc, opened.state);
+    // A new piece starts in English until the writer says otherwise.
+    else doc.getMap(META_FIELD).set("language", "en");
     return doc;
   });
   // A new piece gets its address when it first has words; reloading then opens it.
   const onStart = useCallback(() => window.history.replaceState(null, "", pieceAddress(pieceId)), [pieceId]);
   const save = usePieceSave(pieceId, userId, ydoc, { initial: opened ?? undefined, onStart });
   const [words, setWords] = useState(0);
-  const [language, setLanguage] = useState<PieceLanguage>(opened?.language ?? "en");
-  const [title, setTitle] = useState<string | null>(opened?.title ?? null);
+  const { title, language, setTitle, setLanguage } = usePieceMeta(ydoc);
   const [firstLine, setFirstLine] = useState("");
 
   const refresh = (doc: EditorDoc) => {
@@ -60,10 +62,7 @@ export function Page({ pieceId, userId, opened, wide, showSparkle, onSparkle, on
         season="Now"
         title={title}
         firstLine={firstLine}
-        onRename={(next) => {
-          setTitle(next);
-          save.changeTitle(next);
-        }}
+        onRename={setTitle}
         save={save.state}
         showSparkle={showSparkle}
         onSparkle={onSparkle}
@@ -79,10 +78,7 @@ export function Page({ pieceId, userId, opened, wide, showSparkle, onSparkle, on
         wide={wide}
         words={words}
         language={language}
-        onLanguage={(next) => {
-          setLanguage(next);
-          save.changeLanguage(next);
-        }}
+        onLanguage={setLanguage}
         save={save.state}
       />
     </>

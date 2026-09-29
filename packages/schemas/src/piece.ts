@@ -55,12 +55,11 @@ export const editorDoc: z.ZodType<EditorDoc, z.ZodTypeDef, unknown> = z
   .refine((value) => depthOf(value) <= MAX_DEPTH, { message: `Nested deeper than ${MAX_DEPTH} levels` })
   .pipe(z.object({ type: z.literal("doc"), content: z.array(editorNode).optional() }));
 
-// Everything about a piece except its words, which are written by syncing (see sync.ts).
+// The flags the server keeps. The words, the title and the language are part of the piece's
+// Yjs document and are written by syncing (see sync.ts), so they merge across devices.
 export const updatePieceInput = z
   .object({
-    title: z.string().trim().max(200).nullable(),
     status: pieceStatus,
-    language: pieceLanguage.nullable(),
     isFragment: z.boolean(),
     includeInMemory: z.boolean()
   })

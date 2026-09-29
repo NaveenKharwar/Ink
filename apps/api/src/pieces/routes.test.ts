@@ -40,10 +40,10 @@ function memoryRepo(): PiecesRepo {
       }
       if (!row || row.userId !== userId) return null;
       const merged = mergeYdoc(row.ydoc, request.update, request.stateVector);
-      if (request.update) Object.assign(row, { ydoc: merged.state, content: merged.content, text: merged.text });
-      if (request.title !== undefined) row.title = request.title || null;
-      if (request.language !== undefined) row.language = request.language;
-      if (request.update || request.title !== undefined || request.language !== undefined) row.updatedAt = tick();
+      if (request.update) {
+        Object.assign(row, { ydoc: merged.state, content: merged.content, text: merged.text, ...merged.meta });
+        row.updatedAt = tick();
+      }
       return { piece: summary(strip(row)), update: merged.diff, stateVector: merged.stateVector };
     },
     async list(userId, { limit, after }) {
@@ -90,6 +90,14 @@ function device() {
           p.push([t]);
           t.insert(0, line);
         });
+      }
+    },
+    // The piece's settings live in the document too.
+    setMeta(values: { title?: string | null; language?: string }) {
+      const meta = ydoc.getMap("meta");
+      for (const [key, value] of Object.entries(values)) {
+        if (value === null) meta.delete(key);
+        else meta.set(key, value);
       }
     },
     // Adds a line at the end of the first stanza.
@@ -143,7 +151,8 @@ test("the first sync creates the piece and derives plain text", async () => {
   const id = randomUUID();
   const d = device();
   d.write(["पिता के हाथों में", "लोहे की गंध थी,"], ["और सर्दियों में"]);
-  const { res } = await syncFrom(ctx, ASHA, id, d, null, { language: "hi" });
+  d.setMeta({ language: "hi" });
+  const { res } = await syncFrom(ctx, ASHA, id, d, null);
   assert.equal(res.statusCode, 200);
   const { piece } = res.json();
   assert.equal(piece.id, id);
@@ -244,26 +253,68 @@ test("bytes that are not a Yjs update are a 400", async () => {
   assert.equal(badId.statusCode, 404);
 });
 
-test("title and language travel with a sync; patch changes the rest and cannot write the words", async () => {
+test("title and language are part of the document; patch changes only the flags", async () => {
   const ctx = await setup();
   const id = randomUUID();
   const d = device();
   d.write(["The kettle clicks off"]);
-  const { known } = await syncFrom(ctx, ASHA, id, d, null, { title: "Kettle" });
-  const cleared = await syncFrom(ctx, ASHA, id, d, known, { title: null });
+  d.setMeta({ title: "Kettle", language: "en" });
+  const { known } = await syncFrom(ctx, ASHA, id, d, null);
+  const got = await ctx.app.inject({ method: "GET", url: `/api/pieces/${id}`, headers: ctx.as(ASHA) });
+  assert.equal(got.json().title, "Kettle");
+  assert.equal(got.json().language, "en");
+
+  d.setMeta({ title: null, language: "hi" });
+  const cleared = await syncFrom(ctx, ASHA, id, d, known);
   assert.equal(cleared.body.piece.title, null);
+  assert.equal(cleared.body.piece.language, "hi");
 
   const patched = await ctx.app.inject({ method: "PATCH", url: `/api/pieces/${id}`, headers: ctx.as(ASHA), payload: { status: "finished", isFragment: true } });
   assert.equal(patched.statusCode, 200);
   assert.equal(patched.json().status, "finished");
   assert.equal(patched.json().text, "The kettle clicks off");
 
-  const words = await ctx.app.inject({ method: "PATCH", url: `/api/pieces/${id}`, headers: ctx.as(ASHA), payload: { content: { type: "doc" } } });
-  assert.equal(words.statusCode, 400);
-  const empty = await ctx.app.inject({ method: "PATCH", url: `/api/pieces/${id}`, headers: ctx.as(ASHA), payload: {} });
-  assert.equal(empty.statusCode, 400);
+  // The words, the title and the language are not patchable: nothing is left to update.
+  for (const payload of [{ content: { type: "doc" } }, { title: "Sneaky" }, { language: "hi" }, {}]) {
+    const res = await ctx.app.inject({ method: "PATCH", url: `/api/pieces/${id}`, headers: ctx.as(ASHA), payload });
+    assert.equal(res.statusCode, 400);
+  }
   const created = await ctx.app.inject({ method: "POST", url: "/api/pieces", headers: ctx.as(ASHA), payload: {} });
   assert.equal(created.statusCode, 404);
+});
+
+test("two devices renaming the same piece: each setting merges on its own", async () => {
+  const ctx = await setup();
+  const id = randomUUID();
+  const laptop = device();
+  laptop.write(["one stanza"]);
+  laptop.setMeta({ language: "en" });
+  let laptopKnown = (await syncFrom(ctx, ASHA, id, laptop, null)).known;
+
+  const phone = device();
+  const opened = await ctx.app.inject({ method: "POST", url: `/api/pieces/${id}/sync`, headers: ctx.as(ASHA), payload: { stateVector: toBase64(Y.encodeStateVector(phone.ydoc)) } });
+  Y.applyUpdate(phone.ydoc, fromBase64(opened.json().update));
+  const phoneKnown = fromBase64(opened.json().stateVector);
+
+  laptop.setMeta({ title: "From the laptop" });
+  phone.setMeta({ language: "hi" });
+  await syncFrom(ctx, ASHA, id, phone, phoneKnown);
+  laptopKnown = (await syncFrom(ctx, ASHA, id, laptop, laptopKnown)).known;
+
+  const stored = (await ctx.app.inject({ method: "GET", url: `/api/pieces/${id}`, headers: ctx.as(ASHA) })).json();
+  assert.equal(stored.title, "From the laptop");
+  assert.equal(stored.language, "hi");
+});
+
+test("a nonsense language or an overlong title in the document never reaches the columns", async () => {
+  const ctx = await setup();
+  const id = randomUUID();
+  const d = device();
+  d.write(["x"]);
+  d.setMeta({ language: "klingon", title: "y".repeat(500) });
+  const { body } = await syncFrom(ctx, ASHA, id, d, null);
+  assert.equal(body.piece.language, null);
+  assert.equal(body.piece.title.length, 200);
 });
 
 test("list is newest first and pages with a cursor", async () => {

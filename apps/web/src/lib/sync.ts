@@ -24,9 +24,7 @@ export function createSync(buffer: Buffer, api: SyncApi) {
     const news = Y.diffUpdate(piece.state, piece.serverVector ?? NOTHING);
     const out = await api.sync(piece.id, {
       ...(isEmpty(news) ? {} : { update: toBase64(news) }),
-      stateVector: toBase64(Y.encodeStateVectorFromUpdate(piece.state)),
-      title: piece.title,
-      language: piece.language
+      stateVector: toBase64(Y.encodeStateVectorFromUpdate(piece.state))
     });
     return { remote: fromBase64(out.update), serverVector: fromBase64(out.stateVector) };
   }

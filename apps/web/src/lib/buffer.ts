@@ -1,4 +1,3 @@
-import type { PieceLanguage } from "@ink/schemas";
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 
 // A piece as it sits on this device, waiting to reach the server.
@@ -7,12 +6,10 @@ export type BufferedPiece = {
   key: string; // `${userId}:${id}`, so one writer never sees another's leftovers
   userId: string;
   id: string;
-  // The whole piece as Yjs data, so a record is complete on its own.
+  // The whole piece as Yjs data (words, title, language), so a record is complete on its own.
   state: Uint8Array;
   // What the server was known to have; the next send only needs what is newer. Null = never sent.
   serverVector: Uint8Array | null;
-  language: PieceLanguage;
-  title: string | null;
   updatedAt: number; // ms; changes on every write, so a save that raced an edit can tell
 };
 

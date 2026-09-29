@@ -64,6 +64,7 @@ export const openApiDocument = {
         description:
           "The only way to write the words. The piece is created by its first sync, under an id the client makes. " +
           "`update` is Yjs data (base64) with the client's new changes; `stateVector` says what the client already has. " +
+          "Title and language are in the Yjs data too (its `meta` map), so they merge like the words. " +
           "The answer holds what the client is missing. Merging is safe to repeat, so a retry changes nothing.",
         parameters: [idParam],
         requestBody: { required: true, content: { "application/json": { schema: toSchema(syncPieceInput) } } },
@@ -83,7 +84,7 @@ export const openApiDocument = {
       },
       patch: {
         summary: "Update a piece",
-        description: "Send only the fields that change. The words are not written here (see sync). `title: null` clears the title.",
+        description: "Send only the fields that change. The words, title and language are not written here (see sync).",
         parameters: [idParam],
         requestBody: { required: true, content: { "application/json": { schema: toSchema(updatePieceInput) } } },
         responses: {

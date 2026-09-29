@@ -1,0 +1,27 @@
+meta {
+  name: Rename it (title is in the document)
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/api/pieces/{{pieceId}}/sync
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "update": "AQHtBwAoAQRtZXRhBXRpdGxlAXcGS2V0dGxlAA==",
+    "stateVector": "BO0HAesHKeoHFekHQw=="
+  }
+}
+
+docs {
+  The title is part of the piece's Yjs data, not a separate field. This update only sets meta.title.
+  Expect `piece.title` to be "Kettle" and the words untouched.
+}

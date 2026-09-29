@@ -1,4 +1,4 @@
-import { ydocToEditorDoc, type EditorNode, type PieceLanguage } from "@ink/schemas";
+import { ydocToEditorDoc, type EditorNode } from "@ink/schemas";
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as Y from "yjs";
 import { bufferKey } from "../lib/buffer";
@@ -28,7 +28,7 @@ const hasContent = (nodes: EditorNode[] = []): boolean =>
  */
 export type SaveOptions = {
   /** A piece that already exists: its meta and what the server is known to have. */
-  initial?: { serverVector: Uint8Array | null; language: PieceLanguage; title: string | null };
+  initial?: { serverVector: Uint8Array | null };
   /** Called once, when the piece first has something worth saving. */
   onStart?: () => void;
 };
@@ -36,10 +36,6 @@ export type SaveOptions = {
 export function usePieceSave(pieceId: string, userId: string, ydoc: Y.Doc, { initial, onStart }: SaveOptions = {}) {
   const key = bufferKey(userId, pieceId);
   const [state, setState] = useState<SaveState>("idle");
-  const meta = useRef<{ language: PieceLanguage; title: string | null }>({
-    language: initial?.language ?? "en",
-    title: initial?.title ?? null
-  });
   // An opened piece is already worth saving; a new one is not until it has words.
   const started = useRef(!!initial);
   const stamp = useRef(0);
@@ -67,8 +63,6 @@ export function usePieceSave(pieceId: string, userId: string, ydoc: Y.Doc, { ini
             id: pieceId,
             state: Y.encodeStateAsUpdate(ydoc),
             serverVector: serverVector.current,
-            language: meta.current.language,
-            title: meta.current.title,
             updatedAt: stamp.current
           });
         }
@@ -119,23 +113,7 @@ export function usePieceSave(pieceId: string, userId: string, ydoc: Y.Doc, { ini
     timer.current = setTimeout(() => void flush(), QUIET_MS);
   }, [ydoc, persist, flush, onStart]);
 
-  const changeLanguage = useCallback(
-    (language: PieceLanguage) => {
-      meta.current.language = language;
-      schedule();
-    },
-    [schedule]
-  );
-
-  const changeTitle = useCallback(
-    (title: string | null) => {
-      meta.current.title = title;
-      schedule();
-    },
-    [schedule]
-  );
-
-  // Writing in the page (anything that is not from the server) is saved.
+  // Writing in the page, and changes to its settings (anything that is not from the server), are saved.
   useEffect(() => {
     const onChange = (_update: Uint8Array, origin: unknown) => {
       if (origin !== REMOTE) schedule();
@@ -157,5 +135,5 @@ export function usePieceSave(pieceId: string, userId: string, ydoc: Y.Doc, { ini
     };
   }, [flush]);
 
-  return { state, changeLanguage, changeTitle };
+  return { state };
 }
