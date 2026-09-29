@@ -88,9 +88,11 @@ export function Signature({
     };
   }, [id, name, hindi, align, size]);
 
+  // Separate keys: React must not reuse the drawing's box for the Kalam name, or the drawing's
+  // cleanup (which empties its box) would wipe out the name just rendered there.
   if (hindi) {
     return (
-      <div className={`flex pr-2 ${align === "right" ? "justify-end" : "justify-start"}`}>
+      <div key="hand" className={`flex pr-2 ${align === "right" ? "justify-end" : "justify-start"}`}>
         <div
           style={{ fontSize: Math.round(size * 0.85), lineHeight: `${Math.round(size * 1.5)}px` }}
           className={`signature-in max-w-full -rotate-3 truncate py-2 font-hand ${align === "right" ? "origin-right" : "origin-left"} ${colour}`}
@@ -102,6 +104,7 @@ export function Signature({
   }
   return (
     <div
+      key="stroke"
       id={id}
       ref={box}
       aria-label={name}
