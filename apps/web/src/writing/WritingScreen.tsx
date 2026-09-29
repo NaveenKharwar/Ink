@@ -17,7 +17,7 @@ const PHONE_OFFSET: Record<PhonePos, string> = {
 
 const typingInPage = () => !!document.activeElement?.closest(".ProseMirror");
 
-export function WritingScreen() {
+export function WritingScreen({ email }: { email: string }) {
   const wide = useMediaQuery("(min-width: 1024px)");
   const [pieceId, setPieceId] = useState(() => crypto.randomUUID());
   const [collapsed, setCollapsed] = useState(false);
@@ -31,10 +31,10 @@ export function WritingScreen() {
   };
   const signOut = () => void supabase.auth.signOut();
 
-  // ⌘B opens and closes the menu; inside the page it stays Bold.
+  // ⌘\ opens and closes the menu from anywhere. ⌘B is always Bold.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "b" && wide && !typingInPage()) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "\\" && wide) {
         e.preventDefault();
         setCollapsed((c) => !c);
       }
@@ -58,9 +58,9 @@ export function WritingScreen() {
     return (
       <div className="fixed inset-0 box-border flex gap-2 bg-ground p-3">
         {collapsed ? (
-          <Rail onExpand={() => setCollapsed(false)} onWrite={newPiece} />
+          <Rail email={email} onExpand={() => setCollapsed(false)} onWrite={newPiece} onSignOut={signOut} />
         ) : (
-          <Sidebar onCollapse={() => setCollapsed(true)} onWrite={newPiece} onSignOut={signOut} />
+          <Sidebar email={email} onCollapse={() => setCollapsed(true)} onWrite={newPiece} onSignOut={signOut} />
         )}
         <main className="relative flex min-w-0 grow flex-col overflow-hidden rounded-panel border border-line bg-surface">
           {page}
@@ -91,7 +91,7 @@ export function WritingScreen() {
         style={{ width: "calc(100vw + 600px)", transform: `translateX(${PHONE_OFFSET[pos]})` }}
       >
         <div inert={pos !== "menu"} className="h-full">
-          <Sidebar phone onCollapse={() => setPos("page")} onWrite={newPiece} onSignOut={signOut} />
+          <Sidebar phone email={email} onCollapse={() => setPos("page")} onWrite={newPiece} onSignOut={signOut} />
         </div>
         <main className="relative flex h-full w-screen shrink-0 flex-col overflow-hidden bg-surface">
           <div inert={pos !== "page"} className="flex h-full flex-col">

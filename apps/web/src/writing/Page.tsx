@@ -20,6 +20,8 @@ export function Page({ pieceId, wide, showSparkle, onSparkle, onMenu }: Props) {
   const save = usePieceSave(pieceId);
   const [words, setWords] = useState(0);
   const [language, setLanguage] = useState<PieceLanguage>("en");
+  const [title, setTitle] = useState<string | null>(null);
+  const [firstLine, setFirstLine] = useState("");
 
   const editor = useEditor({
     extensions: writingExtensions,
@@ -27,7 +29,9 @@ export function Page({ pieceId, wide, showSparkle, onSparkle, onMenu }: Props) {
     editorProps: { attributes: { "aria-label": "Your writing", spellcheck: "false" } },
     onUpdate: ({ editor: e }) => {
       const doc = e.getJSON() as EditorDoc;
-      setWords(countWords(docToPlainText(doc)));
+      const text = docToPlainText(doc);
+      setWords(countWords(text));
+      setFirstLine(openingLine(text));
       save.changeDoc(doc);
     }
   });
@@ -37,7 +41,12 @@ export function Page({ pieceId, wide, showSparkle, onSparkle, onMenu }: Props) {
       <TopBar
         wide={wide}
         season="Now"
-        title={null}
+        title={title}
+        firstLine={firstLine}
+        onRename={(next) => {
+          setTitle(next);
+          save.changeTitle(next);
+        }}
         save={save.state}
         showSparkle={showSparkle}
         onSparkle={onSparkle}
@@ -61,4 +70,10 @@ export function Page({ pieceId, wide, showSparkle, onSparkle, onMenu }: Props) {
       />
     </>
   );
+}
+
+// The first line with words in it, used as the piece's name until the writer gives one.
+function openingLine(text: string): string {
+  const line = text.split("\n").find((l) => l.trim() && l.trim() !== "* * *") ?? "";
+  return line.trim().slice(0, 80);
 }

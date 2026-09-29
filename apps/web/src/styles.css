@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* App colours switch with the system theme. */
+/* App colours: follow the system unless the writer picked Light or Dark (data-theme on <html>). */
 :root {
   --ground: #f4f4f3;
   --surface: #ffffff;
@@ -15,11 +15,11 @@
   --stanza: #9db5f5;
   --tooltip: #16181d;
   --tooltip-key: #2e323a;
-  color-scheme: light dark;
+  color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --ground: #121314;
     --surface: #1a1b1d;
     --line: #2a2b2e;
@@ -33,7 +33,25 @@
     --stanza: #4a64b5;
     --tooltip: #2e3035;
     --tooltip-key: #3a3d43;
+    color-scheme: dark;
   }
+}
+
+:root[data-theme="dark"] {
+  --ground: #121314;
+  --surface: #1a1b1d;
+  --line: #2a2b2e;
+  --ink: #ededec;
+  --on-ink: #121314;
+  --ink-muted: #a3a3a0;
+  --accent: #8aa8ff;
+  --surface-hover: #232427;
+  --line-strong: #34363a;
+  --ink-subtle: #7a7b7e;
+  --stanza: #4a64b5;
+  --tooltip: #2e3035;
+  --tooltip-key: #3a3d43;
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -65,7 +83,6 @@
   --color-auth-sunset: #f2b99a;
   --color-auth-muted: #6b665e;
   --color-auth-backdrop: #e6d9c6;
-  --color-auth-on-sky: #2b2a28;
 
   --font-serif: "Source Serif 4", "Noto Serif Devanagari", Georgia, serif;
   --font-sans: Inter, "Noto Sans Devanagari", system-ui, sans-serif;
@@ -159,14 +176,18 @@ body {
   border-radius: 2px;
   background: var(--stanza);
 }
+/* One heading level: the writing serif, larger. */
 .ink-editor .ProseMirror h1 {
   font-size: 30px;
   line-height: 36px;
   font-weight: 400;
 }
+/* A quote: indented italic in full ink. Devanagari has no italic, so it stays upright
+   instead of being slanted artificially. */
 .ink-editor .ProseMirror blockquote {
   padding-left: 1.5em;
-  color: var(--ink-muted);
+  font-style: italic;
+  font-synthesis: none;
 }
 .ink-editor .ProseMirror blockquote > * + * { margin-top: var(--lh); }
 /* Scene break: a small diamond between two short rules, centred. */

@@ -1,8 +1,10 @@
 import { ApiCheck } from "../dev/ApiCheck";
+import { AccountMenu } from "./AccountMenu";
 import { MenuIcon, PencilIcon } from "./icons";
 
 type Props = {
   phone?: boolean;
+  email: string;
   onCollapse: () => void;
   onWrite: () => void;
   onSignOut: () => void;
@@ -11,7 +13,7 @@ type Props = {
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
 // Search, Home, All writing and the seasons arrive with the library view.
-export function Sidebar({ phone = false, onCollapse, onWrite, onSignOut }: Props) {
+export function Sidebar({ phone = false, email, onCollapse, onWrite, onSignOut }: Props) {
   return (
     <nav
       aria-label="Main"
@@ -44,13 +46,7 @@ export function Sidebar({ phone = false, onCollapse, onWrite, onSignOut }: Props
       </button>
       <div className="grow" />
       {import.meta.env.DEV && <ApiCheck />}
-      <button
-        type="button"
-        onClick={onSignOut}
-        className={`self-start cursor-pointer rounded-md border-0 bg-transparent px-3 py-1 text-[13px] text-ink-muted hover:text-ink ${focusRing}`}
-      >
-        Sign out
-      </button>
+      <AccountMenu email={email} onSignOut={onSignOut} />
     </nav>
   );
 }

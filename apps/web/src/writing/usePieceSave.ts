@@ -18,7 +18,11 @@ const hasContent = (nodes: EditorNode[] = []): boolean =>
  */
 export function usePieceSave(pieceId: string) {
   const [state, setState] = useState<SaveState>("idle");
-  const latest = useRef<{ doc: EditorDoc | null; language: PieceLanguage }>({ doc: null, language: "en" });
+  const latest = useRef<{ doc: EditorDoc | null; language: PieceLanguage; title: string | null }>({
+    doc: null,
+    language: "en",
+    title: null
+  });
   const created = useRef(false);
   const inFlight = useRef(false);
   // Changes not yet sent.
@@ -27,7 +31,7 @@ export function usePieceSave(pieceId: string) {
 
   const flush = useCallback(async () => {
     clearTimeout(timer.current);
-    const { doc, language } = latest.current;
+    const { doc, language, title } = latest.current;
     if (!doc || !pending.current || inFlight.current) return;
     if (!created.current && !hasContent(doc.content)) {
       pending.current = false;
@@ -37,8 +41,8 @@ export function usePieceSave(pieceId: string) {
     inFlight.current = true;
     pending.current = false;
     try {
-      if (created.current) await pieces.update(pieceId, { content: doc, language });
-      else await pieces.create({ id: pieceId, content: doc, language });
+      if (created.current) await pieces.update(pieceId, { content: doc, language, title });
+      else await pieces.create({ id: pieceId, content: doc, language, ...(title ? { title } : {}) });
       created.current = true;
       inFlight.current = false;
       // Changes typed while the request was out go in the next one.
@@ -74,6 +78,14 @@ export function usePieceSave(pieceId: string) {
     [schedule]
   );
 
+  const changeTitle = useCallback(
+    (title: string | null) => {
+      latest.current.title = title;
+      if (latest.current.doc) schedule();
+    },
+    [schedule]
+  );
+
   // Save straight away when the tab is hidden or the piece is left.
   useEffect(() => {
     const onHide = () => document.hidden && void flush();
@@ -84,5 +96,5 @@ export function usePieceSave(pieceId: string) {
     };
   }, [flush]);
 
-  return { state, changeDoc, changeLanguage };
+  return { state, changeDoc, changeLanguage, changeTitle };
 }
