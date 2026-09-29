@@ -199,7 +199,15 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
   const onMenu = () => (wide ? setMenuOpen(true) : setPos("menu"));
   const page =
     view.kind === "profile" ? (
-      <Profile account={account} items={library.items} wide={wide} onBack={leaveProfile} onSignOut={() => void signOut()} />
+      <Profile
+        account={account}
+        items={library.items}
+        wide={wide}
+        showMenuButton={!wide || !menuOpen}
+        onMenu={onMenu}
+        onBack={leaveProfile}
+        onSignOut={() => void signOut()}
+      />
     ) : view.kind === "all" ? (
       <AllWriting
         wide={wide}

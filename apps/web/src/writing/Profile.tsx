@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { GoogleMark } from "../auth/parts";
 import { PEN_NAME_MAX, savePenName, saveSeasons, setPassword, type Account, type PasswordProblem } from "../lib/account";
 import { deviceTimeZone, resolveSeasonSet, seasonPlace, seasonSetFor, type SeasonChoice, type SeasonSet } from "../lib/seasons";
+import { MenuIcon } from "./icons";
 import { SeasonPainting } from "./SeasonPainting";
 import { SideColumn } from "./SideColumn";
 import { Signature } from "./Signature";
@@ -12,6 +13,9 @@ type Props = {
   /** The writer's pieces, for the few quiet facts beside the page (null while loading). */
   items: LibraryItem[] | null;
   wide: boolean;
+  /** ☰: on every screen in the same corner; on desktop hidden while the menu is open. */
+  showMenuButton: boolean;
+  onMenu: () => void;
   onBack: () => void;
   onSignOut: () => void;
 };
@@ -38,7 +42,7 @@ const SAVE_FAILED = "Ink couldn’t save that. Check your connection and try aga
 
 // The writer's account: pen name, seasons, how they sign in, an optional password, sign out.
 // A password is a way back in, never a security score: no nagging, no progress bars.
-export function Profile({ account, items, wide, onBack, onSignOut }: Props) {
+export function Profile({ account, items, wide, showMenuButton, onMenu, onBack, onSignOut }: Props) {
   // The seasons choice lives here so the painting beside the page follows it as it changes.
   const [seasons, setSeasons] = useState(account.seasons);
   const timeZone = deviceTimeZone();
@@ -47,11 +51,21 @@ export function Profile({ account, items, wide, onBack, onSignOut }: Props) {
 
   return (
     <>
-      <div className={`flex h-14 shrink-0 items-center border-b border-line ${wide ? "px-5" : "px-3"}`}>
+      <div className={`flex shrink-0 items-center gap-1 border-b border-line ${wide ? "h-14 pr-4 pl-4" : "h-[52px] pr-1.5 pl-1"}`}>
+        {showMenuButton && (
+          <button
+            type="button"
+            onClick={onMenu}
+            aria-label="Open menu"
+            className={`flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-ink ${focusRing}`}
+          >
+            <MenuIcon />
+          </button>
+        )}
         <button
           type="button"
           onClick={onBack}
-          className={`-ml-1 flex h-10 cursor-pointer items-center gap-2 rounded-md border-0 bg-transparent px-2 text-ink hover:bg-surface-hover ${focusRing}`}
+          className={`flex h-10 cursor-pointer items-center gap-2 rounded-md border-0 bg-transparent px-2 text-ink hover:bg-surface-hover ${focusRing}`}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M15 6l-6 6 6 6" />
