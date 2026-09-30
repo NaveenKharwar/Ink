@@ -8,6 +8,7 @@ import {
   CheckCircleIcon,
   ChevronIcon,
   IndentIcon,
+  KeyboardDownIcon,
   LinkIcon,
   NoteIcon,
   NumberedListIcon,
@@ -31,13 +32,13 @@ type Props = {
   language: PieceLanguage;
   onLanguage: (language: PieceLanguage) => void;
   save: SaveState;
+  /** Phone: how much of the screen the keyboard covers (0 when it's closed). */
+  keyboardInset?: number;
 };
 
 // The same slide as Ink's side sheets (360ms, same curve); with reduced motion it moves at once.
 // Room kept between the tools and the words/save group when they share one line.
 const GROUP_GAP = 24;
-// The gap between the save icon and its word (gap-2).
-const SAVE_GAP = 8;
 
 const SLIDE = "transition-[translate,opacity] duration-[360ms] ease-[cubic-bezier(0.2,0.7,0.2,1)] motion-reduce:transition-none";
 
@@ -73,8 +74,8 @@ function Tool({
 
 const SAVE_SHORT = { idle: "", saving: "Saving", saved: "Saved", device: "On this device", refused: "Not saved" } as const;
 
-// The one floating tool bar: a little formatting, then word count, language and save state.
-export function Toolbar({ editor, style, wide, words, language, onLanguage, save }: Props) {
+// The tool bar: the style's formatting tools, then word count, language (desktop) and save state.
+export function Toolbar({ editor, style, wide, words, language, onLanguage, save, keyboardInset = 0 }: Props) {
   // The writer can slide the bar down with the tab on its top edge; it stays down until they
   // tap the tab left at the bottom. Nothing hides it on its own.
   const [tucked, setTucked] = useState(false);
@@ -126,7 +127,7 @@ export function Toolbar({ editor, style, wide, words, language, onLanguage, save
     ]
   };
 
-  // When the tools and the words/save group don't fit on one line (a narrow phone), the bar
+  // Desktop: when the tools and the words/save group don't fit on one line (Notes on a narrow paper), the bar
   // becomes two rows: the tools spread evenly on top, then a thin line, then word count and
   // save state at either end. Decided by measuring what the groups need, not by screen size.
   const bar = useRef<HTMLDivElement>(null);
@@ -138,13 +139,8 @@ export function Toolbar({ editor, style, wide, words, language, onLanguage, save
     if (!el) return;
     const measure = () => {
       if (!tools.current || !meta.current) return;
-      // Natural widths: the buttons and texts themselves (spreading them doesn't change these),
-      // as they are on one line: the save word that only two rows show is left out.
-      const widthOf = (group: HTMLElement) =>
-        [...group.children].reduce((w, c) => {
-          const extra = [...c.querySelectorAll<HTMLElement>("[data-two-rows-only]")].reduce((x, e) => x + e.offsetWidth + SAVE_GAP, 0);
-          return w + (c as HTMLElement).offsetWidth - extra;
-        }, 0);
+      // Natural widths: the buttons and texts themselves (spreading them doesn't change these).
+      const widthOf = (group: HTMLElement) => [...group.children].reduce((w, c) => w + (c as HTMLElement).offsetWidth, 0);
       const style = getComputedStyle(el);
       const room = el.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
       setTwoRows(widthOf(tools.current) + widthOf(meta.current) + GROUP_GAP > room);
@@ -184,18 +180,48 @@ export function Toolbar({ editor, style, wide, words, language, onLanguage, save
       node: (
         <span className="flex items-center gap-2 whitespace-nowrap text-ink-muted">
           {save === "refused" ? <NoteIcon /> : <CheckCircleIcon saving={save === "saving"} />}
-          {wide ? (
-            <span>{SAVE_SHORT[save]}</span>
-          ) : twoRows ? (
-            <span data-two-rows-only="">{SAVE_SHORT[save]}</span>
-          ) : (
-            <span className="sr-only">{SAVE_SHORT[save]}</span>
-          )}
+          {wide ? <span>{SAVE_SHORT[save]}</span> : <span className="sr-only">{SAVE_SHORT[save]}</span>}
         </span>
       )
     });
   }
 
+  const scrollRow =
+    "overflow-x-auto [scrollbar-width:none] [mask-image:linear-gradient(to_right,transparent,black_12px,black_calc(100%-20px),transparent)] [&::-webkit-scrollbar]:hidden";
+  const toolButtons = toolsFor[style].map((t) => (
+    <Tool key={t.key} label={t.label} wide={wide} active={t.active} onClick={t.onClick}>
+      {t.icon}
+    </Tool>
+  ));
+
+  // Phone: one row right under the top bar, always in the same place, so the keyboard never
+  // covers it. The tools scroll sideways; at the end, word count and save state, or, while the
+  // keyboard is up, a button to put it away (phone browsers have no key for that).
+  if (!wide) {
+    const typing = keyboardInset > 0;
+    return (
+      <div role="toolbar" aria-label="Formatting" className="relative flex h-12 shrink-0 items-center border-b border-line bg-surface pr-2 pl-1">
+        <div className={`flex min-w-0 flex-1 items-center ${scrollRow}`}>{toolButtons}</div>
+        <div aria-hidden="true" className="mx-1.5 h-6 w-px shrink-0 bg-line" />
+        {typing ? (
+          <Tool label="Hide keyboard" wide={false} onClick={() => editor.commands.blur()}>
+            <KeyboardDownIcon />
+          </Tool>
+        ) : (
+          <div className="flex shrink-0 items-center gap-2.5 text-[13px]">
+            {metaItems.map((item) => (
+              <Fragment key={item.key}>{item.node}</Fragment>
+            ))}
+          </div>
+        )}
+        {linking && style === "notes" && (
+          <LinkField editor={editor} className="absolute top-[calc(100%+8px)] right-2 left-2 max-w-[360px]" onDone={() => setLinking(false)} />
+        )}
+      </div>
+    );
+  }
+
+  // Desktop: the floating bar at the bottom of the paper.
   return (
     <>
       <div
@@ -203,11 +229,9 @@ export function Toolbar({ editor, style, wide, words, language, onLanguage, save
         role="toolbar"
         aria-label="Formatting"
         inert={tucked}
-        className={`absolute box-border flex flex-wrap items-center rounded-bar border border-line bg-surface ${SLIDE} ${
-          wide
-            ? "right-3.5 bottom-3 left-3.5 min-h-14 px-3"
-            : `right-2 bottom-2 left-2 min-h-[52px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] ${twoRows ? "px-2 py-1" : "pr-3 pl-1.5"}`
-        } ${tucked ? "pointer-events-none translate-y-[calc(100%+16px)] opacity-0" : "translate-y-0 opacity-100"}`}
+        className={`absolute right-3.5 bottom-3 left-3.5 box-border flex min-h-14 flex-wrap items-center rounded-bar border border-line bg-surface px-3 ${SLIDE} ${
+          tucked ? "pointer-events-none translate-y-[calc(100%+16px)] opacity-0" : "translate-y-0 opacity-100"
+        }`}
       >
         <button
           type="button"
@@ -217,32 +241,18 @@ export function Toolbar({ editor, style, wide, words, language, onLanguage, save
         >
           <ChevronIcon size={12} />
         </button>
-        {/* In two rows the tools spread across the top; when even that is too narrow (Notes on a
-            small phone), the row scrolls sideways and fades at its edges to show there's more. */}
-        <div
-          ref={tools}
-          className={`flex items-center ${
-            twoRows
-              ? "w-full justify-between overflow-x-auto [scrollbar-width:none] [mask-image:linear-gradient(to_right,transparent,black_12px,black_calc(100%-20px),transparent)] [&::-webkit-scrollbar]:hidden"
-              : ""
-          }`}
-        >
-          {toolsFor[style].map((t) => (
-            <Tool key={t.key} label={t.label} wide={wide} active={t.active} onClick={t.onClick}>
-              {t.icon}
-            </Tool>
-          ))}
+        {/* In two rows (Notes' many tools on a narrow paper) the tools spread across the top and
+            scroll sideways if even that is too narrow. */}
+        <div ref={tools} className={`flex items-center ${twoRows ? `w-full justify-between ${scrollRow}` : ""}`}>
+          {toolButtons}
         </div>
         {linking && style === "notes" && <LinkField editor={editor} onDone={() => setLinking(false)} />}
         {!twoRows && <div className="grow" />}
-        <div
-          ref={meta}
-          className={`flex items-center ${twoRows ? "mt-1 h-10 w-full justify-between border-t border-line px-1.5" : wide ? "gap-4" : "gap-3 pl-2"}`}
-        >
+        <div ref={meta} className={`flex items-center ${twoRows ? "mt-1 h-10 w-full justify-between border-t border-line px-1.5" : "gap-4"}`}>
           {metaItems.map((item, i) => (
             <Fragment key={item.key}>
               {/* On one line, a thin divider sits between neighbours (never at the ends). */}
-              {i > 0 && wide && !twoRows && <div aria-hidden="true" className="h-6 w-px shrink-0 bg-line" />}
+              {i > 0 && !twoRows && <div aria-hidden="true" className="h-6 w-px shrink-0 bg-line" />}
               {item.node}
             </Fragment>
           ))}

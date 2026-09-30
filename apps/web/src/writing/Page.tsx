@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import * as Y from "yjs";
 import { countWords } from "../editor/counts";
 import { setEditorStyle, writingExtensions } from "../editor/extensions";
+import { useVisibleArea } from "../lib/visibleArea";
 import { LinkCard } from "./LinkCard";
 import { StyleCards } from "./StyleCards";
 import type { OpenedPiece } from "../lib/openPiece";
@@ -27,6 +28,8 @@ type Props = {
   onSparkle: () => void;
   onMenu: () => void;
 };
+
+const EDITOR_ATTRIBUTES = { "aria-label": "Your writing", spellcheck: "false" };
 
 // The page panel: where the piece lives, the writing itself, and the tool bar.
 export function Page({ pieceId, userId, opened, wide, season, showMenuButton, showSparkle, onSparkle, onMenu }: Props) {
@@ -69,7 +72,7 @@ export function Page({ pieceId, userId, opened, wide, season, showMenuButton, sh
   const editor = useEditor({
     extensions: [...writingExtensions, Collaboration.configure({ document: ydoc })],
     autofocus: "end",
-    editorProps: { attributes: { "aria-label": "Your writing", spellcheck: "false" } },
+    editorProps: { attributes: EDITOR_ATTRIBUTES },
     onCreate: ({ editor: e }) => refresh(e.getJSON() as EditorDoc, false),
     onUpdate: ({ editor: e }) => refresh(e.getJSON() as EditorDoc, true)
   });
@@ -89,6 +92,28 @@ export function Page({ pieceId, userId, opened, wide, season, showMenuButton, sh
   };
   const showCards = chosen === null && empty;
 
+  // Phone keyboard: the app screen shrinks to the part still showing (see WritingScreen), so the
+  // writing ends where the keyboard begins; bring the cursor back into view when it opens.
+  const keyboard = useVisibleArea(!wide)?.keyboard ?? 0;
+  useEffect(() => {
+    if (keyboard && editor.isFocused) editor.commands.scrollIntoView();
+  }, [editor, keyboard]);
+
+  // The tool bar: under the top bar on phones (clear of the keyboard), floating at the bottom of
+  // the paper on desktop.
+  const toolbar = (
+    <Toolbar
+      editor={editor}
+      style={style}
+      wide={wide}
+      keyboardInset={keyboard}
+      words={words}
+      language={language}
+      onLanguage={setLanguage}
+      save={save.state}
+    />
+  );
+
   return (
     <>
       <TopBar
@@ -107,8 +132,9 @@ export function Page({ pieceId, userId, opened, wide, season, showMenuButton, sh
         showMenuButton={showMenuButton}
         onMenu={onMenu}
       />
+      {!wide && toolbar}
       <div
-        className={`ink-editor style-${style} ${showCards ? "is-blank" : ""} grow overflow-y-auto ${wide ? "pt-9 pr-10 pb-[110px] pl-[72px]" : "pt-5 pr-5 pb-[140px] pl-[33px]"}`}
+        className={`ink-editor style-${style} ${showCards ? "is-blank" : ""} grow overflow-y-auto px-[var(--page-gutter)] ${wide ? "pt-9 pb-[110px]" : "pt-5 pb-12"}`}
       >
         <div className="mx-auto max-w-[640px]">
           <EditorContent editor={editor} />
@@ -116,15 +142,7 @@ export function Page({ pieceId, userId, opened, wide, season, showMenuButton, sh
           <StyleCards shown={showCards} wide={wide} onPick={changeStyle} />
         </div>
       </div>
-      <Toolbar
-        editor={editor}
-        style={style}
-        wide={wide}
-        words={words}
-        language={language}
-        onLanguage={setLanguage}
-        save={save.state}
-      />
+      {wide && toolbar}
     </>
   );
 }

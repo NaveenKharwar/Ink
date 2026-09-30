@@ -12,6 +12,8 @@ import { Profile } from "./Profile";
 import { SearchDialog } from "./SearchDialog";
 import { Sidebar } from "./Sidebar";
 import { useLibrary } from "./useLibrary";
+import { newId } from "../lib/newId";
+import { useVisibleArea } from "../lib/visibleArea";
 
 type PhonePos = "menu" | "page" | "panel";
 
@@ -30,13 +32,13 @@ const typingInPage = () => !!document.activeElement?.closest(".ProseMirror");
 type Target = { id: string; open: boolean };
 type View = { kind: "piece"; target: Target } | { kind: "all"; season: string | null } | { kind: "profile" };
 
-const blank = (): View => ({ kind: "piece", target: { id: crypto.randomUUID(), open: false } });
+const blank = (): View => ({ kind: "piece", target: { id: newId(), open: false } });
 function viewFromAddress(): View {
   const route = parseRoute(window.location.pathname);
   if (route.kind === "all") return { kind: "all", season: null };
   if (route.kind === "profile") return { kind: "profile" };
   if (route.kind === "piece") return { kind: "piece", target: { id: route.id, open: true } };
-  if (route.kind === "missing") return { kind: "piece", target: { id: crypto.randomUUID(), open: true } };
+  if (route.kind === "missing") return { kind: "piece", target: { id: newId(), open: true } };
   return blank();
 }
 
@@ -240,6 +242,9 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
     <SearchDialog wide={wide} recent={recent} seasonSet={seasonSet} onOpen={openPiece} onClose={() => setSearchOpen(false)} />
   );
 
+  // Phone: the part of the screen actually showing (the keyboard can cover the rest).
+  const visible = useVisibleArea(!wide);
+
   if (wide) {
     const panelShown = panelOpen && view.kind === "piece";
     return (
@@ -288,7 +293,14 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
     // `overflow-clip`, not `hidden`: a hidden box can still be scrolled by the browser (it does,
     // to show the cursor when a new piece's editor takes focus), which would shift the track
     // off its sheets. A clipped box can't scroll at all; only the slide moves it.
-    <div className="fixed inset-0 touch-pan-y overflow-clip bg-surface" onPointerDown={onPointerDown} onPointerUp={onPointerUp}>
+    <div
+      className="fixed inset-x-0 top-0 h-dvh touch-pan-y overflow-clip bg-surface"
+      // Sized and placed to the part of the screen the phone shows, so the keyboard (and the
+      // browser's own bars) never cover the top bar, the tool bar or the line being typed.
+      style={visible ? { top: visible.top, height: visible.height } : undefined}
+      onPointerDown={onPointerDown}
+      onPointerUp={onPointerUp}
+    >
       <div
         className="absolute top-0 left-0 flex h-full transition-transform duration-[360ms] ease-[cubic-bezier(0.2,0.7,0.2,1)] motion-reduce:transition-none"
         style={{ width: "calc(100vw + 2 * var(--phone-sheet-width))", transform: `translateX(${PHONE_OFFSET[pos]})` }}

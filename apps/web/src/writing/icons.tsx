@@ -45,6 +45,14 @@ export const SceneBreakIcon = ({ size = 18 }: P) => (
   </svg>
 );
 
+// Put the phone keyboard away: a small keyboard with an arrow pointing down.
+export const KeyboardDownIcon = ({ size = 18 }: P) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="3" y="4" width="18" height="11" rx="2" />
+    <path d="M7 8h.01M10.5 8h.01M14 8h.01M17 8h.01M8 11.5h8M9.5 18.5L12 21l2.5-2.5" />
+  </svg>
+);
+
 export const IndentIcon = ({ size = 18 }: P) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M4 6h16M11 10.5h9M11 14.5h9M4 19h16M4 9.5l3 2.5-3 2.5" />
