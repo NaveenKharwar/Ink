@@ -1,0 +1,21 @@
+meta {
+  name: Broken token
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/pieces
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}x
+}
+
+docs {
+  Sends your real token with one wrong character added at the end.
+  Expect 401 unauthorized: "Sign in to continue."
+  Try the same on a pictures request (change the URL to /api/pictures) - also 401.
+}

@@ -1,0 +1,32 @@
+meta {
+  name: Get a token (second user)
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{process.env.SUPABASE_URL}}/auth/v1/token?grant_type=password
+  body: json
+  auth: none
+}
+
+headers {
+  apikey: {{process.env.SUPABASE_ANON_KEY}}
+}
+
+body:json {
+  {
+    "email": "{{process.env.SECOND_EMAIL}}",
+    "password": "{{process.env.SECOND_PASSWORD}}"
+  }
+}
+
+script:post-response {
+  if (res.status === 200) bru.setVar("token", res.body.access_token);
+}
+
+docs {
+  For the privacy check only. Signs in a SECOND writer and replaces the saved token, so every request after this runs as them.
+  Run "Get a token" again to go back to the first user.
+  Needs SECOND_EMAIL and SECOND_PASSWORD in the .env file.
+}
