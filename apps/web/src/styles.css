@@ -35,8 +35,6 @@
   --line-strong: #dccfb9;
   --ink-subtle: #8a8a8a;
   --stanza: color-mix(in srgb, var(--accent) 45%, var(--surface));
-  --tooltip: #16181d;
-  --tooltip-key: #2e323a;
   --scrim: rgba(20, 20, 20, 0.28);
   --ad-line: #d6d6d4;
   --season-winter: #5b7fa6;
@@ -69,8 +67,6 @@
     --line-strong: #36302a;
     --ink-subtle: #7a7b7e;
     --stanza: color-mix(in srgb, var(--accent) 50%, var(--surface));
-    --tooltip: #2e3035;
-    --tooltip-key: #3a3d43;
     --scrim: rgba(0, 0, 0, 0.5);
     --ad-line: #3a3c40;
     --season-winter: #8fb0d6;
@@ -101,8 +97,6 @@
   --line-strong: #36302a;
   --ink-subtle: #7a7b7e;
   --stanza: color-mix(in srgb, var(--accent) 50%, var(--surface));
-  --tooltip: #2e3035;
-  --tooltip-key: #3a3d43;
   --scrim: rgba(0, 0, 0, 0.5);
   --ad-line: #3a3c40;
   --season-winter: #8fb0d6;
@@ -138,8 +132,6 @@
   --color-season-monsoon: var(--season-monsoon);
   --color-season-autumn: var(--season-autumn);
   --color-stanza: var(--stanza);
-  --color-tooltip: var(--tooltip);
-  --color-tooltip-key: var(--tooltip-key);
   --color-scrim: var(--scrim);
   --color-loader: var(--loader);
   --color-loader-on-ink: var(--loader-on-ink);

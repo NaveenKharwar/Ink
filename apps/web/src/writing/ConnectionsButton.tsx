@@ -23,7 +23,7 @@ export function ConnectionsButton({ open, onToggle }: Props) {
         type="button"
         aria-label="Show what Ink sees"
         aria-pressed={open}
-        data-tether="sparkle"
+        data-tether="mark"
         className="relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         onClick={onToggle}
         onPointerEnter={(e) => {

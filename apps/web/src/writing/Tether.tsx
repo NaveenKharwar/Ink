@@ -17,7 +17,7 @@ export function Tether({
   onGone
 }: {
   anchor: string;
-  // Where on the anchor the thread is pinned: its left edge (the panel) or its bottom (✦).
+  // Where on the anchor the thread is pinned: its left edge (the panel) or its bottom (the mark).
   side: "left" | "bottom";
   note: string;
   state: TetherState;

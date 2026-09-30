@@ -203,7 +203,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
   const thread = tether !== "gone" && view.kind === "piece" && (
     <Tether
       key={wide ? "wide" : "phone"}
-      anchor={wide ? "panel" : "sparkle"}
+      anchor={wide ? "panel" : "mark"}
       side={wide ? "left" : "bottom"}
       note={wide ? "Look here." : "Peek inside."}
       state={tether}
@@ -323,7 +323,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
         season={pieceSeason(view.target.id)}
         showMenuButton={!wide || !menuVisible}
         panelOpen={wide ? panelOpen : pos === "panel"}
-        onSparkle={() => (wide ? setPanelOpen((open) => !open) : setPos(pos === "panel" ? "page" : "panel"))}
+        onPanelToggle={() => (wide ? setPanelOpen((open) => !open) : setPos(pos === "panel" ? "page" : "panel"))}
         onMenu={onMenu}
       />
     );

@@ -33,7 +33,7 @@ type Props = {
   /** "Ink sees this too" is open (the mark stays put, joined). */
   panelOpen: boolean;
   /** Opens the panel, or closes it if it is open. */
-  onSparkle: () => void;
+  onPanelToggle: () => void;
   /** ☰: always on phone; on desktop while the menu is closed. */
   showMenuButton: boolean;
   onMenu: () => void;
@@ -54,7 +54,7 @@ export function TopBar({
   onStyle,
   save,
   panelOpen,
-  onSparkle,
+  onPanelToggle,
   showMenuButton,
   onMenu
 }: Props) {
@@ -107,7 +107,7 @@ export function TopBar({
             display={<span className="font-medium">{SHORT[language]}</span>}
           />
         )}
-        <ConnectionsButton open={panelOpen} onToggle={onSparkle} />
+        <ConnectionsButton open={panelOpen} onToggle={onPanelToggle} />
       </div>
     </div>
   );
