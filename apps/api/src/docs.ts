@@ -1,6 +1,6 @@
 import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
-import { listPiecesQuery, piece, searchQuery, syncPieceInput, syncPieceOutput, updatePieceInput } from "@ink/schemas";
+import { listPiecesQuery, pictureListResponse, pictureUsesResponse, piece, searchQuery, syncPieceInput, syncPieceOutput, updatePieceInput } from "@ink/schemas";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
@@ -122,6 +122,53 @@ export const openApiDocument = {
           "200": json(piece, "Updated."),
           "400": json(validationBody, "The body is not valid, or empty."),
           "404": json(errorBody, "No such piece for you."),
+          ...errors
+        }
+      }
+    },
+    "/api/pictures": {
+      get: {
+        summary: "List your pictures, newest first",
+        description: "Every picture you stored (covers and pictures in Notes), with the space they take together.",
+        responses: { "200": json(pictureListResponse, "Your pictures."), ...errors }
+      }
+    },
+    "/api/pictures/{id}/uses": {
+      get: {
+        summary: "Which of your pieces use a picture",
+        description: "Pieces with it as their cover or in their text, newest first. Another writer's picture id gives an empty list.",
+        parameters: [idParam],
+        responses: { "200": json(pictureUsesResponse, "The pieces, possibly none."), ...errors }
+      }
+    },
+    "/api/pictures/{id}": {
+      delete: {
+        summary: "Delete one of your pictures",
+        description: "Takes it out of every piece that uses it (as a normal change your devices merge), then deletes the file itself. Can't be undone.",
+        parameters: [idParam],
+        responses: { "204": { description: "Deleted." }, "404": json(errorBody, "No such picture for you."), ...errors }
+      },
+      put: {
+        summary: "Store one of your pictures (a cover, or a picture in Notes)",
+        description:
+          "Send the picture's bytes, JPEG or WebP (checked by the bytes themselves), at most 5 MB. The id is made by the client; " +
+          "sending the same id again replaces it, so a retry is safe. Pictures go to your own private folder only.",
+        parameters: [idParam],
+        requestBody: { required: true, content: { "image/webp": { schema: { type: "string", format: "binary" } }, "image/jpeg": { schema: { type: "string", format: "binary" } } } },
+        responses: {
+          "204": { description: "Stored." },
+          "413": json(errorBody, "Larger than 5 MB."),
+          "415": json(errorBody, "Not a JPEG or WebP picture."),
+          ...errors
+        }
+      },
+      get: {
+        summary: "Get one of your pictures",
+        description: "The picture's bytes. Only ever from your own folder: someone else's picture id answers 404.",
+        parameters: [idParam],
+        responses: {
+          "200": { description: "The picture.", content: { "image/webp": { schema: { type: "string", format: "binary" } }, "image/jpeg": { schema: { type: "string", format: "binary" } } } },
+          "404": json(errorBody, "No such picture for you."),
           ...errors
         }
       }

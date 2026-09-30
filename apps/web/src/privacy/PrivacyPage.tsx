@@ -37,6 +37,12 @@ export function PrivacyPage() {
           created and last changed it.
         </li>
         <li>
+          <strong>Your pictures, only if you add them:</strong> a cover or a picture in your notes. Before a picture
+          leaves your device, Ink makes it smaller and keeps only the image itself, so the place, camera and time a
+          photo was taken are never sent. A picture you take off a piece stays in your Pictures until you delete it
+          there; deleting it removes it for good.
+        </li>
+        <li>
           <strong>A password, only if you add one:</strong> it is stored scrambled (hashed), never as you typed it.
         </li>
         <li>
@@ -68,7 +74,8 @@ export function PrivacyPage() {
       <p>Ink uses a few services to run. Each one handles your data only to do its job for Ink.</p>
       <ul>
         <li>
-          <strong>Supabase</strong> stores your account and your writing, in a data centre in Mumbai, India.
+          <strong>Supabase</strong> stores your account, your writing and your pictures, in a data centre in Mumbai,
+          India.
         </li>
         <li>
           <strong>Google</strong>, only if you choose Continue with Google, to confirm who you are. Ink&rsquo;s fonts are
@@ -85,7 +92,7 @@ export function PrivacyPage() {
 
       <h2>Who can read your writing</h2>
       <p>
-        Only you, through Ink. Every request for your writing is checked against your account, so another writer
+        Only you, through Ink. Every request for your writing or your pictures is checked against your account, so another writer
         cannot open it even by guessing a link. [Who at Ink can technically reach the database, and the promise about
         when they would, if ever.]
       </p>

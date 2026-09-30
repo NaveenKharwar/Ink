@@ -1,4 +1,11 @@
-import type { LibraryResponse, SearchResponse, SyncPieceInput, SyncPieceOutput } from "@ink/schemas";
+import type {
+  LibraryResponse,
+  PictureListResponse,
+  PictureUsesResponse,
+  SearchResponse,
+  SyncPieceInput,
+  SyncPieceOutput
+} from "@ink/schemas";
 import { supabase } from "./supabase";
 
 export class ApiError extends Error {
@@ -13,22 +20,26 @@ export class ApiError extends Error {
 }
 
 // Every call carries the signed-in writer's access token; supabase-js refreshes it when needed.
-async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+async function send(path: string, init: RequestInit = {}): Promise<Response> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   if (!token) throw new ApiError(401, "unauthorized", "Not signed in");
 
   const headers = new Headers(init.headers);
   headers.set("Authorization", `Bearer ${token}`);
-  if (init.body) headers.set("Content-Type", "application/json");
+  if (init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
 
   const res = await fetch(path, { ...init, headers });
-  const body: unknown = res.status === 204 ? null : await res.json().catch(() => null);
   if (!res.ok) {
-    const err = (body ?? {}) as { error?: string; message?: string };
+    const err = ((await res.json().catch(() => null)) ?? {}) as { error?: string; message?: string };
     throw new ApiError(res.status, err.error ?? "unknown", err.message ?? res.statusText);
   }
-  return body as T;
+  return res;
+}
+
+async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const res = await send(path, init);
+  return (res.status === 204 ? null : await res.json().catch(() => null)) as T;
 }
 
 export const pieces = {
@@ -38,4 +49,24 @@ export const pieces = {
   library: () => request<LibraryResponse>("/api/library"),
   search: (q: string, signal?: AbortSignal) =>
     request<SearchResponse>(`/api/search?${new URLSearchParams({ q })}`, { signal })
+};
+
+// The writer's own pictures (covers, pictures in Notes), as their bytes. The API only ever reads
+// and writes the signed-in writer's own pictures.
+export const pictures = {
+  // The small copy (for grids) goes with `size: "small"`; the picture itself carries its tiny preview.
+  put: async (id: string, picture: Blob, options: { size?: "small"; preview?: string } = {}) => {
+    const headers: Record<string, string> = { "Content-Type": picture.type };
+    if (options.preview) headers["Ink-Picture-Preview"] = options.preview;
+    const query = options.size ? `?size=${options.size}` : "";
+    await send(`/api/pictures/${encodeURIComponent(id)}${query}`, { method: "PUT", body: picture, headers });
+  },
+  get: async (id: string, size: "full" | "small" = "full") =>
+    (await send(`/api/pictures/${encodeURIComponent(id)}${size === "small" ? "?size=small" : ""}`)).blob(),
+  list: () => request<PictureListResponse>("/api/pictures"),
+  uses: (id: string) => request<PictureUsesResponse>(`/api/pictures/${encodeURIComponent(id)}/uses`),
+  // Also takes it out of every piece that uses it.
+  remove: async (id: string) => {
+    await send(`/api/pictures/${encodeURIComponent(id)}`, { method: "DELETE" });
+  }
 };

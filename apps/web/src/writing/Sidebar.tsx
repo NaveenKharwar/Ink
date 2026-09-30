@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { AccountMenu } from "./AccountMenu";
-import { ChevronIcon, DocumentIcon, MenuIcon, PencilIcon, SearchIcon, SeasonIcon } from "./icons";
+import { ChevronIcon, DocumentIcon, MenuIcon, PencilIcon, PictureIcon, SearchIcon, SeasonIcon } from "./icons";
 
 // Which screen is open; Profile has no item of its own in the menu, so nothing is marked there.
-export type Screen = "write" | "all" | "profile";
+export type Screen = "write" | "all" | "pictures" | "profile";
 
 export type SeasonLink = { key: string; label: string; divider: string | null; count: number };
 
@@ -19,6 +19,7 @@ type Props = {
   onSearch: () => void;
   onWrite: () => void;
   onAll: () => void;
+  onPictures: () => void;
   onSeason: (key: string) => void;
   onProfile: () => void;
   onSignOut: () => Promise<void>;
@@ -28,10 +29,10 @@ const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-
 const navItem = `box-border flex h-9 w-full cursor-pointer items-center gap-3 rounded-md border-0 px-3 text-left text-ink ${focusRing}`;
 const SEASONS_SHOWN = 7;
 
-// The menu: search, Write, All writing and the seasons, with the account at the foot.
+// The menu: search, Write, All writing, Pictures and the seasons, with the account at the foot.
 // Desktop: a side sheet from the left edge. Phone: the left side of the sliding track.
 export function Sidebar(props: Props) {
-  const { phone = false, name, screen, seasons, activeSeason, onClose, onSearch, onWrite, onAll, onSeason, onProfile, onSignOut } = props;
+  const { phone = false, name, screen, seasons, activeSeason, onClose, onSearch, onWrite, onAll, onPictures, onSeason, onProfile, onSignOut } = props;
   const [allSeasons, setAllSeasons] = useState(false);
   const shown = allSeasons ? seasons : seasons.slice(0, SEASONS_SHOWN);
 
@@ -93,6 +94,15 @@ export function Sidebar(props: Props) {
         >
           <DocumentIcon />
           All writing
+        </button>
+        <button
+          type="button"
+          onClick={onPictures}
+          aria-current={screen === "pictures" ? "page" : undefined}
+          className={`${navItem} ${screen === "pictures" ? "bg-surface-hover font-semibold" : "bg-transparent"}`}
+        >
+          <PictureIcon size={17} />
+          Pictures
         </button>
 
         {seasons.length > 0 && (

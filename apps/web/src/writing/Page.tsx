@@ -1,17 +1,22 @@
 import { docToPlainText, META_FIELD, type EditorDoc, type PieceStyle } from "@ink/schemas";
 import Collaboration from "@tiptap/extension-collaboration";
-import { EditorContent, useEditor } from "@tiptap/react";
+import { EditorContent, ReactNodeViewRenderer, useEditor } from "@tiptap/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as Y from "yjs";
 import { countWords } from "../editor/counts";
 import { setEditorStyle, writingExtensions } from "../editor/extensions";
+import { Picture } from "../editor/picture";
 import { useVisibleArea } from "../lib/visibleArea";
+import { Cover } from "./Cover";
 import { LinkCard } from "./LinkCard";
+import { PicturePicker } from "./PicturePicker";
+import { PictureView } from "./PictureView";
 import { StyleCards } from "./StyleCards";
 import type { OpenedPiece } from "../lib/openPiece";
 import { pieceAddress } from "../lib/route";
 import { Toolbar } from "./Toolbar";
 import { TopBar } from "./TopBar";
+import { usePictureAdder } from "./usePictureAdder";
 import { usePieceMeta } from "./usePieceMeta";
 import { usePieceSave } from "./usePieceSave";
 
@@ -47,7 +52,7 @@ export function Page({ pieceId, userId, opened, wide, season, showMenuButton, sh
   const save = usePieceSave(pieceId, userId, ydoc, { initial: opened ?? undefined, onStart });
   const [words, setWords] = useState(0);
   const [empty, setEmpty] = useState(true);
-  const { title, language, style: chosen, setTitle, setLanguage, setStyle } = usePieceMeta(ydoc);
+  const { title, language, style: chosen, cover, setTitle, setLanguage, setStyle, setCover } = usePieceMeta(ydoc);
   // A piece nobody has given a style reads as a poem.
   const style: PieceStyle = chosen ?? "poem";
   const [firstLine, setFirstLine] = useState("");
@@ -69,13 +74,27 @@ export function Page({ pieceId, userId, opened, wide, season, showMenuButton, sh
     wasEmpty.current = !hasWords;
   };
 
+  // Pictures pasted or dropped into a Notes piece go to the picture adder (made after the editor).
+  const onPictureFiles = useRef<(files: File[]) => void>(() => {});
   const editor = useEditor({
-    extensions: [...writingExtensions, Collaboration.configure({ document: ydoc })],
+    extensions: [
+      ...writingExtensions.map((extension) =>
+        extension === Picture
+          ? Picture.configure({ view: ReactNodeViewRenderer(PictureView), onFiles: (files) => onPictureFiles.current(files) })
+          : extension
+      ),
+      Collaboration.configure({ document: ydoc })
+    ],
     autofocus: "end",
     editorProps: { attributes: EDITOR_ATTRIBUTES },
     onCreate: ({ editor: e }) => refresh(e.getJSON() as EditorDoc, false),
     onUpdate: ({ editor: e }) => refresh(e.getJSON() as EditorDoc, true)
   });
+
+  const pictures = usePictureAdder(editor);
+  useEffect(() => {
+    onPictureFiles.current = (files) => void pictures.addFiles(files);
+  }, [pictures]);
 
   // The editor's keys and input rules follow the style, including a change from another device.
   useEffect(() => {
@@ -111,6 +130,7 @@ export function Page({ pieceId, userId, opened, wide, season, showMenuButton, sh
       language={language}
       onLanguage={setLanguage}
       save={save.state}
+      pictures={pictures}
     />
   );
 
@@ -133,16 +153,21 @@ export function Page({ pieceId, userId, opened, wide, season, showMenuButton, sh
         onMenu={onMenu}
       />
       {!wide && toolbar}
-      <div
-        className={`ink-editor style-${style} ${showCards ? "is-blank" : ""} grow overflow-y-auto px-[var(--page-gutter)] ${wide ? "pt-9 pb-[110px]" : "pt-5 pb-12"}`}
-      >
-        <div className="mx-auto max-w-[640px]">
-          <EditorContent editor={editor} />
-          <LinkCard editor={editor} />
-          <StyleCards shown={showCards} wide={wide} onPick={changeStyle} />
+      <div className={`ink-editor style-${style} ${showCards ? "is-blank" : ""} grow overflow-y-auto ${wide ? "pb-[110px]" : "pb-12"}`}>
+        {/* The cover sits across the whole paper, above the writing, and scrolls away with it. */}
+        <Cover cover={cover} onCover={setCover} wide={wide} />
+        <div className={`px-[var(--page-gutter)] ${cover ? "pt-3 wide:pt-3" : "pt-3 wide:pt-4"}`}>
+          <div className="mx-auto max-w-[640px]">
+            <EditorContent editor={editor} />
+            <LinkCard editor={editor} />
+            <StyleCards shown={showCards} wide={wide} onPick={changeStyle} />
+          </div>
         </div>
       </div>
       {wide && toolbar}
+      {pictures.picking && (
+        <PicturePicker wide={wide} purpose="notes" onClose={pictures.closePicker} onPick={(id) => pictures.insert(id)} />
+      )}
     </>
   );
 }

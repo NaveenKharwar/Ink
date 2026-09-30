@@ -1,0 +1,21 @@
+meta {
+  name: Delete the picture
+  type: http
+  seq: 7
+}
+
+delete {
+  url: {{baseUrl}}/api/pictures/{{pictureId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  Takes the picture out of every piece that uses it, then deletes the file. Expect 204; running it again gives 404.
+  Privacy check: with a second user's token, expect 404 and the picture still there.
+  Run "Upload a picture" again afterwards to put it back.
+}

@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import type { Account } from "../lib/account";
 import { sync } from "../lib/localSave";
-import { ALL_WRITING, PROFILE, parseRoute, pieceAddress } from "../lib/route";
+import { ALL_WRITING, PICTURES, PROFILE, parseRoute, pieceAddress } from "../lib/route";
 import { deviceTimeZone, groupBySeason, resolveSeasonSet, seasonText } from "../lib/seasons";
 import { supabase } from "../lib/supabase";
 import { useWide } from "../lib/layout";
 import { AllWriting } from "./AllWriting";
 import { InkSeesPanel } from "./InkSeesPanel";
+import { PicturesPage } from "./PicturesPage";
 import { PieceView } from "./PieceView";
 import { Profile } from "./Profile";
 import { SearchDialog } from "./SearchDialog";
@@ -30,13 +31,14 @@ const typingInPage = () => !!document.activeElement?.closest(".ProseMirror");
 // What the address says to show: a blank page, a piece to open, or All writing. A piece that
 // cannot exist (`/p/nonsense`) is shown as not found, like someone else's piece.
 type Target = { id: string; open: boolean };
-type View = { kind: "piece"; target: Target } | { kind: "all"; season: string | null } | { kind: "profile" };
+type View = { kind: "piece"; target: Target } | { kind: "all"; season: string | null } | { kind: "pictures" } | { kind: "profile" };
 
 const blank = (): View => ({ kind: "piece", target: { id: newId(), open: false } });
 function viewFromAddress(): View {
   const route = parseRoute(window.location.pathname);
   if (route.kind === "all") return { kind: "all", season: null };
   if (route.kind === "profile") return { kind: "profile" };
+  if (route.kind === "pictures") return { kind: "pictures" };
   if (route.kind === "piece") return { kind: "piece", target: { id: route.id, open: true } };
   if (route.kind === "missing") return { kind: "piece", target: { id: newId(), open: true } };
   return blank();
@@ -89,6 +91,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
   const newPiece = () => go("/", blank());
   const openPiece = (id: string) => go(pieceAddress(id), { kind: "piece", target: { id, open: true } });
   const openAll = (season: string | null = null) => go(ALL_WRITING, { kind: "all", season });
+  const openPictures = () => go(PICTURES, { kind: "pictures" });
   // Back to writing returns to where Profile was opened from (a blank page if opened directly).
   const beforeProfile = useRef<{ address: string; view: View } | null>(null);
   const openProfile = () => {
@@ -193,6 +196,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
     onSearch: () => setSearchOpen(true),
     onWrite: newPiece,
     onAll: () => openAll(),
+    onPictures: openPictures,
     onSeason: (key: string) => openAll(key),
     onProfile: openProfile,
     onSignOut: signOut
@@ -209,6 +213,14 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
         onMenu={onMenu}
         onBack={leaveProfile}
         onSignOut={signOut}
+      />
+    ) : view.kind === "pictures" ? (
+      <PicturesPage
+        wide={wide}
+        showMenuButton={!wide || !menuOpen}
+        onMenu={onMenu}
+        seasonOf={(createdAt) => seasonText(new Date(createdAt), new Date(), deviceTimeZone(), seasonSet)}
+        onOpenPiece={openPiece}
       />
     ) : view.kind === "all" ? (
       <AllWriting

@@ -1,5 +1,6 @@
 import * as Y from "yjs";
 import {
+  pieceCover,
   pieceLanguage,
   pieceStyle,
   type EditorDoc,
@@ -69,4 +70,51 @@ export function ydocToMeta(ydoc: Y.Doc): PieceMeta {
     language: language.success ? language.data : null,
     style: style.success ? style.data : null
   };
+}
+
+// The editor node that holds a picture in the text (Notes); its `id` names the picture.
+export const PICTURE_NODE = "picture";
+
+function pictureElements(parent: Y.XmlFragment | Y.XmlElement, found: Array<{ parent: Y.XmlFragment | Y.XmlElement; element: Y.XmlElement }>) {
+  for (const child of parent.toArray()) {
+    if (!(child instanceof Y.XmlElement)) continue;
+    if (child.nodeName === PICTURE_NODE) found.push({ parent, element: child });
+    else pictureElements(child, found);
+  }
+  return found;
+}
+
+/** Every picture a piece uses: its cover and the pictures in its text, each id once. */
+export function ydocPictureIds(ydoc: Y.Doc): string[] {
+  const ids = new Set<string>();
+  const cover = pieceCover.safeParse(ydoc.getMap(META_FIELD).get("cover"));
+  if (cover.success) ids.add(cover.data.id);
+  for (const { element } of pictureElements(ydoc.getXmlFragment(EDITOR_FIELD), [])) {
+    const id = element.getAttribute("id");
+    if (typeof id === "string" && id) ids.add(id);
+  }
+  return [...ids];
+}
+
+/**
+ * Takes a picture out of a piece (its cover and every place in the text), as an ordinary Yjs
+ * change, so the writer's devices simply merge it. Returns whether anything changed.
+ */
+export function removePictureFromYdoc(ydoc: Y.Doc, id: string): boolean {
+  let changed = false;
+  ydoc.transact(() => {
+    const meta = ydoc.getMap(META_FIELD);
+    const cover = pieceCover.safeParse(meta.get("cover"));
+    if (cover.success && cover.data.id === id) {
+      meta.delete("cover");
+      changed = true;
+    }
+    // From the end, so earlier positions stay valid.
+    for (const { parent, element } of pictureElements(ydoc.getXmlFragment(EDITOR_FIELD), []).reverse()) {
+      if (element.getAttribute("id") !== id) continue;
+      parent.delete(parent.toArray().indexOf(element), 1);
+      changed = true;
+    }
+  });
+  return changed;
 }

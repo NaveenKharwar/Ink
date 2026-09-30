@@ -6,7 +6,9 @@ const envSchema = z.object({
   DATABASE_URL: z.string().url(),
   // Path to the database's CA certificate (PEM). Required in production.
   DATABASE_SSL_CA: z.string().min(1).optional(),
-  SUPABASE_URL: z.string().url()
+  SUPABASE_URL: z.string().url(),
+  // Lets the API (and only the API) read and write the private pictures bucket. Never sent to browsers.
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1)
 });
 
 export type Env = z.infer<typeof envSchema>;

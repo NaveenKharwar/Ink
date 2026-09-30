@@ -1,0 +1,19 @@
+meta {
+  name: A picture that does not exist
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/pictures/00000000-0000-4000-8000-000000000000
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  Expect 404 { error: "not_found" }.
+}

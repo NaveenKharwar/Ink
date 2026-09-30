@@ -1,0 +1,24 @@
+meta {
+  name: Upload a picture
+  type: http
+  seq: 1
+}
+
+put {
+  url: {{baseUrl}}/api/pictures/{{pictureId}}
+  body: file
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:file {
+  file: @file(4 Pictures/sample.jpg) @contentType(image/jpeg)
+}
+
+docs {
+  Stores a small JPEG under pictureId in your own private folder. Expect 204.
+  Sending it again replaces it (also 204), so a retry is safe.
+}

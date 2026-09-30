@@ -1,4 +1,4 @@
-import { docToPlainText, ydocToEditorDoc, ydocToMeta, type EditorDoc, type PieceMeta } from "@ink/schemas";
+import { docToPlainText, removePictureFromYdoc, ydocPictureIds, ydocToEditorDoc, ydocToMeta, type EditorDoc, type PieceMeta } from "@ink/schemas";
 import * as Y from "yjs";
 
 /** The bytes the client sent are not valid Yjs data. */
@@ -15,6 +15,8 @@ export type Merged = {
   content: EditorDoc;
   text: string;
   meta: PieceMeta;
+  /** The pictures the piece uses (cover and text). */
+  pictureIds: string[];
 };
 
 /**
@@ -38,8 +40,22 @@ export function mergeYdoc(stored: Uint8Array | null, incoming: Uint8Array | null
     stateVector: Y.encodeStateVector(doc),
     content,
     text: docToPlainText(content),
-    meta: ydocToMeta(doc)
+    meta: ydocToMeta(doc),
+    pictureIds: ydocPictureIds(doc)
   };
   doc.destroy();
   return merged;
+}
+
+/**
+ * The piece with a picture taken out (cover and text), made as an ordinary Yjs change so the
+ * writer's devices merge it on their next sync. Null when the piece didn't use it.
+ */
+export function withoutPicture(stored: Uint8Array, pictureId: string): Merged | null {
+  const doc = new Y.Doc();
+  Y.applyUpdate(doc, stored);
+  const changed = removePictureFromYdoc(doc, pictureId);
+  const state = Y.encodeStateAsUpdate(doc);
+  doc.destroy();
+  return changed ? mergeYdoc(state, null, new Uint8Array([0])) : null;
 }

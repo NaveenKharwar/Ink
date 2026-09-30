@@ -1,4 +1,4 @@
-// The one ad slot (300 × 250), only on Home and All writing. For now an empty placeholder
+// The one ad slot (300 × 250), only on Home, All writing and Pictures. For now an empty placeholder
 // shown in development only, to see the layout; no ad code is loaded. Real ads come from an
 // isolated frame on another origin so ad code can never read the writing.
 export function AdSlot() {

@@ -32,3 +32,9 @@ test("/profile is the writer's Profile", () => {
   assert.deepEqual(parseRoute("/profile/"), { kind: "profile" });
   assert.deepEqual(parseRoute("/profiles"), { kind: "new" });
 });
+
+test("/pictures is the writer's Pictures", () => {
+  assert.deepEqual(parseRoute("/pictures"), { kind: "pictures" });
+  assert.deepEqual(parseRoute("/pictures/"), { kind: "pictures" });
+  assert.deepEqual(parseRoute("/pictures/x"), { kind: "new" });
+});

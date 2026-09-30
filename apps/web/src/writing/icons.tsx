@@ -80,6 +80,14 @@ export const LinkIcon = ({ size = 18 }: P) => (
   </svg>
 );
 
+export const PictureIcon = ({ size = 18 }: P) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="3.5" y="5" width="17" height="14" rx="2" />
+    <circle cx="9" cy="10" r="1.6" />
+    <path d="M4 17l5-4.5 3.5 3 3-2.5L20 17" />
+  </svg>
+);
+
 // A plain note: something needs the writer's attention (never red).
 export const NoteIcon = ({ size = 20 }: P) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">

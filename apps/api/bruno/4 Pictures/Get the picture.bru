@@ -1,0 +1,20 @@
+meta {
+  name: Get the picture
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/pictures/{{pictureId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  Expect 200 with the picture (Content-Type image/jpeg, Cache-Control private).
+  Privacy check: sign in as a second user and run this with their token: expect 404.
+}

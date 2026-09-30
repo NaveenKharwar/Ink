@@ -1,0 +1,27 @@
+meta {
+  name: Not a picture
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{baseUrl}}/api/pictures/{{pictureId}}
+  body: text
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: image/jpeg
+}
+
+body:text {
+  this says it is a JPEG but it is not
+}
+
+docs {
+  The server checks the bytes, not the Content-Type. Expect 415 { error: "unsupported_media_type" } and nothing stored.
+}

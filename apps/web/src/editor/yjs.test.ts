@@ -40,3 +40,18 @@ test("the editor's Yjs data reads back as the same JSON on the server", () => {
     "Monsoon\n\nthe rain remembers\n\n\tपिता के हाथों में\nलोहे की गंध थी,\n\n* * *\n\nYaar, aaj phir chai thandi ho gayi."
   );
 });
+
+test("a picture keeps only its id through Yjs and adds nothing to the plain text", () => {
+  const id = "3f2a9c1e-8b7d-4c6a-9e5f-1a2b3c4d5e6f";
+  const withPicture: EditorDoc = {
+    type: "doc",
+    content: [
+      { type: "paragraph", content: [{ type: "text", text: "Night trains" }] },
+      { type: "picture", attrs: { id } },
+      { type: "paragraph", content: [{ type: "text", text: "yellow autos in the rain" }] }
+    ]
+  };
+  const back = ydocToEditorDoc(prosemirrorJSONToYDoc(schema, withPicture, "default"));
+  assert.deepEqual(JSON.parse(JSON.stringify(back.content?.[1])), { type: "picture", attrs: { id } });
+  assert.equal(docToPlainText(back), "Night trains\n\nyellow autos in the rain");
+});

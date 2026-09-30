@@ -1,6 +1,7 @@
 vars:pre-request {
   baseUrl: http://localhost:3001
   pieceId: 3f0c7a52-8b1e-4d2a-9c3e-5a6b7c8d9e01
+  pictureId: 7a1d2e3f-4b5c-4d6e-8f70-81a2b3c4d5e6
 }
 
 docs {
@@ -8,10 +9,11 @@ docs {
 
   1. Put your test user's email and password in the .env file in this folder (TEST_EMAIL, TEST_PASSWORD).
   2. Run "1 Sign in / Get a token".
-  3. Run the "2 Pieces" folder top to bottom, then "3 Errors".
+  3. Run the "2 Pieces" folder top to bottom, then "3 Errors", then "4 Pictures".
   Writing goes through POST /api/pieces/{id}/sync with Yjs data (base64) that a script prepared, as if a device typed it.
   All the requests use the piece in pieceId (set above); change it to start clean.
   For the privacy check: sign in as a second user, paste that token, and run "Get the piece" or a sync with the same pieceId: expect 404.
+  Pictures the same: as the second user, "Get the picture" with the same pictureId must answer 404.
 
   Each request's Docs tab says what to expect.
 }

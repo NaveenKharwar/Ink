@@ -1,0 +1,20 @@
+meta {
+  name: Where is it used
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/api/pictures/{{pictureId}}/uses
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  The pieces that use pictureId as their cover or in their text: { items: [{ id, title, firstLine }] }.
+  A second user's token gets an empty list.
+}

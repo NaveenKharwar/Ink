@@ -3,7 +3,7 @@ import { test } from "node:test";
 import * as Y from "yjs";
 import { docToPlainText } from "./text.js";
 import { fromBase64, toBase64 } from "./bytes.js";
-import { ydocToEditorDoc, ydocToMeta } from "./ydoc.js";
+import { removePictureFromYdoc, ydocPictureIds, ydocToEditorDoc, ydocToMeta } from "./ydoc.js";
 
 // Builds a document the way the editor's Yjs binding stores it.
 function build() {
@@ -93,4 +93,58 @@ test("two devices renaming: each key merges on its own, the later edit of a key 
   Y.applyUpdate(b, Y.encodeStateAsUpdate(a));
   assert.deepEqual(ydocToMeta(a), ydocToMeta(b));
   assert.deepEqual(ydocToMeta(a), { title: "From the laptop", language: "hi", style: null });
+});
+
+const COVER = "3f2a9c1e-8b7d-4c6a-9e5f-1a2b3c4d5e6f";
+const INLINE = "7a1d2e3f-4b5c-4d6e-8f70-81a2b3c4d5e6";
+const CROP = { x: 0, y: 20, width: 100, height: 40 };
+
+// A piece with a cover and, in a list and at the top level, pictures in its text.
+function withPictures() {
+  const ydoc = new Y.Doc();
+  ydoc.getMap("meta").set("cover", { id: COVER, crop: CROP });
+  const fragment = ydoc.getXmlFragment("default");
+  const picture = (id: string) => {
+    const el = new Y.XmlElement("picture");
+    el.setAttribute("id", id);
+    return el;
+  };
+  const p = new Y.XmlElement("paragraph");
+  fragment.push([p, picture(INLINE)]);
+  p.push([new Y.XmlText("Night trains")]);
+  const list = new Y.XmlElement("bulletList");
+  const item = new Y.XmlElement("listItem");
+  fragment.push([list]);
+  list.push([item]);
+  item.push([picture(INLINE), picture(COVER)]);
+  return ydoc;
+}
+
+test("a piece's pictures are its cover and the pictures in its text, each once", () => {
+  assert.deepEqual(ydocPictureIds(withPictures()).sort(), [COVER, INLINE].sort());
+  assert.deepEqual(ydocPictureIds(new Y.Doc()), []);
+  const bad = new Y.Doc();
+  bad.getMap("meta").set("cover", { id: "not-an-id", crop: CROP });
+  assert.deepEqual(ydocPictureIds(bad), []);
+});
+
+test("removing a picture takes it off the cover and out of the text, and leaves the rest", () => {
+  const ydoc = withPictures();
+  assert.equal(removePictureFromYdoc(ydoc, INLINE), true);
+  assert.deepEqual(ydocPictureIds(ydoc), [COVER]);
+  assert.ok(!JSON.stringify(ydocToEditorDoc(ydoc)).includes(INLINE));
+  assert.ok(docToPlainText(ydocToEditorDoc(ydoc)).startsWith("Night trains"));
+  assert.equal(removePictureFromYdoc(ydoc, COVER), true);
+  assert.deepEqual(ydocPictureIds(ydoc), []);
+  assert.equal(ydoc.getMap("meta").get("cover"), undefined);
+  assert.equal(removePictureFromYdoc(ydoc, COVER), false);
+});
+
+test("a removal made elsewhere merges into a device's copy", () => {
+  const device = withPictures();
+  const server = new Y.Doc();
+  Y.applyUpdate(server, Y.encodeStateAsUpdate(device));
+  removePictureFromYdoc(server, COVER);
+  Y.applyUpdate(device, Y.encodeStateAsUpdate(server, Y.encodeStateVector(device)));
+  assert.deepEqual(ydocPictureIds(device), [INLINE]);
 });

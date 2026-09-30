@@ -1,0 +1,19 @@
+meta {
+  name: List my pictures
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/pictures
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  Your pictures, newest first, with totalBytes (the space they take). Only yours: a second user's token lists only theirs.
+}

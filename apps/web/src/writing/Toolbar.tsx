@@ -12,10 +12,13 @@ import {
   LinkIcon,
   NoteIcon,
   NumberedListIcon,
+  PictureIcon,
   QuoteIcon,
   SceneBreakIcon
 } from "./icons";
 import { LinkField } from "./LinkField";
+import { Loader } from "../ui/Loader";
+import type { PictureAdder } from "./usePictureAdder";
 import type { SaveState } from "./usePieceSave";
 
 export const LANGUAGES: Array<{ value: PieceLanguage; label: string }> = [
@@ -34,6 +37,8 @@ type Props = {
   save: SaveState;
   /** Phone: how much of the screen the keyboard covers (0 when it's closed). */
   keyboardInset?: number;
+  /** Adds pictures to a Notes piece. */
+  pictures: PictureAdder;
 };
 
 // The same slide as Ink's side sheets (360ms, same curve); with reduced motion it moves at once.
@@ -75,7 +80,7 @@ function Tool({
 const SAVE_SHORT = { idle: "", saving: "Saving", saved: "Saved", device: "On this device", refused: "Not saved" } as const;
 
 // The tool bar: the style's formatting tools, then word count, language (desktop) and save state.
-export function Toolbar({ editor, style, wide, words, language, onLanguage, save, keyboardInset = 0 }: Props) {
+export function Toolbar({ editor, style, wide, words, language, onLanguage, save, keyboardInset = 0, pictures }: Props) {
   // The writer can slide the bar down with the tab on its top edge; it stays down until they
   // tap the tab left at the bottom. Nothing hides it on its own.
   const [tucked, setTucked] = useState(false);
@@ -122,6 +127,13 @@ export function Toolbar({ editor, style, wide, words, language, onLanguage, save
       { key: "bullets", label: "Bullet list", active: active.bullets, onClick: () => run().toggleBulletList().run(), icon: <BulletListIcon /> },
       { key: "numbers", label: "Numbered list", active: active.numbers, onClick: () => run().toggleOrderedList().run(), icon: <NumberedListIcon /> },
       { key: "link", label: "Link", active: active.link || linking, onClick: () => setLinking(!linking), icon: <LinkIcon /> },
+      {
+        key: "picture",
+        label: "Picture",
+        active: false,
+        onClick: () => !pictures.busy && void pictures.choose(),
+        icon: pictures.busy ? <Loader size={14} label="Adding the picture" /> : <PictureIcon />
+      },
       quote,
       scene
     ]
@@ -186,6 +198,19 @@ export function Toolbar({ editor, style, wide, words, language, onLanguage, save
     });
   }
 
+  // A message about a picture that couldn't be added: beside the tool bar, gone after a moment.
+  const pictureNotice = pictures.notice && (
+    <p
+      role="status"
+      className={`absolute z-10 m-0 flex max-w-[360px] items-center gap-2 rounded-md border border-line-strong bg-surface px-3 py-2 font-sans text-[13px] leading-5 text-ink shadow-[0_4px_16px_rgba(0,0,0,0.10)] ${
+        wide ? "bottom-[calc(100%+8px)] left-3" : "top-[calc(100%+8px)] left-2"
+      }`}
+    >
+      <NoteIcon size={16} />
+      {pictures.notice}
+    </p>
+  );
+
   const scrollRow =
     "overflow-x-auto [scrollbar-width:none] [mask-image:linear-gradient(to_right,transparent,black_12px,black_calc(100%-20px),transparent)] [&::-webkit-scrollbar]:hidden";
   const toolButtons = toolsFor[style].map((t) => (
@@ -217,6 +242,7 @@ export function Toolbar({ editor, style, wide, words, language, onLanguage, save
         {linking && style === "notes" && (
           <LinkField editor={editor} className="absolute top-[calc(100%+8px)] right-2 left-2 max-w-[360px]" onDone={() => setLinking(false)} />
         )}
+        {pictureNotice}
       </div>
     );
   }
@@ -247,6 +273,7 @@ export function Toolbar({ editor, style, wide, words, language, onLanguage, save
           {toolButtons}
         </div>
         {linking && style === "notes" && <LinkField editor={editor} onDone={() => setLinking(false)} />}
+        {pictureNotice}
         {!twoRows && <div className="grow" />}
         <div ref={meta} className={`flex items-center ${twoRows ? "mt-1 h-10 w-full justify-between border-t border-line px-1.5" : "gap-4"}`}>
           {metaItems.map((item, i) => (

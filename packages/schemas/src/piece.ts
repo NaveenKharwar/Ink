@@ -11,6 +11,34 @@ export type PieceLanguage = z.infer<typeof pieceLanguage>;
 export const pieceStyle = z.enum(["poem", "story", "notes"]);
 export type PieceStyle = z.infer<typeof pieceStyle>;
 
+// A piece's cover: one of the writer's own pictures across the top of the paper. It lives in
+// the piece's Yjs document (meta map, "cover"), like the title: `id` names the picture in the
+// writer's private store, `crop` is the part the writer chose, in percent of the picture
+// (the picture itself is never changed, so one picture can be cropped differently per piece).
+const percent = z.number().min(0).max(100);
+export const pictureCrop = z.object({ x: percent, y: percent, width: percent.positive(), height: percent.positive() });
+export type PictureCrop = z.infer<typeof pictureCrop>;
+export const pieceCover = z.object({ id: z.string().uuid(), crop: pictureCrop });
+export type PieceCover = z.infer<typeof pieceCover>;
+
+// The writer's pictures, as the Pictures page lists them.
+export const pictureSummary = z.object({
+  id: z.string().uuid(),
+  type: z.enum(["image/jpeg", "image/webp"]),
+  bytes: z.number().int().nonnegative(),
+  // A tiny blurred preview (a data: URL of a few hundred bytes), shown while the picture loads.
+  preview: z.string().nullable(),
+  createdAt: z.string()
+});
+export type PictureSummary = z.infer<typeof pictureSummary>;
+export const pictureListResponse = z.object({ items: z.array(pictureSummary), totalBytes: z.number().int().nonnegative() });
+export type PictureListResponse = z.infer<typeof pictureListResponse>;
+// The pieces a picture is in (its cover, or in the text).
+export const pictureUsesResponse = z.object({
+  items: z.array(z.object({ id: z.string().uuid(), title: z.string().nullable(), firstLine: z.string() }))
+});
+export type PictureUsesResponse = z.infer<typeof pictureUsesResponse>;
+
 // Editor (TipTap / ProseMirror) JSON. The editor owns the node types, so this only
 // checks the shape. A stanza is a paragraph; a line inside it is a hardBreak.
 export type EditorMark = { type: string; attrs?: Record<string, unknown> };

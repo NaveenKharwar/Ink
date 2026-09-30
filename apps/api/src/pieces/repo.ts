@@ -112,6 +112,7 @@ export function pgPiecesRepo(db: pg.Pool): PiecesRepo {
           set("language", merged.meta.language);
           set("style", merged.meta.style);
           set("search_text", searchText(merged.meta.title, merged.text));
+          set("picture_ids", merged.pictureIds, "::uuid[]");
         }
         if (sets.length) sets.push("updated_at = now()");
 

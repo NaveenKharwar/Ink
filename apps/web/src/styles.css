@@ -12,8 +12,11 @@
      Profile). The poem's stanza bar sits inside it, so it must stay wider than the bar and
      its gap (17px on phone, 32px on desktop). */
   --page-gutter: 24px;
+  /* A piece's cover: across the whole paper, above the writing. */
+  --cover-height: 150px;
   @variant wide {
     --page-gutter: 48px;
+    --cover-height: 220px;
   }
 }
 

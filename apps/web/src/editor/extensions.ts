@@ -16,6 +16,7 @@ import { Slice, type Node as PMNode } from "@tiptap/pm/model";
 import { Plugin, PluginKey, TextSelection } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import { plainTextToDoc } from "./paste";
+import { Picture } from "./picture";
 
 const INDENT = "\t";
 const SPACES_PER_INDENT = 4;
@@ -240,6 +241,8 @@ export const writingExtensions = [
   // Links are added from the tool bar (Notes) and open only on purpose, never by a click
   // while writing.
   Link.configure({ openOnClick: false, autolink: false, linkOnPaste: false, defaultProtocol: "https" }),
+  // Pictures (Notes); before PlainPaste so a pasted picture isn't taken as text.
+  Picture,
   TrailingNode,
   Placeholder.configure({ placeholder: "Start writing…" }),
   StanzaKeys,
