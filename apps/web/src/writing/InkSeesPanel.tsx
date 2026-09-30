@@ -6,6 +6,7 @@ export function InkSeesPanel({ phone = false, onClose }: { phone?: boolean; onCl
   return (
     <aside
       aria-label="Ink sees this too"
+      data-tether="panel"
       className={`box-border flex h-full shrink-0 flex-col overflow-hidden bg-surface ${
         phone ? "w-[var(--phone-sheet-width)] border-l border-line" : "w-[var(--sheet-width)] rounded-l-panel border border-r-0 border-line"
       }`}

@@ -11,6 +11,8 @@ export type Account = {
   seasons: SeasonChoice;
   hasPassword: boolean;
   via: "google" | "code";
+  // How many visits have shown the thread to "Ink sees this too" (it stops after TETHER_VISITS).
+  tetherVisits: number;
 };
 
 const CHOICES: SeasonChoice[] = ["auto", "south-asia", "north", "south"];
@@ -24,11 +26,24 @@ export function accountOf(user: User): Account {
     penName,
     seasons: CHOICES.includes(meta.seasons) ? meta.seasons : "auto",
     hasPassword: meta.has_password === true,
-    via: Array.isArray(providers) && providers.includes("google") ? "google" : "code"
+    via: Array.isArray(providers) && providers.includes("google") ? "google" : "code",
+    tetherVisits: typeof meta.tether_visits === "number" && meta.tether_visits >= 0 ? meta.tether_visits : 0
   };
 }
 
 export const PEN_NAME_MAX = 60;
+
+// The thread to "Ink sees this too" is shown on a writer's first visits only, then never again.
+// Counted on the account, so phone and desktop share the count.
+export const TETHER_VISITS = 3;
+
+// Once per app load: this visit has shown the thread.
+let tetherCounted = false;
+export function countTetherVisit(visits: number) {
+  if (tetherCounted) return;
+  tetherCounted = true;
+  void supabase.auth.updateUser({ data: { tether_visits: visits + 1 } });
+}
 
 export async function savePenName(name: string): Promise<boolean> {
   const { error } = await supabase.auth.updateUser({ data: { pen_name: name.trim().slice(0, PEN_NAME_MAX) || null } });

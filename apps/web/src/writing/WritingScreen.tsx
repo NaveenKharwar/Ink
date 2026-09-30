@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
-import type { Account } from "../lib/account";
+import { TETHER_VISITS, countTetherVisit, type Account } from "../lib/account";
 import { sync } from "../lib/localSave";
 import { ALL_WRITING, PICTURES, PROFILE, parseRoute, pieceAddress } from "../lib/route";
 import { deviceTimeZone, groupBySeason, resolveSeasonSet, seasonText } from "../lib/seasons";
@@ -12,6 +12,7 @@ import { PieceView } from "./PieceView";
 import { Profile } from "./Profile";
 import { SearchDialog } from "./SearchDialog";
 import { Sidebar } from "./Sidebar";
+import { Tether, type TetherState } from "./Tether";
 import { useLibrary } from "./useLibrary";
 import { newId } from "../lib/newId";
 import { useVisibleArea } from "../lib/visibleArea";
@@ -67,6 +68,8 @@ function useRememberedOpen(key: string, fallback: boolean) {
   return [open, setOpen] as const;
 }
 
+const tetherForced = import.meta.env.DEV && new URLSearchParams(window.location.search).has("tether");
+
 const SLIDE = "transition-[translate,opacity] duration-[360ms] ease-[cubic-bezier(0.2,0.7,0.2,1)] motion-reduce:transition-none";
 
 export function WritingScreen({ account, userId }: { account: Account; userId: string }) {
@@ -81,6 +84,11 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
   const [pos, setPos] = useState<PhonePos>("page");
   const swipeStart = useRef<number | null>(null);
   const library = useLibrary();
+  // On a writer's first visits, a thread invites them to "Ink sees this too" (then never again).
+  // In development, `?tether` in the address shows it anyway, without counting a visit.
+  const [tether, setTether] = useState<TetherState | "gone">(() =>
+    account.tetherVisits < TETHER_VISITS || tetherForced ? "hang" : "gone"
+  );
 
   const go = (address: string, next: View) => {
     if (window.location.pathname !== address) window.history.pushState(null, "", address);
@@ -135,6 +143,43 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
     window.addEventListener("online", send);
     return () => window.removeEventListener("online", send);
   }, [userId]);
+
+  useEffect(() => {
+    if (account.tetherVisits < TETHER_VISITS && !tetherForced) countTetherVisit(account.tetherVisits);
+    // Counted once, for the visit the app opened with.
+  }, []);
+
+  // The thread lets go when it has done its job: on desktop once the writer has written three
+  // lines (or closes the panel), on phone as soon as they open the panel. It only hangs on a
+  // piece: on other screens it waits, and hangs again when the writer is back on a piece.
+  const tetherHangs = tether === "hang";
+  useEffect(() => {
+    if (!tetherHangs || view.kind !== "piece") return;
+    if (wide && !panelOpen) setTether("drift");
+    else if (!wide && pos === "panel") setTether("fall");
+  }, [tetherHangs, view.kind, wide, panelOpen, pos]);
+  useEffect(() => {
+    if (!tetherHangs || !wide) return;
+    let lines = 0;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Enter" || e.isComposing || !typingInPage()) return;
+      lines += 1;
+      if (lines >= 3) setTether("drift");
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [tetherHangs, wide]);
+  const thread = tether !== "gone" && view.kind === "piece" && (
+    <Tether
+      key={wide ? "wide" : "phone"}
+      anchor={wide ? "panel" : "sparkle"}
+      side={wide ? "left" : "bottom"}
+      note={wide ? "Look here." : "Peek inside."}
+      state={tether}
+      pointerWind={wide}
+      onGone={() => setTether("gone")}
+    />
+  );
 
   // ⌘\ opens and closes the menu, ⌘K opens search, from anywhere. ⌘B is always Bold.
   useEffect(() => {
@@ -281,6 +326,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
           <InkSeesPanel onClose={() => setPanelOpen(false)} />
         </div>
 
+        {thread}
         {search}
       </div>
     );
@@ -337,6 +383,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
           <InkSeesPanel phone onClose={() => setPos("page")} />
         </div>
       </div>
+      {thread}
       {search}
     </div>
   );

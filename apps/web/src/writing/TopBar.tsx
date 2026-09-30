@@ -105,7 +105,13 @@ export function TopBar({
           />
         )}
         {showSparkle && (
-          <button type="button" onClick={onSparkle} aria-label="Show what Ink sees" className={`h-9 w-9 ${iconButton}`}>
+          <button
+            type="button"
+            onClick={onSparkle}
+            aria-label="Show what Ink sees"
+            data-tether="sparkle"
+            className={`h-9 w-9 ${iconButton}`}
+          >
             <SparkleIcon />
           </button>
         )}

@@ -156,7 +156,8 @@
   /* Fonts are served by Ink itself (src/fonts.ts), never loaded from a third party. */
   --font-serif: "Source Serif 4 Variable", "Noto Serif Devanagari", Georgia, serif;
   --font-sans: "Inter Variable", "Noto Sans Devanagari Variable", system-ui, sans-serif;
-  /* Handwriting for a Hindi pen name (the stroke-drawn signature font has Latin letters only). */
+  /* Handwriting: a Hindi pen name (the stroke-drawn signature font has Latin letters only) and the
+     note on the thread to "Ink sees this too". */
   --font-hand: "Kalam", cursive;
 
   --radius-sm: 5px;
