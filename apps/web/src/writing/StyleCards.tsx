@@ -107,7 +107,7 @@ function StyleCardFace({ style }: { style: (typeof STYLES)[number] }) {
     <>
       <StyleArt art={style.art} />
       <span className="style-card-label block px-4 pb-4">
-        <span className="block font-serif text-[20px] leading-[26px]">{style.label}</span>
+        <span className="block font-display text-[20px] leading-[26px]">{style.label}</span>
         <span className="mt-0.5 block text-[13px] leading-[18px] text-ink-muted">{style.hint}</span>
       </span>
     </>

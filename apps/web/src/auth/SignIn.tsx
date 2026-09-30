@@ -59,10 +59,10 @@ export function SignIn() {
             {step === "email" ? (
               <>
                 <Eyebrow>WELCOME TO</Eyebrow>
-                <h1 className="mt-1.5 mb-0 font-serif text-[52px] leading-[56px] font-normal tracking-[-0.01em] wide:text-[76px] wide:leading-[80px]">
+                <h1 className="mt-1.5 mb-0 font-display text-[52px] leading-[56px] font-normal tracking-[-0.01em] wide:text-[76px] wide:leading-[80px]">
                   Ink
                 </h1>
-                <p className="mt-4 mb-0 max-w-[420px] font-serif text-[22px] leading-[30px] wide:text-[28px] wide:leading-[36px]">
+                <p className="mt-4 mb-0 max-w-[420px] font-display text-[22px] leading-[30px] wide:text-[28px] wide:leading-[36px]">
                   A home for everything you write.
                 </p>
                 <div className="h-8 wide:h-14" />

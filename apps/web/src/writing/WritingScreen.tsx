@@ -322,8 +322,8 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
         wide={wide}
         season={pieceSeason(view.target.id)}
         showMenuButton={!wide || !menuVisible}
-        showSparkle={!wide || !panelOpen}
-        onSparkle={() => (wide ? setPanelOpen(true) : setPos("panel"))}
+        panelOpen={wide ? panelOpen : pos === "panel"}
+        onSparkle={() => (wide ? setPanelOpen((open) => !open) : setPos(pos === "panel" ? "page" : "panel"))}
         onMenu={onMenu}
       />
     );

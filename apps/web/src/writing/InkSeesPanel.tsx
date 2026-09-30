@@ -2,7 +2,7 @@ import type { RelatedNote } from "@ink/schemas";
 import { useState, type ReactNode } from "react";
 import { noteLabel, seasonColorVar } from "../lib/related";
 import { deviceTimeZone, type SeasonSet } from "../lib/seasons";
-import { ChevronIcon, CloseIcon, SparkleIcon } from "./icons";
+import { ChevronIcon, CloseIcon } from "./icons";
 import { RelatedNoteView } from "./RelatedNoteView";
 import { useDismissals, useRelated } from "./useRelated";
 
@@ -106,12 +106,7 @@ export function InkSeesPanel({ phone = false, pieceId, exists, seasonSet, onClos
       }`}
     >
       <div className={`flex h-14 shrink-0 items-center justify-between border-b border-line pr-3 ${phone ? "pl-6" : "pl-4"}`}>
-        <span className="flex items-center gap-2 font-serif text-[16px] leading-[22px]">
-          <span className="text-accent">
-            <SparkleIcon size={15} />
-          </span>
-          Ink sees this too
-        </span>
+        <span className="font-display text-[16px] leading-[22px]">Ink sees this too</span>
         <button
           type="button"
           onClick={onClose}

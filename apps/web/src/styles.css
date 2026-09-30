@@ -22,19 +22,19 @@
 
 /* App colours: follow the system unless the writer picked Light or Dark (data-theme on <html>). */
 :root {
-  --ground: #f4f4f3;
-  --surface: #ffffff;
-  --line: #ececea;
+  --ground: #efe8dc;
+  --surface: #fdfaf3;
+  --line: #e6dccb;
   --ink: #1a1a1a;
   --on-ink: #ffffff;
-  --ink-muted: #6b6b6b;
-  --accent: #1d4ed8;
-  --accent-soft: #eaf0fe;
-  --dash: #b9c7ee;
-  --surface-hover: #f2f2f1;
-  --line-strong: #e4e4e2;
+  --ink-muted: #666560;
+  --accent: #4d7c0f;
+  --accent-soft: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  --dash: color-mix(in srgb, var(--accent) 35%, var(--surface));
+  --surface-hover: #f5efe3;
+  --line-strong: #dccfb9;
   --ink-subtle: #8a8a8a;
-  --stanza: #9db5f5;
+  --stanza: color-mix(in srgb, var(--accent) 45%, var(--surface));
   --tooltip: #16181d;
   --tooltip-key: #2e323a;
   --scrim: rgba(20, 20, 20, 0.28);
@@ -56,19 +56,19 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --ground: #121314;
-    --surface: #1a1b1d;
-    --line: #2a2b2e;
+    --ground: #14120f;
+    --surface: #1c1a17;
+    --line: #2a2620;
     --ink: #ededec;
     --on-ink: #121314;
     --ink-muted: #a3a3a0;
-    --accent: #8aa8ff;
-    --accent-soft: #1f2a44;
-    --dash: #3c4c7a;
-    --surface-hover: #232427;
-    --line-strong: #34363a;
+    --accent: #a8d86a;
+    --accent-soft: color-mix(in srgb, var(--accent) 18%, var(--surface));
+    --dash: color-mix(in srgb, var(--accent) 40%, var(--surface));
+    --surface-hover: #252119;
+    --line-strong: #36302a;
     --ink-subtle: #7a7b7e;
-    --stanza: #4a64b5;
+    --stanza: color-mix(in srgb, var(--accent) 50%, var(--surface));
     --tooltip: #2e3035;
     --tooltip-key: #3a3d43;
     --scrim: rgba(0, 0, 0, 0.5);
@@ -88,19 +88,19 @@
 }
 
 :root[data-theme="dark"] {
-  --ground: #121314;
-  --surface: #1a1b1d;
-  --line: #2a2b2e;
+  --ground: #14120f;
+  --surface: #1c1a17;
+  --line: #2a2620;
   --ink: #ededec;
   --on-ink: #121314;
   --ink-muted: #a3a3a0;
-  --accent: #8aa8ff;
-  --accent-soft: #1f2a44;
-  --dash: #3c4c7a;
-  --surface-hover: #232427;
-  --line-strong: #34363a;
+  --accent: #a8d86a;
+  --accent-soft: color-mix(in srgb, var(--accent) 18%, var(--surface));
+  --dash: color-mix(in srgb, var(--accent) 40%, var(--surface));
+  --surface-hover: #252119;
+  --line-strong: #36302a;
   --ink-subtle: #7a7b7e;
-  --stanza: #4a64b5;
+  --stanza: color-mix(in srgb, var(--accent) 50%, var(--surface));
   --tooltip: #2e3035;
   --tooltip-key: #3a3d43;
   --scrim: rgba(0, 0, 0, 0.5);
@@ -153,7 +153,7 @@
 
   /* Sign-in is light only, so it uses the light values directly. */
   --color-auth-ink: #1a1a1a;
-  --color-auth-accent: #1d4ed8;
+  --color-auth-accent: #4d7c0f;
   --color-auth-cream: #faf8f3;
   --color-auth-line: #e2ded5;
   --color-auth-rule: #cfc9bd;
@@ -162,8 +162,11 @@
   --color-auth-backdrop: #e6d9c6;
 
   /* Fonts are served by Ink itself (src/fonts.ts), never loaded from a third party. */
-  --font-serif: "Source Serif 4 Variable", "Noto Serif Devanagari", Georgia, serif;
-  --font-sans: "Inter Variable", "Noto Sans Devanagari Variable", system-ui, sans-serif;
+  --font-serif: "Lora Variable", "Noto Serif Devanagari", Georgia, serif;
+  --font-sans: "DM Sans Variable", "Noto Sans Devanagari Variable", system-ui, sans-serif;
+  /* The headings Ink writes (screen titles, the wordmark, dialog titles), as opposed to the
+     writer's own words, which are always --font-serif. Today the same face; one place to change. */
+  --font-display: var(--font-serif);
   /* Handwriting: a Hindi pen name (the stroke-drawn signature font has Latin letters only) and the
      note on the thread to "Ink sees this too". */
   --font-hand: "Kalam", cursive;

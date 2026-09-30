@@ -35,7 +35,7 @@ export function SkyRoller({ still }: { still: boolean }) {
         aria-hidden="true"
         className="pointer-events-none absolute right-0 bottom-0 h-[160px] w-full wide:h-[260px] wide:w-[720px] bg-[radial-gradient(ellipse_at_bottom_right,rgba(22,24,44,0.62)_0%,rgba(22,24,44,0.35)_40%,rgba(22,24,44,0)_72%)]"
       />
-    <div className="absolute right-5 bottom-4 text-right font-serif text-[16px] leading-[22px] text-white wide:right-10 wide:bottom-10 wide:text-[20px] wide:leading-7 [text-shadow:0_1px_12px_rgba(25,45,90,0.45)]">
+    <div className="absolute right-5 bottom-4 text-right font-display text-[16px] leading-[22px] text-white wide:right-10 wide:bottom-10 wide:text-[20px] wide:leading-7 [text-shadow:0_1px_12px_rgba(25,45,90,0.45)]">
       <ul className="sr-only">
         {LINES.map((line) => (
           <li key={line}>{line}</li>

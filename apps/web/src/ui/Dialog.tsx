@@ -67,7 +67,7 @@ export function Dialog({ title, wide, onClose, className = "w-[720px] h-[620px]"
         }`}
       >
         <div className="flex h-[60px] shrink-0 items-center justify-between border-b border-line pr-3 pl-[var(--page-gutter)] wide:pl-6">
-          <h2 className="m-0 font-serif text-[20px] leading-7 font-normal">{title}</h2>
+          <h2 className="m-0 font-display text-[20px] leading-7 font-normal">{title}</h2>
           <button
             type="button"
             onClick={onClose}

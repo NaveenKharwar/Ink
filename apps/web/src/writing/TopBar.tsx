@@ -1,6 +1,7 @@
 import type { PieceLanguage, PieceStyle } from "@ink/schemas";
 import { useEffect, useRef, useState } from "react";
-import { CloudIcon, MenuIcon, SparkleIcon } from "./icons";
+import { CloudIcon, MenuIcon } from "./icons";
+import { ConnectionsButton } from "./ConnectionsButton";
 import { Dropdown } from "./Dropdown";
 import { STYLES } from "./StyleCards";
 import { LANGUAGES } from "./Toolbar";
@@ -29,7 +30,9 @@ type Props = {
   style: PieceStyle | null;
   onStyle: (style: PieceStyle) => void;
   save: SaveState;
-  showSparkle: boolean;
+  /** "Ink sees this too" is open (the mark stays put, joined). */
+  panelOpen: boolean;
+  /** Opens the panel, or closes it if it is open. */
   onSparkle: () => void;
   /** ☰: always on phone; on desktop while the menu is closed. */
   showMenuButton: boolean;
@@ -50,7 +53,7 @@ export function TopBar({
   style,
   onStyle,
   save,
-  showSparkle,
+  panelOpen,
   onSparkle,
   showMenuButton,
   onMenu
@@ -104,17 +107,7 @@ export function TopBar({
             display={<span className="font-medium">{SHORT[language]}</span>}
           />
         )}
-        {showSparkle && (
-          <button
-            type="button"
-            onClick={onSparkle}
-            aria-label="Show what Ink sees"
-            data-tether="sparkle"
-            className={`h-9 w-9 ${iconButton}`}
-          >
-            <SparkleIcon />
-          </button>
-        )}
+        <ConnectionsButton open={panelOpen} onToggle={onSparkle} />
       </div>
     </div>
   );

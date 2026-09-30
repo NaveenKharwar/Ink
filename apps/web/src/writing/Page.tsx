@@ -29,7 +29,7 @@ type Props = {
   /** Where the piece lives: "Now", "Summer", "Monsoon 2025". */
   season: string;
   showMenuButton: boolean;
-  showSparkle: boolean;
+  panelOpen: boolean;
   onSparkle: () => void;
   onMenu: () => void;
 };
@@ -37,7 +37,7 @@ type Props = {
 const EDITOR_ATTRIBUTES = { "aria-label": "Your writing", spellcheck: "false" };
 
 // The page panel: where the piece lives, the writing itself, and the tool bar.
-export function Page({ pieceId, userId, opened, wide, season, showMenuButton, showSparkle, onSparkle, onMenu }: Props) {
+export function Page({ pieceId, userId, opened, wide, season, showMenuButton, panelOpen, onSparkle, onMenu }: Props) {
   // The piece is a Yjs document: it merges with what other devices write.
   // Loaded before the editor exists, so the editor starts from the piece and adds nothing on top.
   const [ydoc] = useState(() => {
@@ -147,7 +147,7 @@ export function Page({ pieceId, userId, opened, wide, season, showMenuButton, sh
         style={showCards ? null : style}
         onStyle={changeStyle}
         save={save.state}
-        showSparkle={showSparkle}
+        panelOpen={panelOpen}
         onSparkle={onSparkle}
         showMenuButton={showMenuButton}
         onMenu={onMenu}

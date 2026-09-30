@@ -6,7 +6,7 @@ export function Eyebrow({ children, className = "" }: { children: ReactNode; cla
 }
 
 export function Heading({ children }: { children: ReactNode }) {
-  return <h1 className="mt-2 font-serif text-[32px] leading-[1.15] font-normal wide:text-[44px]">{children}</h1>;
+  return <h1 className="mt-2 font-display text-[32px] leading-[1.15] font-normal wide:text-[44px]">{children}</h1>;
 }
 
 // While busy, the label gives way to the loader (screen readers still hear the label).

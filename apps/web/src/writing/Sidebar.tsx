@@ -55,7 +55,7 @@ export function Sidebar(props: Props) {
             <MenuIcon />
           </button>
           <div>
-            <div className="font-serif text-[25px] leading-[25px] font-medium">Ink</div>
+            <div className="font-display text-[25px] leading-[25px] font-medium">Ink</div>
             <div className="mt-1 text-[10px] leading-3 text-ink-muted">Write. Remember. Rediscover.</div>
           </div>
         </div>

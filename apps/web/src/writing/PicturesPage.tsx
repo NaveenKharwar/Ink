@@ -81,7 +81,7 @@ export function PicturesPage({ wide, showMenuButton, onMenu, seasonOf, onOpenPie
         <div className={`mx-auto max-w-[680px] ${wide ? "pt-7" : "pt-4"}`}>
           <div className="flex items-end justify-between gap-4">
             <div>
-              <h1 className={`m-0 font-serif font-normal ${wide ? "text-[30px] leading-9" : "text-[26px] leading-8"}`}>Your pictures</h1>
+              <h1 className={`m-0 font-display font-normal ${wide ? "text-[30px] leading-9" : "text-[26px] leading-8"}`}>Your pictures</h1>
               {list.items && (
                 <div className="mt-1 text-[13px] text-ink-muted">
                   {count} {count === 1 ? "picture" : "pictures"}
