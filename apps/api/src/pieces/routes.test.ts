@@ -5,6 +5,7 @@ import { fromBase64, toBase64, type Piece } from "@ink/schemas";
 import * as Y from "yjs";
 import { buildApp } from "../app.js";
 import { memoryPicturesRepo } from "../pictures/repo.js";
+import { memoryRelatedRepo } from "../related/repo.js";
 import { memoryPictureStore } from "../pictures/store.js";
 import type { VerifyToken } from "../auth.js";
 import { searchText, searchWords } from "./fold.js";
@@ -134,7 +135,7 @@ function device() {
 type Device = ReturnType<typeof device>;
 
 async function setup(repo: PiecesRepo = memoryRepo()) {
-  const app = await buildApp({ repo, pictures: { store: memoryPictureStore(), repo: memoryPicturesRepo() }, verify });
+  const app = await buildApp({ repo, related: memoryRelatedRepo(repo), pictures: { store: memoryPictureStore(), repo: memoryPicturesRepo() }, verify });
   const as = (userId: string) => ({ authorization: `Bearer token-${userId}` });
   return { app, as };
 }
@@ -396,7 +397,8 @@ test("malformed JSON, unknown routes and server errors all use { error, message 
 });
 
 test("the docs page and its OpenAPI document load when docs are on", async () => {
-  const app = await buildApp({ repo: memoryRepo(), pictures: { store: memoryPictureStore(), repo: memoryPicturesRepo() }, verify, docs: true });
+  const repo = memoryRepo();
+  const app = await buildApp({ repo, related: memoryRelatedRepo(repo), pictures: { store: memoryPictureStore(), repo: memoryPicturesRepo() }, verify, docs: true });
   const page = await app.inject({ method: "GET", url: "/docs" });
   assert.ok(page.statusCode === 200 || page.statusCode === 302);
   const spec = await app.inject({ method: "GET", url: "/docs/json" });

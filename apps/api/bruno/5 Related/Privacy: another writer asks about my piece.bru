@@ -1,0 +1,19 @@
+meta {
+  name: Privacy: another writer asks about my piece
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/pieces/{{pieceId}}/related
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  Run "1 Sign in / Get a token (second user)" first, so the token is the second writer. Expect 404. Then run "Get a token" again to go back to your own.
+}

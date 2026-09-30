@@ -1,0 +1,19 @@
+meta {
+  name: What Ink sees beside a piece
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/pieces/{{pieceId}}/related
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  Three lists: related, forgotten and loose, each note with its own opening lines, title and dates. Only your own pieces. Until the embedding pipeline exists, close means sharing words. Needs pieceId to be a piece of yours that has words.
+}

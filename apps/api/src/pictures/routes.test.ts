@@ -6,6 +6,7 @@ import type { VerifyToken } from "../auth.js";
 import type { PiecesRepo } from "../pieces/repo.js";
 import { PICTURE_MAX_BYTES, sniffPicture } from "./routes.js";
 import { memoryPicturesRepo, type PictureUse } from "./repo.js";
+import { memoryRelatedRepo } from "../related/repo.js";
 import { memoryPictureStore } from "./store.js";
 
 const ASHA = "11111111-1111-4111-8111-111111111111";
@@ -25,7 +26,7 @@ const WEBP = Buffer.concat([Buffer.from("RIFF"), Buffer.alloc(4), Buffer.from("W
 const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(64)]);
 
 async function setup(uses = new Map<string, PictureUse[]>()) {
-  const app = await buildApp({ repo: noPieces, pictures: { store: memoryPictureStore(), repo: memoryPicturesRepo(uses) }, verify });
+  const app = await buildApp({ repo: noPieces, related: memoryRelatedRepo(noPieces), pictures: { store: memoryPictureStore(), repo: memoryPicturesRepo(uses) }, verify });
   const as = (userId: string, type = "image/jpeg") => ({ authorization: `Bearer token-${userId}`, "content-type": type });
   return { app, as };
 }

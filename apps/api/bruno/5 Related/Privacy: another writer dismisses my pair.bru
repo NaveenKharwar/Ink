@@ -1,0 +1,19 @@
+meta {
+  name: Privacy: another writer dismisses my pair
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{baseUrl}}/api/pieces/{{pieceId}}/related/{{otherPieceId}}/dismissed
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  As the second writer (see the request above): expect 404, and nothing changes for you.
+}

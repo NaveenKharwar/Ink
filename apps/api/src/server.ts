@@ -4,6 +4,7 @@ import { createPool } from "./db.js";
 import { loadEnv } from "./env.js";
 import { pgPiecesRepo } from "./pieces/repo.js";
 import { pgPicturesRepo } from "./pictures/repo.js";
+import { pgRelatedRepo } from "./related/repo.js";
 import { supabasePictureStore } from "./pictures/store.js";
 
 const env = loadEnv();
@@ -12,6 +13,7 @@ const pool = createPool(env, (message) => warnings.push(message));
 
 const app = await buildApp({
   repo: pgPiecesRepo(pool),
+  related: pgRelatedRepo(pool),
   pictures: { store: supabasePictureStore(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY), repo: pgPicturesRepo(pool) },
   verify: supabaseTokenVerifier(env.SUPABASE_URL),
   logger: true,

@@ -1,0 +1,130 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import { buildApp } from "../app.js";
+import type { VerifyToken } from "../auth.js";
+import { memoryPicturesRepo } from "../pictures/repo.js";
+import { memoryPictureStore } from "../pictures/store.js";
+import type { PiecesRepo } from "../pieces/repo.js";
+import { rankRelated, type Candidate } from "./rank.js";
+import type { RelatedRepo } from "./repo.js";
+
+const ASHA = "11111111-1111-4111-8111-111111111111";
+const RAVI = "22222222-2222-4222-8222-222222222222";
+const [A, B, C] = ["aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", "cccccccc-cccc-4ccc-8ccc-cccccccccccc"];
+
+const NOW = new Date("2026-09-30T00:00:00Z");
+const piece = (id: string, text: string, updatedAt: string, title: string | null = null): Candidate => ({
+  id, title, text, language: "en", style: "poem", createdAt: updatedAt, updatedAt
+});
+
+test("pieces that share words are related, the closest first", () => {
+  const current = piece(A, "The rain kept the window company\nand the kettle went cold", "2026-09-29T00:00:00Z");
+  const out = rankRelated(
+    current,
+    [
+      piece(B, "Steam on the window, rain on the steam, the kettle again and again and again and again and again and again and again and again and again and again and again and again", "2026-08-01T00:00:00Z"),
+      piece(C, "A bus, a shelter, a quiet stranger with a folded newspaper hat, waiting out the weather together for a very long time, long past the hour that anyone had promised", "2026-08-02T00:00:00Z")
+    ],
+    NOW
+  );
+  assert.deepEqual(out.related.map((n) => n.id), [B]);
+  assert.deepEqual(out.related[0]!.lines, ["Steam on the window, rain on the steam, the kettle again and again and again and again and again and again and again and again and again and again and again and again"]);
+  assert.equal(out.forgotten.length, 0);
+});
+
+test("old pieces are forgotten, closest first, at most two, and never also related", () => {
+  const current = piece(A, "The kettle knew my name", "2026-09-29T00:00:00Z");
+  const old = (id: string, text: string, date: string) => piece(id, text, date);
+  const out = rankRelated(
+    current,
+    [
+      old("d1", "a long letter about nothing at all that goes on and on for the whole page and past the edge of what anyone would call a line, honestly, and then some", "2025-01-01T00:00:00Z"),
+      old("d2", "the kettle again, again", "2025-02-01T00:00:00Z"),
+      old("d3", "one more old page with no shared words whatsoever, just to fill the shelf up to the brim with paper and dust and patient old ink that nobody has opened", "2024-12-01T00:00:00Z")
+    ],
+    NOW
+  );
+  assert.equal(out.forgotten.length, 2);
+  assert.equal(out.forgotten[0]!.id, "d2");
+  assert.ok(!out.related.some((n) => out.forgotten.some((f) => f.id === n.id)));
+});
+
+test("short pieces are loose lines; a blank piece has nothing to be close to", () => {
+  const current = piece(A, "The kettle knew my name", "2026-09-29T00:00:00Z");
+  const out = rankRelated(current, [piece(B, "the kettle again, again", "2026-09-01T00:00:00Z")], NOW);
+  assert.deepEqual(out.loose.map((n) => n.id), [B]);
+  assert.deepEqual(rankRelated(piece(A, "  ", "2026-09-29T00:00:00Z"), [piece(B, "kettle", "2026-09-01T00:00:00Z")], NOW), {
+    related: [], forgotten: [], loose: []
+  });
+});
+
+test("Devanagari words count too", () => {
+  const current = piece(A, "बारिश में टीन की छत बोलती रही", "2026-09-29T00:00:00Z");
+  const other = piece(B, "छत पर बारिश की आवाज़ रात भर सुनता रहा, और सोचता रहा कि कितनी बातें हैं जो अब तक अनकही रह गई हैं, कितने ख़त हैं जो भेजे नहीं गए, कितने नाम हैं जिन्हें आवाज़ नहीं मिली", "2026-09-01T00:00:00Z");
+  assert.deepEqual(rankRelated(current, [other], NOW).related.map((n) => n.id), [B]);
+});
+
+// The routes, over a repo that remembers who asked, to show every call names the signed-in writer.
+function stubRepo() {
+  const asked: string[] = [];
+  const dismissed: string[] = [];
+  const mine = new Set([`${ASHA}|${A}`, `${ASHA}|${B}`]);
+  const repo: RelatedRepo = {
+    async candidates(userId, pieceId) {
+      asked.push(`${userId}|${pieceId}`);
+      if (!mine.has(`${userId}|${pieceId}`)) return null;
+      return { current: piece(A, "The kettle knew my name", "2026-09-29T00:00:00Z"), others: [piece(B, "the kettle again, again", "2026-09-01T00:00:00Z")] };
+    },
+    async dismiss(userId, pieceId, otherId) {
+      if (!mine.has(`${userId}|${pieceId}`) || !mine.has(`${userId}|${otherId}`)) return false;
+      dismissed.push(`${pieceId}>${otherId}`);
+      return true;
+    },
+    async restore(userId, pieceId, otherId) {
+      if (!mine.has(`${userId}|${pieceId}`) || !mine.has(`${userId}|${otherId}`)) return false;
+      dismissed.length = 0;
+      return true;
+    }
+  };
+  return { repo, asked, dismissed };
+}
+
+async function setup() {
+  const stub = stubRepo();
+  const noPieces = {} as PiecesRepo;
+  const verify: VerifyToken = async (token) => {
+    if (!token.startsWith("token-")) throw new Error("bad token");
+    return { userId: token.slice("token-".length) };
+  };
+  const app = await buildApp({ repo: noPieces, related: stub.repo, pictures: { store: memoryPictureStore(), repo: memoryPicturesRepo() }, verify });
+  const as = (userId: string) => ({ authorization: `Bearer token-${userId}` });
+  return { app, as, ...stub };
+}
+
+test("the related routes need a token", async () => {
+  const { app } = await setup();
+  assert.equal((await app.inject({ method: "GET", url: `/api/pieces/${A}/related` })).statusCode, 401);
+  assert.equal((await app.inject({ method: "PUT", url: `/api/pieces/${A}/related/${B}/dismissed` })).statusCode, 401);
+});
+
+test("the writer gets their notes; someone else's piece is not found", async () => {
+  const { app, as, asked } = await setup();
+  const mine = await app.inject({ method: "GET", url: `/api/pieces/${A}/related`, headers: as(ASHA) });
+  assert.equal(mine.statusCode, 200);
+  assert.deepEqual(mine.json().loose.map((n: { id: string }) => n.id), [B]);
+  const theirs = await app.inject({ method: "GET", url: `/api/pieces/${A}/related`, headers: as(RAVI) });
+  assert.equal(theirs.statusCode, 404);
+  assert.deepEqual(asked, [`${ASHA}|${A}`, `${RAVI}|${A}`]);
+  assert.equal((await app.inject({ method: "GET", url: "/api/pieces/nonsense/related", headers: as(ASHA) })).statusCode, 404);
+});
+
+test("dismissing and undoing answer 204, repeat safely, and refuse pieces that are not the writer's", async () => {
+  const { app, as, dismissed } = await setup();
+  const url = `/api/pieces/${A}/related/${B}/dismissed`;
+  assert.equal((await app.inject({ method: "PUT", url, headers: as(ASHA) })).statusCode, 204);
+  assert.equal((await app.inject({ method: "PUT", url, headers: as(ASHA) })).statusCode, 204);
+  assert.deepEqual(dismissed.slice(0, 1), [`${A}>${B}`]);
+  assert.equal((await app.inject({ method: "DELETE", url, headers: as(ASHA) })).statusCode, 204);
+  assert.equal((await app.inject({ method: "PUT", url, headers: as(RAVI) })).statusCode, 404);
+  assert.equal((await app.inject({ method: "PUT", url: `/api/pieces/${A}/related/nope/dismissed`, headers: as(ASHA) })).statusCode, 404);
+});

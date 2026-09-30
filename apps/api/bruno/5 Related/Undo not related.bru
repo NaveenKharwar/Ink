@@ -1,0 +1,19 @@
+meta {
+  name: Undo not related
+  type: http
+  seq: 3
+}
+
+delete {
+  url: {{baseUrl}}/api/pieces/{{pieceId}}/related/{{otherPieceId}}/dismissed
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  Expect 204. The piece is back in "What Ink sees beside a piece" (if it still qualifies).
+}
