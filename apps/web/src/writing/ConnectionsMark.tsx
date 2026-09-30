@@ -7,7 +7,7 @@ type Props = {
   size?: number;
 };
 
-// The mark for "Ink sees this too" three ink dots joined by threads, still at rest. Ink in colour at rest and on hover;
+// The mark for "Ink sees this too": three ink dots joined by threads, still at rest. Ink in colour at rest and on hover;
 // the accent once pressed or open, because that is what the accent means: this leads to other writing.
 // It moves only when the writer hovers, presses or opens it, never on its own, and not at all with
 // reduced motion.
