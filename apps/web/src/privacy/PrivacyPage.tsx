@@ -43,6 +43,10 @@ export function PrivacyPage() {
           there; deleting it removes it for good.
         </li>
         <li>
+          <strong>Pieces you dismiss:</strong> when you choose &ldquo;Not related&rdquo; on a note in Ink sees this
+          too, Ink remembers that pair of your pieces so it does not show them together again. Only you can see it.
+        </li>
+        <li>
           <strong>A password, only if you add one:</strong> it is stored scrambled (hashed), never as you typed it.
         </li>
         <li>

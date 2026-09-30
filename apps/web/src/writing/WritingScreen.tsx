@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
+import type { RelatedNote } from "@ink/schemas";
 import { TETHER_VISITS, countTetherVisit, type Account } from "../lib/account";
 import { sync } from "../lib/localSave";
 import { ALL_WRITING, PICTURES, PROFILE, parseRoute, pieceAddress } from "../lib/route";
 import { deviceTimeZone, groupBySeason, resolveSeasonSet, seasonText } from "../lib/seasons";
 import { supabase } from "../lib/supabase";
+import { READER_GAP } from "../lib/beside";
 import { useWide } from "../lib/layout";
 import { AllWriting } from "./AllWriting";
+import { BesidePaper } from "./BesidePaper";
 import { InkSeesPanel } from "./InkSeesPanel";
 import { PicturesPage } from "./PicturesPage";
 import { PieceView } from "./PieceView";
@@ -13,18 +16,21 @@ import { Profile } from "./Profile";
 import { SearchDialog } from "./SearchDialog";
 import { Sidebar } from "./Sidebar";
 import { Tether, type TetherState } from "./Tether";
+import { useDesktopLayout } from "./useDesktopLayout";
 import { useLibrary } from "./useLibrary";
 import { newId } from "../lib/newId";
 import { useVisibleArea } from "../lib/visibleArea";
 
-type PhonePos = "menu" | "page" | "panel";
+type PhonePos = "menu" | "page" | "panel" | "reader";
 
 // The track is menu · page · panel; each sheet is --phone-sheet-width wide (styles.css). The
 // panel sits flush with the right edge, mirroring the menu on the left.
 const PHONE_OFFSET: Record<PhonePos, string> = {
   menu: "0px",
   page: "calc(-1 * var(--phone-sheet-width))",
-  panel: "calc(-2 * var(--phone-sheet-width))"
+  panel: "calc(-2 * var(--phone-sheet-width))",
+  // An older piece opened from the panel is one more screen after it, as wide as the phone.
+  reader: "calc(-2 * var(--phone-sheet-width) - 100vw)"
 };
 
 const typingInPage = () => !!document.activeElement?.closest(".ProseMirror");
@@ -82,6 +88,13 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
   const [panelOpen, setPanelOpen] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
   const [pos, setPos] = useState<PhonePos>("page");
+  // The piece being written; the desktop layout and the older pieces being read belong to it.
+  const openPieceId = view.kind === "piece" ? view.target.id : null;
+  // How the desktop screen is shared (menu, page, reading paper, panel) and which older pieces are
+  // being read: all of it in one place, see useDesktopLayout.
+  const shell = useDesktopLayout({ menuPreferred: menuOpen, setMenuPreferred: setMenuOpen, panelOpen, pieceId: openPieceId });
+  const { tabs } = shell;
+  const menuVisible = wide ? shell.menuVisible : menuOpen;
   const swipeStart = useRef<number | null>(null);
   const library = useLibrary();
   // On a writer's first visits, a thread invites them to "Ink sees this too" (then never again).
@@ -112,6 +125,24 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
     else newPiece();
   };
 
+  // An older piece to read: beside the page on desktop, the screen after the panel on a phone.
+  const openBeside = (note: RelatedNote) => {
+    shell.read(note);
+    if (!wide) setPos("reader");
+  };
+  const closeTab = (id: string) => {
+    if (wide) shell.close(id);
+    else {
+      // One piece at a time here: slide back to the panel first, then forget what was being read.
+      setPos("panel");
+      window.setTimeout(() => shell.stop(), 380);
+    }
+  };
+  const readOlderPiece = (id: string) => {
+    shell.stop();
+    openPiece(id);
+  };
+
   // Back and forward move between pieces and All writing.
   useEffect(() => {
     const onPop = () => setView(viewFromAddress());
@@ -121,7 +152,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
 
   // The list is fetched again whenever it is about to be seen, so a piece written a moment ago is in it.
   // The desktop menu can stay open, so moving to another piece or screen fetches it too.
-  const menuShown = wide ? menuOpen : pos === "menu";
+  const menuShown = wide ? menuVisible : pos === "menu";
   const { refresh } = library;
   useEffect(() => {
     if (menuShown || view.kind === "all" || view.kind === "profile" || searchOpen) refresh();
@@ -187,7 +218,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
       const mod = e.metaKey || e.ctrlKey;
       if (mod && e.key === "\\" && wide) {
         e.preventDefault();
-        setMenuOpen((open) => !open);
+        shell.toggleMenu();
       } else if (mod && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setSearchOpen(true);
@@ -195,7 +226,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [wide]);
+  }, [wide, shell.toggleMenu]);
 
   // Seasons follow the device's time zone unless the writer chose a set in Profile.
   const timeZone = deviceTimeZone();
@@ -225,7 +256,6 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
 
   // The menu's dot marks the season on screen: the one All writing is narrowed to, or the open
   // piece's season (a piece not in the list yet is new, so it belongs to Now).
-  const openPieceId = view.kind === "piece" ? view.target.id : null;
   const menuSeason =
     view.kind === "all"
       ? view.season
@@ -247,14 +277,17 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
     onSignOut: signOut
   };
 
-  const onMenu = () => (wide ? setMenuOpen(true) : setPos("menu"));
+  const onMenu = () => {
+    if (wide) shell.openMenu();
+    else setPos("menu");
+  };
   const page =
     view.kind === "profile" ? (
       <Profile
         account={account}
         items={library.items}
         wide={wide}
-        showMenuButton={!wide || !menuOpen}
+        showMenuButton={!wide || !menuVisible}
         onMenu={onMenu}
         onBack={leaveProfile}
         onSignOut={signOut}
@@ -262,7 +295,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
     ) : view.kind === "pictures" ? (
       <PicturesPage
         wide={wide}
-        showMenuButton={!wide || !menuOpen}
+        showMenuButton={!wide || !menuVisible}
         onMenu={onMenu}
         seasonOf={(createdAt) => seasonText(new Date(createdAt), new Date(), deviceTimeZone(), seasonSet)}
         onOpenPiece={openPiece}
@@ -270,7 +303,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
     ) : view.kind === "all" ? (
       <AllWriting
         wide={wide}
-        showMenuButton={!wide || !menuOpen}
+        showMenuButton={!wide || !menuVisible}
         onMenu={onMenu}
         groups={shownGroups}
         failed={library.failed}
@@ -288,7 +321,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
         userId={userId}
         wide={wide}
         season={pieceSeason(view.target.id)}
-        showMenuButton={!wide || !menuOpen}
+        showMenuButton={!wide || !menuVisible}
         showSparkle={!wide || !panelOpen}
         onSparkle={() => (wide ? setPanelOpen(true) : setPos("panel"))}
         onMenu={onMenu}
@@ -304,18 +337,39 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
 
   if (wide) {
     const panelShown = panelOpen && view.kind === "piece";
+    const reading = shell.layout.reading;
     return (
       <div className="fixed inset-0 bg-ground">
-        <main className="relative mx-auto box-border flex h-full w-[var(--paper-width)] flex-col overflow-hidden border-x border-line bg-surface">
-          {page}
-        </main>
         <div
-          inert={!menuOpen}
+          className="absolute inset-0 flex justify-center"
+          style={reading ? { paddingLeft: reading.left, paddingRight: reading.right } : undefined}
+        >
+          <main
+            className="relative box-border flex h-full shrink-0 flex-col overflow-hidden border-x border-line bg-surface"
+            style={{ width: reading ? reading.page : "var(--paper-width)" }}
+          >
+            {page}
+          </main>
+          {reading && (
+            <div className="h-full shrink-0" style={{ marginLeft: READER_GAP, width: reading.reader }}>
+              <BesidePaper
+                tabs={tabs}
+                active={shell.active ?? tabs[0]!.id}
+                seasonSet={seasonSet}
+                onSelect={shell.select}
+                onClose={closeTab}
+                onOpenPiece={readOlderPiece}
+              />
+            </div>
+          )}
+        </div>
+        <div
+          inert={!menuVisible}
           className={`fixed top-3 bottom-3 left-0 z-30 flex rounded-r-panel shadow-[8px_0_24px_rgba(0,0,0,0.08)] ${SLIDE} ${
-            menuOpen ? "translate-x-0 opacity-100" : "pointer-events-none -translate-x-[calc(var(--sheet-width)+12px)] opacity-0"
+            menuVisible ? "translate-x-0 opacity-100" : "pointer-events-none -translate-x-[calc(var(--sheet-width)+12px)] opacity-0"
           }`}
         >
-          <Sidebar {...sidebarProps} onClose={() => setMenuOpen(false)} />
+          <Sidebar {...sidebarProps} onClose={shell.closeMenu} />
         </div>
         <div
           inert={!panelShown}
@@ -323,7 +377,14 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
             panelShown ? "translate-x-0 opacity-100" : "pointer-events-none translate-x-[calc(var(--sheet-width)+12px)] opacity-0"
           }`}
         >
-          <InkSeesPanel onClose={() => setPanelOpen(false)} />
+          <InkSeesPanel
+            key={openPieceId ?? "none"}
+            pieceId={openPieceId}
+            exists={view.kind === "piece" && view.target.open}
+            seasonSet={seasonSet}
+            onClose={() => setPanelOpen(false)}
+            onOpenBeside={openBeside}
+          />
         </div>
 
         {thread}
@@ -335,6 +396,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
   // Phone: menu, page and panel on one track that slides; nothing overlays the page.
   // All writing and Profile have no panel, so they move between the menu and the page only.
   const order: PhonePos[] = view.kind === "piece" ? ["menu", "page", "panel"] : ["menu", "page"];
+  const readerShown = view.kind === "piece" && tabs.length > 0;
   const onPointerDown = (e: PointerEvent) => {
     swipeStart.current = e.pointerType === "touch" && !typingInPage() && !searchOpen ? e.clientX : null;
   };
@@ -361,7 +423,10 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
     >
       <div
         className="absolute top-0 left-0 flex h-full transition-transform duration-[360ms] ease-[cubic-bezier(0.2,0.7,0.2,1)] motion-reduce:transition-none"
-        style={{ width: "calc(100vw + 2 * var(--phone-sheet-width))", transform: `translateX(${PHONE_OFFSET[pos]})` }}
+        style={{
+          width: readerShown ? "calc(200vw + 2 * var(--phone-sheet-width))" : "calc(100vw + 2 * var(--phone-sheet-width))",
+          transform: `translateX(${PHONE_OFFSET[pos]})`
+        }}
       >
         <div inert={pos !== "menu"} className="h-full">
           <Sidebar phone {...sidebarProps} onClose={() => setPos("page")} />
@@ -380,8 +445,29 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
           )}
         </main>
         <div inert={pos !== "panel"} className="h-full">
-          <InkSeesPanel phone onClose={() => setPos("page")} />
+          <InkSeesPanel
+            key={openPieceId ?? "none"}
+            phone
+            pieceId={openPieceId}
+            exists={view.kind === "piece" && view.target.open}
+            seasonSet={seasonSet}
+            onClose={() => setPos("page")}
+            onOpenBeside={openBeside}
+          />
         </div>
+        {readerShown && (
+          <div inert={pos !== "reader"} className="h-full">
+            <BesidePaper
+              phone
+              tabs={tabs}
+              active={shell.active ?? tabs[0]!.id}
+              seasonSet={seasonSet}
+              onSelect={shell.select}
+              onClose={closeTab}
+              onOpenPiece={readOlderPiece}
+            />
+          </div>
+        )}
       </div>
       {thread}
       {search}

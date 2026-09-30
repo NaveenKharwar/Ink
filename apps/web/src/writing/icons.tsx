@@ -167,3 +167,16 @@ export const SeasonIcon = ({ name, size = 16 }: P & { name: string }) => (
     {seasonPaths[name.toLowerCase()] ?? <circle cx="12" cy="12" r="3" />}
   </svg>
 );
+
+export const OpenBesideIcon = ({ size = 16 }: P) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="3" y="4" width="18" height="16" rx="2" />
+    <path d="M14 4v16" />
+  </svg>
+);
+
+export const ChevronSideIcon = ({ size = 14, dir }: P & { dir: "left" | "right" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d={dir === "left" ? "M15 6l-6 6 6 6" : "M9 6l6 6-6 6"} />
+  </svg>
+);

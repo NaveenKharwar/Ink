@@ -29,6 +29,8 @@
   --on-ink: #ffffff;
   --ink-muted: #6b6b6b;
   --accent: #1d4ed8;
+  --accent-soft: #eaf0fe;
+  --dash: #b9c7ee;
   --surface-hover: #f2f2f1;
   --line-strong: #e4e4e2;
   --ink-subtle: #8a8a8a;
@@ -61,6 +63,8 @@
     --on-ink: #121314;
     --ink-muted: #a3a3a0;
     --accent: #8aa8ff;
+    --accent-soft: #1f2a44;
+    --dash: #3c4c7a;
     --surface-hover: #232427;
     --line-strong: #34363a;
     --ink-subtle: #7a7b7e;
@@ -91,6 +95,8 @@
   --on-ink: #121314;
   --ink-muted: #a3a3a0;
   --accent: #8aa8ff;
+  --accent-soft: #1f2a44;
+  --dash: #3c4c7a;
   --surface-hover: #232427;
   --line-strong: #34363a;
   --ink-subtle: #7a7b7e;
@@ -120,6 +126,8 @@
   --color-on-ink: var(--on-ink);
   --color-ink-muted: var(--ink-muted);
   --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-dash: var(--dash);
   --color-surface-hover: var(--surface-hover);
   --color-line-strong: var(--line-strong);
   --color-ink-subtle: var(--ink-subtle);

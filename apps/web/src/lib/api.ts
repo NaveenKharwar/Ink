@@ -1,5 +1,7 @@
 import type {
   LibraryResponse,
+  Piece,
+  RelatedResponse,
   PictureListResponse,
   PictureUsesResponse,
   SearchResponse,
@@ -47,6 +49,15 @@ export const pieces = {
   sync: (id: string, input: SyncPieceInput) =>
     request<SyncPieceOutput>(`/api/pieces/${encodeURIComponent(id)}/sync`, { method: "POST", body: JSON.stringify(input) }),
   library: () => request<LibraryResponse>("/api/library"),
+  get: (id: string) => request<Piece>(`/api/pieces/${encodeURIComponent(id)}`),
+  // What "Ink sees this too" shows beside a piece. "Not related" hides a piece beside this one for good.
+  related: (id: string, signal?: AbortSignal) => request<RelatedResponse>(`/api/pieces/${encodeURIComponent(id)}/related`, { signal }),
+  dismiss: async (id: string, otherId: string) => {
+    await send(`/api/pieces/${encodeURIComponent(id)}/related/${encodeURIComponent(otherId)}/dismissed`, { method: "PUT" });
+  },
+  restore: async (id: string, otherId: string) => {
+    await send(`/api/pieces/${encodeURIComponent(id)}/related/${encodeURIComponent(otherId)}/dismissed`, { method: "DELETE" });
+  },
   search: (q: string, signal?: AbortSignal) =>
     request<SearchResponse>(`/api/search?${new URLSearchParams({ q })}`, { signal })
 };

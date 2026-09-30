@@ -1,3 +1,4 @@
+import { announceSaved } from "../lib/savedEvents";
 import { ydocToEditorDoc, type EditorNode } from "@ink/schemas";
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as Y from "yjs";
@@ -106,6 +107,7 @@ export function usePieceSave(pieceId: string, userId: string, ydoc: Y.Doc, { ini
     if (result.serverVector) serverVector.current = result.serverVector;
     // What another device wrote lands in the open page.
     if (result.remote) Y.applyUpdate(ydoc, result.remote, REMOTE);
+    announceSaved(pieceId);
     if (version.current === sentVersion) setState("saved");
   }, [key, ydoc]);
 
