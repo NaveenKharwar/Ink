@@ -255,7 +255,9 @@ export function Toolbar({ editor, style, wide, words, language, onLanguage, save
         role="toolbar"
         aria-label="Formatting"
         inert={tucked}
-        className={`absolute right-3.5 bottom-3 left-3.5 box-border flex min-h-14 flex-wrap items-center rounded-bar border border-line bg-surface px-3 ${SLIDE} ${
+        className={`absolute bottom-3 box-border flex min-h-14 flex-wrap items-center rounded-bar border border-line bg-surface px-3 ${SLIDE} ${
+          wide ? "right-[calc(var(--scrollbar-w)+16px)] left-[calc(var(--scrollbar-w)+16px)]" : "right-3.5 left-3.5"
+        } ${
           tucked ? "pointer-events-none translate-y-[calc(100%+16px)] opacity-0" : "translate-y-0 opacity-100"
         }`}
       >

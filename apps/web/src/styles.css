@@ -5,6 +5,7 @@
 :root {
   --sheet-width: 290px;
   --sheet-gap: 24px;
+  --scrollbar-w: 12px;
   --paper-max: 820px;
   --paper-width: min(var(--paper-max), calc(100vw - 2 * (var(--sheet-width) + var(--sheet-gap))));
   --phone-sheet-width: 300px;
@@ -498,12 +499,35 @@ body {
 .plain * { all: revert; }
 .plain { display: block; margin: 8px; font-family: serif; color: CanvasText; background: Canvas; }
 
-/* Scroll boxes that hide their bar and fade the edge where more is hiding (ui/FadeScroll). */
+/* Scroll boxes (ui/FadeScroll): the edge fades where more is hiding; the bar follows
+   data-scrollbar. The thumb is Chromium and Safari only; Firefox keeps its own bar. */
 .fade-scroll {
-  scrollbar-width: none;
-  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 var(--fade-top, 0px), #000 calc(100% - var(--fade-bottom, 0px)), transparent);
-  mask-image: linear-gradient(to bottom, transparent, #000 var(--fade-top, 0px), #000 calc(100% - var(--fade-bottom, 0px)), transparent);
+  --mask: linear-gradient(to bottom, transparent, #000 var(--fade-top, 0px), #000 calc(100% - var(--fade-bottom, 0px)), transparent);
+  -webkit-mask-image: var(--mask);
+  mask-image: var(--mask);
 }
-.fade-scroll::-webkit-scrollbar {
+.fade-scroll[data-scrollbar="hidden"] {
+  scrollbar-width: none;
+}
+.fade-scroll[data-scrollbar="hidden"]::-webkit-scrollbar {
   display: none;
+}
+.fade-scroll:not([data-scrollbar="hidden"])::-webkit-scrollbar {
+  width: var(--scrollbar-w);
+}
+.fade-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.fade-scroll::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--accent) 45%, transparent);
+  background-clip: padding-box;
+  border: 3px solid transparent;
+  border-radius: 6px;
+}
+.fade-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+  background-clip: padding-box;
+}
+.fade-scroll[data-scrollbar="scrolling"]:not([data-active])::-webkit-scrollbar-thumb {
+  background: transparent;
 }

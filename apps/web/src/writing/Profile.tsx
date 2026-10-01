@@ -76,7 +76,7 @@ export function Profile({ account, items, wide, showMenuButton, onMenu, onBack, 
         </button>
       </div>
 
-      <FadeScroll className="grow">
+      <FadeScroll scrollbar="scrolling" className="grow">
         <div className={`mx-auto max-w-[560px] box-content px-[var(--page-gutter)] ${wide ? "pt-12 pb-12" : "pt-7 pb-10"}`}>
           <h1 className={`m-0 font-display font-normal leading-[1.2] ${wide ? "text-[30px]" : "text-[26px]"}`}>Profile</h1>
           <PenName initial={account.penName ?? ""} />

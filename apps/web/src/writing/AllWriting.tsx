@@ -106,7 +106,7 @@ export function AllWriting({ wide, showMenuButton, onMenu, groups, failed, onRet
       </div>
 
       {/* No top padding on the scroll box itself, so season labels stick flush to its top edge. */}
-      <FadeScroll ref={scroller} className={`grow px-[var(--page-gutter)] ${wide ? "pb-12" : "pb-10"}`}>
+      <FadeScroll scrollbar="visible" ref={scroller} className={`grow px-[var(--page-gutter)] ${wide ? "pb-12" : "pb-10"}`}>
         <div className={`mx-auto max-w-[680px] ${wide ? "pt-7" : "pt-4"}`}>
           <h1 className={`m-0 font-display font-normal ${wide ? "text-[30px] leading-9" : "text-[26px] leading-8"}`}>{season ?? "All writing"}</h1>
           {groups && (

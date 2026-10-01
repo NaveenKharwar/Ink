@@ -1,41 +1,65 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, type HTMLAttributes } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type HTMLAttributes } from "react";
 
-// A scroll box with no scrollbar. Where more is hiding above or below, that edge fades out,
-// so the writer sees there is more without a bar to look at. Sets --fade-top / --fade-bottom
-// (the fade height in px, 0 at an end) which the `.fade-scroll` rule in styles.css masks with.
-export const FadeScroll = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(function FadeScroll(
-  { className = "", children, ...rest },
+// How the box shows that it scrolls:
+//   hidden    no bar (lists, panels)
+//   visible   the Moss thumb always (the long reading pages)
+//   scrolling the thumb only while the page is being scrolled (Profile)
+export type ScrollbarMode = "hidden" | "visible" | "scrolling";
+
+const FADE_MAX = 28; // px, the tallest an edge fade gets
+const BAR_REST_MS = 900; // how long the thumb stays after the last scroll tick
+
+type Props = HTMLAttributes<HTMLDivElement> & { scrollbar?: ScrollbarMode };
+
+// A scroll box. Where more is hiding above or below, that edge fades out, so the writer sees
+// there is more. The fade height goes to --fade-top / --fade-bottom (0 at an end), which the
+// `.fade-scroll` rules in styles.css mask with; scrolling must not re-render, so it is set
+// straight on the element. The bar itself is plain CSS, driven by data-scrollbar.
+export const FadeScroll = forwardRef<HTMLDivElement, Props>(function FadeScroll(
+  { scrollbar = "hidden", className = "", children, ...rest },
   ref,
 ) {
-  const el = useRef<HTMLDivElement>(null);
-  useImperativeHandle(ref, () => el.current!);
-
-  const update = useCallback(() => {
-    const box = el.current;
-    if (!box) return;
-    const above = box.scrollTop;
-    const below = box.scrollHeight - box.clientHeight - box.scrollTop;
-    box.style.setProperty("--fade-top", `${Math.min(28, above)}px`);
-    box.style.setProperty("--fade-bottom", `${Math.min(28, below)}px`);
-  }, []);
+  const box = useRef<HTMLDivElement>(null);
+  useImperativeHandle(ref, () => box.current!);
+  const [active, setActive] = useState(false);
 
   useEffect(() => {
-    const box = el.current;
-    if (!box) return;
+    const el = box.current;
+    if (!el) return;
+    let rest = 0;
+    const update = () => {
+      const below = el.scrollHeight - el.clientHeight - el.scrollTop;
+      el.style.setProperty("--fade-top", `${Math.min(FADE_MAX, el.scrollTop)}px`);
+      el.style.setProperty("--fade-bottom", `${Math.min(FADE_MAX, Math.max(0, below))}px`);
+    };
+    const onScroll = () => {
+      update();
+      if (scrollbar !== "scrolling") return;
+      setActive(true);
+      window.clearTimeout(rest);
+      rest = window.setTimeout(() => setActive(false), BAR_REST_MS);
+    };
     update();
-    box.addEventListener("scroll", update, { passive: true });
-    // Content or box size changes (more seasons, window resize) change what is hidden.
+    el.addEventListener("scroll", onScroll, { passive: true });
+    // What is hidden also changes when the box or its content changes size.
     const watch = new ResizeObserver(update);
-    watch.observe(box);
-    for (const child of Array.from(box.children)) watch.observe(child);
+    watch.observe(el);
+    for (const child of Array.from(el.children)) watch.observe(child);
     return () => {
-      box.removeEventListener("scroll", update);
+      el.removeEventListener("scroll", onScroll);
+      window.clearTimeout(rest);
       watch.disconnect();
     };
-  }, [update]);
+  }, [scrollbar]);
 
   return (
-    <div ref={el} {...rest} className={`fade-scroll overflow-y-auto ${className}`}>
+    <div
+      ref={box}
+      {...rest}
+      data-scrollbar={scrollbar}
+      data-active={active || undefined}
+      className={`fade-scroll overflow-y-auto ${className}`}
+    >
       {children}
     </div>
   );

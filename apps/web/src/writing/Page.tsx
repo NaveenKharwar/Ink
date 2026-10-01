@@ -154,7 +154,7 @@ export function Page({ pieceId, userId, opened, wide, season, showMenuButton, pa
         onMenu={onMenu}
       />
       {!wide && toolbar}
-      <FadeScroll className={`ink-editor style-${style} ${showCards ? "is-blank" : ""} grow ${wide ? "pb-[110px]" : "pb-12"}`}>
+      <FadeScroll scrollbar="visible" className={`ink-editor style-${style} ${showCards ? "is-blank" : ""} grow ${wide ? "pb-[110px]" : "pb-12"}`}>
         {/* The cover sits across the whole paper, above the writing, and scrolls away with it. */}
         <Cover cover={cover} onCover={setCover} wide={wide} />
         <div className={`px-[var(--page-gutter)] ${cover ? "pt-3 wide:pt-3" : "pt-3 wide:pt-4"}`}>
