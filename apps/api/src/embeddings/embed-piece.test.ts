@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { embedPiece } from "./embed-piece.js";
+import { sweepStale } from "./queue.js";
 import { fakeEmbeddingProvider } from "./fake.js";
 import type { EmbeddableRow, EmbeddingsRepo } from "./repo.js";
 
@@ -16,6 +17,10 @@ function memoryRepo(pieces: Record<string, Omit<EmbeddableRow, "storedHash">>) {
     },
     async remove(id) {
       stored.delete(id);
+    },
+    async touch() {},
+    async findStale() {
+      return Object.keys(pieces).filter((id) => !stored.has(id));
     }
   };
   return { repo, stored, pieces };
@@ -74,4 +79,14 @@ test("a provider failure is thrown so the queue retries", async () => {
   const down = { model: "x", embed: async () => { throw new Error("down"); } };
   await assert.rejects(embedPiece(repo, down, "a"), /down/);
   assert.equal(stored.has("a"), false);
+});
+
+test("the sweep queues pieces that have no vector, and nothing once they do", async () => {
+  const { repo } = memoryRepo({ a: piece, b: piece });
+  const queued: string[] = [];
+  assert.equal(await sweepStale(repo, async (id) => void queued.push(id)), 2);
+  await embedPiece(repo, fakeEmbeddingProvider(), "a");
+  await embedPiece(repo, fakeEmbeddingProvider(), "b");
+  assert.equal(await sweepStale(repo, async (id) => void queued.push(id)), 0);
+  assert.deepEqual(queued, ["a", "b"]);
 });

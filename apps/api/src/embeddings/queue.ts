@@ -14,6 +14,16 @@ export interface EmbeddingQueue {
   stop(): Promise<void>;
 }
 
+const SWEEP_EVERY_MS = 15 * 60 * 1000;
+const SWEEP_LIMIT = 50;
+
+/** Queues pieces that lost their job (for example during a long outage). Returns how many it queued. */
+export async function sweepStale(repo: EmbeddingsRepo, enqueue: (pieceId: string) => Promise<void>, limit = SWEEP_LIMIT): Promise<number> {
+  const ids = await repo.findStale(limit);
+  for (const id of ids) await enqueue(id);
+  return ids.length;
+}
+
 export const noEmbeddingQueue: EmbeddingQueue = { enqueue: async () => {}, stop: async () => {} };
 
 export async function startEmbeddingQueue(
@@ -29,14 +39,23 @@ export async function startEmbeddingQueue(
   await boss.work<{ pieceId: string }>(QUEUE, async (jobs) => {
     for (const job of jobs) await embedPiece(repo, provider, job.data.pieceId);
   });
+  const enqueue = async (pieceId: string) => {
+    try {
+      await boss.sendDebounced(QUEUE, { pieceId }, null, QUIET_SECONDS, pieceId);
+    } catch (err) {
+      log.warn(`Could not queue embedding: ${(err as Error).message}`);
+    }
+  };
+  // Every so often, pick up pieces whose job was dropped. Quiet when nothing is missing.
+  const sweep = () => sweepStale(repo, enqueue).catch((err) => log.warn(`Embedding sweep: ${(err as Error).message}`));
+  const timer = setInterval(() => void sweep(), SWEEP_EVERY_MS);
+  timer.unref();
+  void sweep();
   return {
-    async enqueue(pieceId) {
-      try {
-        await boss.sendDebounced(QUEUE, { pieceId }, null, QUIET_SECONDS, pieceId);
-      } catch (err) {
-        log.warn(`Could not queue embedding: ${(err as Error).message}`);
-      }
-    },
-    stop: () => boss.stop({ graceful: true })
+    enqueue,
+    stop: async () => {
+      clearInterval(timer);
+      await boss.stop({ graceful: true });
+    }
   };
 }

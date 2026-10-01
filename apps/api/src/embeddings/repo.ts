@@ -8,6 +8,10 @@ export interface EmbeddingsRepo {
   load(pieceId: string): Promise<EmbeddableRow | null>;
   save(pieceId: string, userId: string, model: string, vector: number[], hash: string): Promise<void>;
   remove(pieceId: string): Promise<void>;
+  /** Marks a vector as checked against the current text, without changing it. */
+  touch(pieceId: string): Promise<void>;
+  /** Pieces that should have a vector but have none, or were edited after theirs was made. Newest first. */
+  findStale(limit: number): Promise<string[]>;
 }
 
 export function pgEmbeddingsRepo(db: pg.Pool): EmbeddingsRepo {
@@ -33,6 +37,22 @@ export function pgEmbeddingsRepo(db: pg.Pool): EmbeddingsRepo {
     },
     async remove(pieceId) {
       await db.query("delete from piece_embeddings where piece_id = $1", [pieceId]);
+    },
+    async touch(pieceId) {
+      await db.query("update piece_embeddings set embedded_at = now() where piece_id = $1", [pieceId]);
+    },
+    async findStale(limit) {
+      // The 2 minute margin keeps a piece that was just embedded from counting as stale.
+      const { rows } = await db.query<{ id: string }>(
+        `select p.id
+           from pieces p left join piece_embeddings e on e.piece_id = p.id
+          where p.include_in_memory and btrim(p.text) <> ''
+            and (e.piece_id is null or p.updated_at > e.embedded_at + interval '2 minutes')
+          order by p.updated_at desc
+          limit $1`,
+        [limit]
+      );
+      return rows.map((r) => r.id);
     }
   };
 }

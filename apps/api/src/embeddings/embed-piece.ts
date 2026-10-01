@@ -17,7 +17,10 @@ export async function embedPiece(repo: EmbeddingsRepo, provider: EmbeddingProvid
     return "removed";
   }
   const hash = textHash(text);
-  if (piece.storedHash === hash) return "unchanged";
+  if (piece.storedHash === hash) {
+    await repo.touch(pieceId); // checked and current, so the sweep leaves it alone
+    return "unchanged";
+  }
   const [vector] = await provider.embed([text]);
   if (!vector) throw new Error("Embedder returned no vector.");
   await repo.save(pieceId, piece.userId, provider.model, vector, hash);
