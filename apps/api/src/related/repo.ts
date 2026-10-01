@@ -26,6 +26,7 @@ type Row = {
   include_in_memory: boolean;
   created_at: Date;
   updated_at: Date;
+  similarity?: number | null;
 };
 
 const COLUMNS = "id, title, left(text, 5000) as text, language, style, include_in_memory, created_at, updated_at";
@@ -37,7 +38,8 @@ const toCandidate = (row: Row): Candidate => ({
   language: row.language,
   style: row.style,
   createdAt: row.created_at.toISOString(),
-  updatedAt: row.updated_at.toISOString()
+  updatedAt: row.updated_at.toISOString(),
+  similarity: row.similarity ?? null
 });
 
 export function pgRelatedRepo(db: pg.Pool): RelatedRepo {
@@ -56,9 +58,14 @@ export function pgRelatedRepo(db: pg.Pool): RelatedRepo {
       if (!mine[0]) return null;
       const current = toCandidate(mine[0]);
       if (!mine[0].include_in_memory) return { current, others: [] };
+      // Similarity is null when either piece has no vector yet; those fall back to shared words.
+      const cols = "p.id, p.title, left(p.text, 5000) as text, p.language, p.style, p.include_in_memory, p.created_at, p.updated_at";
       const { rows } = await db.query<Row>(
-        `select ${COLUMNS}
+        `select ${cols},
+                1 - (e.embedding operator(extensions.<=>) c.embedding) as similarity
          from pieces p
+         left join piece_embeddings e on e.piece_id = p.id and e.user_id = $1
+         left join piece_embeddings c on c.piece_id = $2 and c.user_id = $1
          where p.user_id = $1 and p.id <> $2 and p.include_in_memory and btrim(p.text) <> ''
            and not exists (
              select 1 from related_dismissals d where d.user_id = $1 and d.piece_id = $2 and d.other_id = p.id
@@ -94,7 +101,12 @@ export function pgRelatedRepo(db: pg.Pool): RelatedRepo {
 }
 
 /** For tests: the same behaviour over a PiecesRepo, kept in memory. */
-export function memoryRelatedRepo(pieces: PiecesRepo): RelatedRepo {
+export function memoryRelatedRepo(pieces: PiecesRepo, vectors: Map<string, number[]> = new Map()): RelatedRepo {
+  const cosine = (a: number[], b: number[]) => {
+    let dot = 0, na = 0, nb = 0;
+    for (let i = 0; i < a.length; i++) { dot += a[i]! * b[i]!; na += a[i]! ** 2; nb += b[i]! ** 2; }
+    return dot / (Math.sqrt(na) * Math.sqrt(nb));
+  };
   const hidden = new Set<string>();
   const key = (userId: string, a: string, b: string) => `${userId}|${a}|${b}`;
   const toCandidate = (p: { id: string; title: string | null; text: string; language: Candidate["language"]; style: Candidate["style"]; createdAt: string; updatedAt: string }): Candidate => ({
@@ -111,7 +123,10 @@ export function memoryRelatedRepo(pieces: PiecesRepo): RelatedRepo {
       const others = all
         .filter((p) => p.id !== pieceId && p.includeInMemory && p.text.trim() !== "" && !hidden.has(key(userId, pieceId, p.id)))
         .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-        .map(toCandidate);
+        .map((p) => {
+          const a = vectors.get(pieceId), b = vectors.get(p.id);
+          return { ...toCandidate(p), similarity: a && b ? cosine(a, b) : null };
+        });
       return { current: toCandidate(mine), others: mine.includeInMemory ? others : [] };
     },
     async dismiss(userId, pieceId, otherId) {

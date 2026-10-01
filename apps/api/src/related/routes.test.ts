@@ -128,3 +128,19 @@ test("dismissing and undoing answer 204, repeat safely, and refuse pieces that a
   assert.equal((await app.inject({ method: "PUT", url, headers: as(RAVI) })).statusCode, 404);
   assert.equal((await app.inject({ method: "PUT", url: `/api/pieces/${A}/related/nope/dismissed`, headers: as(ASHA) })).statusCode, 404);
 });
+
+test("close vectors rank first, weak ones are left out, and pieces without a vector fall back to shared words", () => {
+  const current = piece(A, "The rain kept the window company", "2026-09-29T00:00:00Z");
+  const long = " and a good deal more writing so that this does not count as a loose line, going on well past the short limit of a line, again and again and again and again and again";
+  const out = rankRelated(
+    current,
+    [
+      { ...piece("v1", "Monsoon evenings" + long, "2026-08-01T00:00:00Z"), similarity: 0.8 },
+      { ...piece("v2", "Taxes and receipts" + long, "2026-08-02T00:00:00Z"), similarity: 0.2 },
+      { ...piece("w1", "Rain on the window again" + long, "2026-08-03T00:00:00Z"), similarity: null },
+      { ...piece("w2", "Nothing in common here" + long, "2026-08-04T00:00:00Z") }
+    ],
+    NOW
+  );
+  assert.deepEqual(out.related.map((n) => n.id), ["v1", "w1"]);
+});

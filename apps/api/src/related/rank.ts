@@ -1,8 +1,8 @@
 import type { RelatedNote, RelatedResponse } from "@ink/schemas";
 import { openingLines } from "../pieces/fold.js";
 
-// A stand-in until the embedding pipeline exists: pieces count as close when they share words.
-// The API's shape does not change when meaning replaces it; only this file does.
+// Pieces count as close by meaning (cosine similarity of their vectors). A piece without a vector
+// yet, or no embedder at all, falls back to shared words.
 
 export type Candidate = {
   id: string;
@@ -12,8 +12,12 @@ export type Candidate = {
   style: RelatedNote["style"];
   createdAt: string;
   updatedAt: string;
+  /** Cosine similarity to the current piece. Absent when either has no vector yet. */
+  similarity?: number | null;
 };
 
+/** Below this a vector match is too weak to call related (soft suggestions only). Retune on real writing. */
+export const MIN_SIMILARITY = 0.45;
 export const RELATED_LIMIT = 5;
 export const FORGOTTEN_LIMIT = 2;
 export const LOOSE_LIMIT = 2;
@@ -46,9 +50,11 @@ export function rankRelated(current: Candidate, others: Candidate[], now: Date):
   if (mine.size === 0) return { related: [], forgotten: [], loose: [] };
 
   const scored = others.map((piece) => {
-    let score = 0;
-    for (const word of wordsOf(piece.text)) if (mine.has(word)) score += 1;
-    return { piece, score };
+    let overlap = 0;
+    for (const word of wordsOf(piece.text)) if (mine.has(word)) overlap += 1;
+    const similarity = piece.similarity ?? null;
+    // Meaning first; pieces without a vector sit below every vector match and sort by shared words.
+    return { piece, overlap, similarity, score: (similarity ?? 0) * 1000 + overlap };
   });
 
   const cutoff = now.getTime() - FORGOTTEN_AFTER_DAYS * DAY;
@@ -72,7 +78,7 @@ export function rankRelated(current: Candidate, others: Candidate[], now: Date):
   const looseIds = new Set(loose.map(({ piece }) => piece.id));
 
   const related = rest
-    .filter(({ piece, score }) => score > 0 && !looseIds.has(piece.id))
+    .filter(({ piece, overlap, similarity }) => (similarity === null ? overlap > 0 : similarity >= MIN_SIMILARITY) && !looseIds.has(piece.id))
     .sort((a, b) => b.score - a.score || b.piece.updatedAt.localeCompare(a.piece.updatedAt))
     .slice(0, RELATED_LIMIT);
 
