@@ -8,6 +8,7 @@ import { Dialog } from "../ui/Dialog";
 import { Loader } from "../ui/Loader";
 import { NoteIcon } from "./icons";
 import { PictureTile, UploadTile } from "./PictureTile";
+import { FadeScroll } from "../ui/FadeScroll";
 
 type Props = {
   wide: boolean;
@@ -63,7 +64,7 @@ export function PicturePicker({ wide, purpose, start, onPick, onClose }: Props) 
           onUse={(crop) => onPick(cropping.id, crop)}
         />
       ) : (
-        <div className="grow overflow-y-auto px-[var(--page-gutter)] py-5 wide:px-6">
+        <FadeScroll className="grow px-[var(--page-gutter)] py-5 wide:px-6">
           {message && (
             <p role="status" className="m-0 mb-4 flex items-center gap-2 text-[13px] leading-5 text-ink">
               <NoteIcon size={16} />
@@ -84,7 +85,7 @@ export function PicturePicker({ wide, purpose, start, onPick, onClose }: Props) 
           {list.failed && (
             <p className="m-0 mt-4 text-[13px] text-ink-muted">Ink couldn't load your pictures. You can still upload a new one.</p>
           )}
-        </div>
+        </FadeScroll>
       )}
     </Dialog>
   );

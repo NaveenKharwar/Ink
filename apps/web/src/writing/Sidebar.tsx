@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { FadeScroll } from "../ui/FadeScroll";
 import { AccountMenu } from "./AccountMenu";
-import { ChevronIcon, DocumentIcon, MenuIcon, PencilIcon, PictureIcon, SearchIcon, SeasonIcon } from "./icons";
+import { DocumentIcon, MenuIcon, PencilIcon, PictureIcon, SearchIcon, SeasonIcon } from "./icons";
 
 // Which screen is open; Profile has no item of its own in the menu, so nothing is marked there.
 export type Screen = "write" | "all" | "pictures" | "profile";
@@ -27,14 +27,11 @@ type Props = {
 
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 const navItem = `box-border flex h-9 w-full cursor-pointer items-center gap-3 rounded-md border-0 px-3 text-left text-ink ${focusRing}`;
-const SEASONS_SHOWN = 7;
 
 // The menu: search, Write, All writing, Pictures and the seasons, with the account at the foot.
 // Desktop: a side sheet from the left edge. Phone: the left side of the sliding track.
 export function Sidebar(props: Props) {
   const { phone = false, name, screen, seasons, activeSeason, onClose, onSearch, onWrite, onAll, onPictures, onSeason, onProfile, onSignOut } = props;
-  const [allSeasons, setAllSeasons] = useState(false);
-  const shown = allSeasons ? seasons : seasons.slice(0, SEASONS_SHOWN);
 
   return (
     <nav
@@ -84,7 +81,7 @@ export function Sidebar(props: Props) {
       </div>
 
       <div className="mx-1 mt-3 h-px shrink-0 bg-line" />
-      <div className="-mx-3 min-h-0 grow overflow-y-auto px-3 pt-3 pb-2">
+      <FadeScroll className="-mx-3 min-h-0 grow px-3 pt-3 pb-2">
         <div className="px-3 pb-1.5 text-[13px] text-ink-muted">Library</div>
         <button
           type="button"
@@ -109,7 +106,7 @@ export function Sidebar(props: Props) {
           <>
             <div className="mx-1 my-3 h-px shrink-0 bg-line" />
             <div className="px-3 pb-1.5 text-[13px] text-ink-muted">Seasons</div>
-            {shown.map((s) => {
+            {seasons.map((s) => {
               const active = s.key === activeSeason;
               return (
                 <div key={s.key}>
@@ -133,20 +130,9 @@ export function Sidebar(props: Props) {
                 </div>
               );
             })}
-            {seasons.length > SEASONS_SHOWN && (
-              <button
-                type="button"
-                onClick={() => setAllSeasons(!allSeasons)}
-                aria-expanded={allSeasons}
-                className={`box-border flex h-[31px] w-full cursor-pointer items-center gap-2 rounded-md border-0 bg-transparent pl-[36px] text-left text-ink-muted ${focusRing}`}
-              >
-                {allSeasons ? "Fewer seasons" : "More seasons"}
-                <ChevronIcon up={allSeasons} />
-              </button>
-            )}
           </>
         )}
-      </div>
+      </FadeScroll>
 
       <div className="shrink-0 pt-3">
         <AccountMenu name={name} onProfile={onProfile} onSignOut={onSignOut} />

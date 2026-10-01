@@ -19,6 +19,7 @@ import { TopBar } from "./TopBar";
 import { usePictureAdder } from "./usePictureAdder";
 import { usePieceMeta } from "./usePieceMeta";
 import { usePieceSave } from "./usePieceSave";
+import { FadeScroll } from "../ui/FadeScroll";
 
 type Props = {
   pieceId: string;
@@ -153,7 +154,7 @@ export function Page({ pieceId, userId, opened, wide, season, showMenuButton, pa
         onMenu={onMenu}
       />
       {!wide && toolbar}
-      <div className={`ink-editor style-${style} ${showCards ? "is-blank" : ""} grow overflow-y-auto ${wide ? "pb-[110px]" : "pb-12"}`}>
+      <FadeScroll className={`ink-editor style-${style} ${showCards ? "is-blank" : ""} grow ${wide ? "pb-[110px]" : "pb-12"}`}>
         {/* The cover sits across the whole paper, above the writing, and scrolls away with it. */}
         <Cover cover={cover} onCover={setCover} wide={wide} />
         <div className={`px-[var(--page-gutter)] ${cover ? "pt-3 wide:pt-3" : "pt-3 wide:pt-4"}`}>
@@ -163,7 +164,7 @@ export function Page({ pieceId, userId, opened, wide, season, showMenuButton, pa
             <StyleCards shown={showCards} wide={wide} onPick={changeStyle} />
           </div>
         </div>
-      </div>
+      </FadeScroll>
       {wide && toolbar}
       {pictures.picking && (
         <PicturePicker wide={wide} purpose="notes" onClose={pictures.closePicker} onPick={(id) => pictures.insert(id)} />

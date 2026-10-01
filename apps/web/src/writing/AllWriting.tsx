@@ -4,6 +4,7 @@ import { ScreenLoader } from "../ui/Loader";
 import { prefersReducedMotion } from "../lib/motion";
 import type { SeasonGroup } from "../lib/seasons";
 import { AdSlot } from "./AdSlot";
+import { FadeScroll } from "../ui/FadeScroll";
 import { CloseIcon, MenuIcon } from "./icons";
 import { SeasonPainting } from "./SeasonPainting";
 import { PlaceLink, SideColumn } from "./SideColumn";
@@ -105,7 +106,7 @@ export function AllWriting({ wide, showMenuButton, onMenu, groups, failed, onRet
       </div>
 
       {/* No top padding on the scroll box itself, so season labels stick flush to its top edge. */}
-      <div ref={scroller} className={`grow overflow-y-auto px-[var(--page-gutter)] ${wide ? "pb-12" : "pb-10"}`}>
+      <FadeScroll ref={scroller} className={`grow px-[var(--page-gutter)] ${wide ? "pb-12" : "pb-10"}`}>
         <div className={`mx-auto max-w-[680px] ${wide ? "pt-7" : "pt-4"}`}>
           <h1 className={`m-0 font-display font-normal ${wide ? "text-[30px] leading-9" : "text-[26px] leading-8"}`}>{season ?? "All writing"}</h1>
           {groups && (
@@ -198,7 +199,7 @@ export function AllWriting({ wide, showMenuButton, onMenu, groups, failed, onRet
             </section>
           ))}
         </div>
-      </div>
+      </FadeScroll>
 
       {/* Beside the paper, on the ground: the season's painting, the seasons on this page, then
           the ad slot. The painting and the ad stay put; only the seasons list scrolls. */}
@@ -211,7 +212,7 @@ export function AllWriting({ wide, showMenuButton, onMenu, groups, failed, onRet
             <nav aria-label="Seasons on this page" className="mt-6 flex min-h-0 flex-col">
               <div className="shrink-0 pb-2 text-[13px] text-ink-muted">Seasons</div>
               {/* A little room on each side so focus rings aren't clipped by the scroll box. */}
-              <div ref={seasonList} className="relative -mx-1 min-h-0 overflow-y-auto px-1">
+              <FadeScroll ref={seasonList} className="relative -mx-1 min-h-0 px-1">
                 <ul className="m-0 list-none border-l border-line p-0">
                   {groups.map((g) => {
                     const active = g.key === reading;
@@ -223,7 +224,7 @@ export function AllWriting({ wide, showMenuButton, onMenu, groups, failed, onRet
                     );
                   })}
                 </ul>
-              </div>
+              </FadeScroll>
             </nav>
           )}
           {import.meta.env.DEV && (

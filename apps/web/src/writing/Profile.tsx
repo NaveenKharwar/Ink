@@ -8,6 +8,7 @@ import { MenuIcon } from "./icons";
 import { SeasonPainting } from "./SeasonPainting";
 import { SideColumn } from "./SideColumn";
 import { Signature } from "./Signature";
+import { FadeScroll } from "../ui/FadeScroll";
 
 type Props = {
   account: Account;
@@ -75,7 +76,7 @@ export function Profile({ account, items, wide, showMenuButton, onMenu, onBack, 
         </button>
       </div>
 
-      <div className="grow overflow-y-auto">
+      <FadeScroll className="grow">
         <div className={`mx-auto max-w-[560px] box-content px-[var(--page-gutter)] ${wide ? "pt-12 pb-12" : "pt-7 pb-10"}`}>
           <h1 className={`m-0 font-display font-normal leading-[1.2] ${wide ? "text-[30px]" : "text-[26px]"}`}>Profile</h1>
           <PenName initial={account.penName ?? ""} />
@@ -89,7 +90,7 @@ export function Profile({ account, items, wide, showMenuButton, onMenu, onBack, 
             <SignOutButton onSignOut={onSignOut} />
           </Section>
         </div>
-      </div>
+      </FadeScroll>
 
       {/* Beside the paper: the painting of the season you're in (it changes with the Seasons
           choice, so the setting shows what it does), with a short note signed over its lower part. */}

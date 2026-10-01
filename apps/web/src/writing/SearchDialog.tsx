@@ -4,6 +4,7 @@ import { pieces } from "../lib/api";
 import { ScreenLoader } from "../ui/Loader";
 import { deviceTimeZone, seasonText, type SeasonSet } from "../lib/seasons";
 import { CloseIcon, SearchIcon } from "./icons";
+import { FadeScroll } from "../ui/FadeScroll";
 
 type Result = { id: string; first: MarkedLine; match: MarkedLine | null; season: string; style: string };
 
@@ -199,7 +200,7 @@ export function SearchDialog({ wide, recent, seasonSet, onOpen, onClose }: Props
             <CloseIcon />
           </button>
         </div>
-        <div className="grow overflow-y-auto px-[18px] pt-1.5 pb-3">
+        <FadeScroll className="grow px-[18px] pt-1.5 pb-3">
           <ul id={listId} role="listbox" aria-label="Results" className="m-0 list-none p-0">
             {query && words.length > 0 && label("Your words", false, true)}
             {words.map((r, i) => row(r, i))}
@@ -224,7 +225,7 @@ export function SearchDialog({ wide, recent, seasonSet, onOpen, onClose }: Props
           {searching && <ScreenLoader label="Searching" className="py-10" />}
           {query && !searching && found && !results.length && !failed && <p className="m-0 pt-2 text-ink-muted">Nothing with those words yet.</p>}
           {failed && <p className="m-0 pt-2 text-ink-muted">Search isn't working right now. Check your connection.</p>}
-        </div>
+        </FadeScroll>
       </div>
     </>
   );

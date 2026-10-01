@@ -9,6 +9,7 @@ import { AdSlot } from "./AdSlot";
 import { MenuIcon, NoteIcon } from "./icons";
 import { PictureTile } from "./PictureTile";
 import { SideColumn } from "./SideColumn";
+import { FadeScroll } from "../ui/FadeScroll";
 
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
@@ -77,7 +78,7 @@ export function PicturesPage({ wide, showMenuButton, onMenu, seasonOf, onOpenPie
         <span className={`whitespace-nowrap ${showMenuButton ? "" : "pl-2.5"}`}>Pictures</span>
       </div>
 
-      <div onDragOver={(e) => e.preventDefault()} onDrop={onDrop} className={`grow overflow-y-auto px-[var(--page-gutter)] ${wide ? "pb-12" : "pb-10"}`}>
+      <FadeScroll onDragOver={(e) => e.preventDefault()} onDrop={onDrop} className={`grow px-[var(--page-gutter)] ${wide ? "pb-12" : "pb-10"}`}>
         <div className={`mx-auto max-w-[680px] ${wide ? "pt-7" : "pt-4"}`}>
           <div className="flex items-end justify-between gap-4">
             <div>
@@ -124,7 +125,7 @@ export function PicturesPage({ wide, showMenuButton, onMenu, seasonOf, onOpenPie
 
           <p className="m-0 mt-6 text-[13px] text-ink-muted">Only you can see these.</p>
         </div>
-      </div>
+      </FadeScroll>
 
       {/* Beside the paper, on the ground: the ad slot at the bottom, as on All writing. */}
       {wide && import.meta.env.DEV && (

@@ -5,6 +5,7 @@ import { deviceTimeZone, type SeasonSet } from "../lib/seasons";
 import { ChevronIcon, CloseIcon } from "./icons";
 import { RelatedNoteView } from "./RelatedNoteView";
 import { useDismissals, useRelated } from "./useRelated";
+import { FadeScroll } from "../ui/FadeScroll";
 
 const RELATED_SHOWN = 3;
 
@@ -116,7 +117,7 @@ export function InkSeesPanel({ phone = false, pieceId, exists, seasonSet, onClos
           <CloseIcon />
         </button>
       </div>
-      <div className="grow overflow-y-auto">
+      <FadeScroll className="grow">
         {empty && (
           <p className="m-0 px-4 py-5 leading-[1.5] text-ink-muted">
             Nothing yet. Once you have written a few lines, related writing appears here.
@@ -142,7 +143,7 @@ export function InkSeesPanel({ phone = false, pieceId, exists, seasonSet, onClos
             </section>
           );
         })}
-      </div>
+      </FadeScroll>
     </aside>
   );
 }

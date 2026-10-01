@@ -11,6 +11,7 @@ import type { SeasonSet } from "../lib/seasons";
 import { ScreenLoader } from "../ui/Loader";
 import { ChevronSideIcon, CloseIcon } from "./icons";
 import { PictureView } from "./PictureView";
+import { FadeScroll } from "../ui/FadeScroll";
 
 type Props = {
   tabs: BesideTab[];
@@ -58,7 +59,7 @@ function Reader({ piece, tab, seasonSet, phone }: { piece: Piece; tab: BesideTab
   );
   const editor = useEditor({ extensions, content: piece.content, editable: false, editorProps: { attributes: { "aria-label": tab.title } } }, [piece.id]);
   return (
-    <div className={`ink-editor style-${piece.style ?? "poem"} grow overflow-y-auto pb-8 ${phone ? "px-6 pt-8" : "px-10 pt-9"}`}>
+    <FadeScroll className={`ink-editor style-${piece.style ?? "poem"} grow pb-8 ${phone ? "px-6 pt-8" : "px-10 pt-9"}`}>
       {/* The same reading column as the page, so a wide screen never makes very long lines. */}
       <div className="mx-auto max-w-[640px]">
         <span className="mb-5 block truncate text-[11px] leading-4 font-medium tracking-[0.08em] text-ink-muted uppercase">
@@ -66,7 +67,7 @@ function Reader({ piece, tab, seasonSet, phone }: { piece: Piece; tab: BesideTab
         </span>
         <EditorContent editor={editor} />
       </div>
-    </div>
+    </FadeScroll>
   );
 }
 

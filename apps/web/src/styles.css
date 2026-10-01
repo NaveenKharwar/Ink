@@ -497,3 +497,13 @@ body {
 .plain,
 .plain * { all: revert; }
 .plain { display: block; margin: 8px; font-family: serif; color: CanvasText; background: Canvas; }
+
+/* Scroll boxes that hide their bar and fade the edge where more is hiding (ui/FadeScroll). */
+.fade-scroll {
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 var(--fade-top, 0px), #000 calc(100% - var(--fade-bottom, 0px)), transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 var(--fade-top, 0px), #000 calc(100% - var(--fade-bottom, 0px)), transparent);
+}
+.fade-scroll::-webkit-scrollbar {
+  display: none;
+}
