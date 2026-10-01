@@ -8,6 +8,7 @@ import { loadEnv } from "./env.js";
 import { pgPiecesRepo } from "./pieces/repo.js";
 import { pgPicturesRepo } from "./pictures/repo.js";
 import { pgRelatedRepo } from "./related/repo.js";
+import { pgMeaningRepo } from "./search/meaning.js";
 import { supabasePictureStore } from "./pictures/store.js";
 
 const env = loadEnv();
@@ -19,12 +20,16 @@ const embeddings = env.EMBEDDER_URL
   ? await startEmbeddingQueue(pool, pgEmbeddingsRepo(pool), httpEmbeddingProvider(env.EMBEDDER_URL), { warn: (m) => warnings.push(m) })
   : noEmbeddingQueue;
 
+// Search by meaning embeds the typed words as the writer waits, so it gives up quickly and falls back to words.
+const meaning = env.EMBEDDER_URL ? { repo: pgMeaningRepo(pool), embedder: httpEmbeddingProvider(env.EMBEDDER_URL, undefined, 5_000) } : undefined;
+
 const app = await buildApp({
   repo: pgPiecesRepo(pool),
   related: pgRelatedRepo(pool),
   pictures: { store: supabasePictureStore(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY), repo: pgPicturesRepo(pool) },
   verify: supabaseTokenVerifier(env.SUPABASE_URL),
   embeddings,
+  meaning,
   logger: true,
   docs: env.NODE_ENV !== "production"
 });

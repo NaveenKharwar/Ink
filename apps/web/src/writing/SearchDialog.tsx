@@ -1,11 +1,15 @@
-import type { LibraryItem, MarkedLine } from "@ink/schemas";
+import type { LibraryItem, MarkedLine, PieceStyle } from "@ink/schemas";
 import { useEffect, useId, useRef, useState } from "react";
 import { pieces } from "../lib/api";
 import { ScreenLoader } from "../ui/Loader";
 import { deviceTimeZone, seasonText, type SeasonSet } from "../lib/seasons";
 import { CloseIcon, SearchIcon } from "./icons";
 
-type Result = { id: string; first: MarkedLine; match: MarkedLine | null; season: string };
+type Result = { id: string; first: MarkedLine; match: MarkedLine | null; season: string; style: string };
+
+// A piece without a style is a Poem.
+const STYLE_NAMES: Record<PieceStyle, string> = { poem: "Poem", story: "Story", notes: "Notes" };
+const styleName = (style: PieceStyle | null) => STYLE_NAMES[style ?? "poem"];
 
 type Props = {
   wide: boolean;
@@ -17,18 +21,24 @@ type Props = {
 };
 
 const WAIT_MS = 200;
+// Words matches shown before "Show more", so "Close in meaning" is always on screen without scrolling.
+const WORDS_SHOWN = 4;
 
-// Search your writing by its words. ⌘K or Search opens it; a result opens the piece.
+const focus = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+
+// Search your writing: the words first, then pieces close in meaning. ⌘K or Search opens it; a result opens the piece.
 export function SearchDialog({ wide, recent, seasonSet, onOpen, onClose }: Props) {
   const season = (createdAt: string) => seasonText(new Date(createdAt), new Date(), deviceTimeZone(), seasonSet);
   const [q, setQ] = useState("");
-  const [found, setFound] = useState<Result[] | null>(null);
+  const [found, setFound] = useState<{ words: Result[]; close: Result[] } | null>(null);
   // Which words the results are for, so a newer search shows the loader, not the old results.
   const [foundFor, setFoundFor] = useState("");
   const [failed, setFailed] = useState(false);
   const [active, setActive] = useState(0);
+  const [showAll, setShowAll] = useState(false);
   const listId = useId();
   const dialog = useRef<HTMLDivElement>(null);
+  const input = useRef<HTMLInputElement>(null);
 
   // A modal dialog: focus goes back to where the writer was when it closes.
   useEffect(() => {
@@ -50,10 +60,10 @@ export function SearchDialog({ wide, recent, seasonSet, onOpen, onClose }: Props
     const timer = setTimeout(() => {
       pieces.search(query, abort.signal).then(
         (res) => {
-          setFound(
-            res.items.map((r) => ({ id: r.id, first: r.firstLine, match: r.match, season: season(r.createdAt) }))
-          );
+          const toResult = (r: (typeof res.items)[number]) => ({ id: r.id, first: r.firstLine, match: r.match, season: season(r.createdAt), style: styleName(r.style) });
+          setFound({ words: res.items.map(toResult), close: res.close.map(toResult) });
           setFoundFor(query);
+          setShowAll(false);
           setFailed(false);
           setActive(0);
         },
@@ -67,16 +77,23 @@ export function SearchDialog({ wide, recent, seasonSet, onOpen, onClose }: Props
   }, [query]);
 
   const searching = Boolean(query) && foundFor !== query && !failed;
-  const results: Result[] = query
+  const allWords: Result[] = query
     ? searching
       ? []
-      : (found ?? [])
+      : (found?.words ?? [])
     : recent.map((item) => ({
         id: item.id,
         first: { text: item.lines[0] ?? item.title ?? "Untitled", marks: [] },
         match: null,
-        season: season(item.createdAt)
+        season: season(item.createdAt),
+        style: styleName(item.style)
       }));
+  // Only a search is capped; the recent pieces shown before typing are never.
+  const words = query && !showAll ? allWords.slice(0, WORDS_SHOWN) : allWords;
+  const hiddenWords = allWords.length - words.length;
+  const close: Result[] = query && !searching ? (found?.close ?? []) : [];
+  // One list for the arrow keys, across both groups.
+  const results = [...words, ...close];
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Tab") {
@@ -111,6 +128,36 @@ export function SearchDialog({ wide, recent, seasonSet, onOpen, onClose }: Props
 
   const optionId = (i: number) => `${listId}-${i}`;
 
+  // The name of a group, the same bar as the sections of Ink sees this too: soft accent for meaning, plain for words.
+  const label = (title: string, tint: boolean, first: boolean) => (
+    <li
+      role="presentation"
+      className={`-mx-[18px] mb-2 flex h-11 items-center border-y border-line px-[18px] text-[13px] font-semibold text-ink ${
+        tint ? "bg-accent-soft" : "bg-transparent"
+      } ${first ? "-mt-1.5 border-t-0" : "mt-3"}`}
+    >
+      <span aria-hidden="true" className={`mr-2.5 h-[7px] w-[7px] rounded-full ${tint ? "bg-accent" : "bg-ink-muted opacity-55"}`} />
+      {title}
+    </li>
+  );
+
+  const row = (r: Result, i: number) => (
+    <li
+      key={r.id}
+      id={optionId(i)}
+      data-index={i}
+      role="option"
+      aria-selected={i === active}
+      onClick={() => onOpen(r.id)}
+      onMouseMove={() => active !== i && setActive(i)}
+      className={`cursor-pointer py-3 transition-colors duration-150 motion-reduce:transition-none ${i === active ? "text-ink" : "text-ink/75"}`}
+    >
+      <Marked line={r.first} className="line-clamp-2 font-serif text-[18px] leading-[25px]" />
+      {r.match && <Marked line={r.match} className="mt-1 line-clamp-2 font-serif text-[16px] leading-[23px] text-ink-muted" />}
+      <div className="mt-1 text-[12px] leading-4 text-ink-muted">{r.season} · {r.style}</div>
+    </li>
+  );
+
   return (
     <>
       {wide && <div aria-hidden="true" onClick={onClose} className="fixed inset-0 z-40 bg-scrim" />}
@@ -129,6 +176,7 @@ export function SearchDialog({ wide, recent, seasonSet, onOpen, onClose }: Props
         <div className="flex h-[60px] shrink-0 items-center gap-3 border-b border-line pr-3 pl-[18px] text-ink">
           <SearchIcon size={19} />
           <input
+            ref={input}
             autoFocus
             role="combobox"
             aria-label="Search"
@@ -153,25 +201,28 @@ export function SearchDialog({ wide, recent, seasonSet, onOpen, onClose }: Props
         </div>
         <div className="grow overflow-y-auto px-[18px] pt-1.5 pb-3">
           <ul id={listId} role="listbox" aria-label="Results" className="m-0 list-none p-0">
-            {results.map((r, i) => (
-              <li
-                key={r.id}
-                id={optionId(i)}
-                data-index={i}
-                role="option"
-                aria-selected={i === active}
-                onClick={() => onOpen(r.id)}
-                onMouseMove={() => active !== i && setActive(i)}
-                className={`cursor-pointer border-b border-surface-hover py-3 transition-colors duration-150 motion-reduce:transition-none ${i === active ? "text-ink" : "text-ink/75"}`}
-              >
-                <Marked line={r.first} className="font-serif text-[18px] leading-[25px]" />
-                {r.match && <Marked line={r.match} className="mt-1 font-serif text-[16px] leading-[23px] text-ink-muted" />}
-                <div className="mt-1 text-[12px] leading-4 text-ink-muted">{r.season}</div>
+            {query && words.length > 0 && label("Your words", false, true)}
+            {words.map((r, i) => row(r, i))}
+            {hiddenWords > 0 && (
+              <li role="presentation" className="py-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAll(true);
+                    // The link goes away; keep focus in the dialog so Esc and Tab still work.
+                    input.current?.focus();
+                  }}
+                  className={`cursor-pointer border-0 border-b-[1.5px] border-dotted border-accent bg-transparent p-0 text-[14px] text-accent ${focus}`}
+                >
+                  Show {hiddenWords} more
+                </button>
               </li>
-            ))}
+            )}
+            {close.length > 0 && label("Close in meaning", true, words.length === 0)}
+            {close.map((r, i) => row(r, words.length + i))}
           </ul>
           {searching && <ScreenLoader label="Searching" className="py-10" />}
-          {query && !searching && found && !found.length && !failed &&<p className="m-0 pt-2 text-ink-muted">Nothing with those words yet.</p>}
+          {query && !searching && found && !results.length && !failed && <p className="m-0 pt-2 text-ink-muted">Nothing with those words yet.</p>}
           {failed && <p className="m-0 pt-2 text-ink-muted">Search isn't working right now. Check your connection.</p>}
         </div>
       </div>

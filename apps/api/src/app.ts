@@ -11,6 +11,7 @@ import type { PictureStore } from "./pictures/store.js";
 import type { RelatedRepo } from "./related/repo.js";
 import { registerRelatedRoutes } from "./related/routes.js";
 import { registerHealthRoutes } from "./routes/health.js";
+import type { Meaning } from "./search/meaning.js";
 
 export type AppDeps = {
   repo: PiecesRepo;
@@ -18,11 +19,13 @@ export type AppDeps = {
   pictures: { store: PictureStore; repo: PicturesRepo };
   verify: VerifyToken;
   embeddings?: EmbeddingQueue;
+  /** Search by meaning. Without it, search answers with words only. */
+  meaning?: Meaning;
   logger?: boolean;
   docs?: boolean;
 };
 
-export async function buildApp({ repo, related, pictures, verify, embeddings = noEmbeddingQueue, logger = false, docs = false }: AppDeps) {
+export async function buildApp({ repo, related, pictures, verify, embeddings = noEmbeddingQueue, meaning, logger = false, docs = false }: AppDeps) {
   const app = Fastify({ logger });
   app.decorateRequest("userId", "");
   registerErrorHandling(app);
@@ -32,7 +35,7 @@ export async function buildApp({ repo, related, pictures, verify, embeddings = n
 
   await app.register(async (api) => {
     api.addHook("preHandler", requireUser(verify));
-    registerPieceRoutes(api, repo, embeddings);
+    registerPieceRoutes(api, repo, embeddings, meaning);
     registerRelatedRoutes(api, related);
     registerPictureRoutes(api, pictures.store, pictures.repo);
   });

@@ -143,4 +143,9 @@ export type SearchResult = Pick<Piece, "id" | "language" | "style" | "isFragment
   /** The line the words were found in, when it is not the first line. */
   match: MarkedLine | null;
 };
-export type SearchResponse = { items: SearchResult[] };
+export type SearchResponse = {
+  /** Pieces holding the typed words. */
+  items: SearchResult[];
+  /** Pieces without those words that are close in meaning; never also in `items`, with no matched line. */
+  close: SearchResult[];
+};

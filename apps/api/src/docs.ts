@@ -23,13 +23,10 @@ const libraryBody = z.object({
   )
 });
 const markedLine = z.object({ text: z.string(), marks: z.array(z.tuple([z.number().int(), z.number().int()])) });
-const searchBody = z.object({
-  items: z.array(
-    piece
-      .pick({ id: true, language: true, isFragment: true, createdAt: true, updatedAt: true })
-      .extend({ firstLine: markedLine, match: markedLine.nullable() })
-  )
-});
+const searchResult = piece
+  .pick({ id: true, language: true, isFragment: true, createdAt: true, updatedAt: true })
+  .extend({ firstLine: markedLine, match: markedLine.nullable() });
+const searchBody = z.object({ items: z.array(searchResult), close: z.array(searchResult) });
 
 const json = (schema: z.ZodTypeAny, description: string) => ({
   description,
@@ -84,7 +81,8 @@ export const openApiDocument = {
         description:
           "Finds your pieces holding every word, or part of a word, in `q`: Hindi and English, and Hinglish typing finds Hindi writing. " +
           "Up to 20, best first. Each result has its first line and, when the words are on another line, that line; " +
-          "`marks` are [start, end) offsets of the found words.",
+          "`marks` are [start, end) offsets of the found words. `close` holds up to 5 more pieces about the same thing " +
+          "without those words (by meaning, never also in `items`); it is empty when meaning search is unavailable.",
         parameters: [{ name: "q", in: "query", required: true, schema: (toSchema(searchQuery).properties as Record<string, unknown>).q }],
         responses: { "200": json(searchBody, "Results, possibly none."), "400": json(validationBody, "No search words."), ...errors }
       }

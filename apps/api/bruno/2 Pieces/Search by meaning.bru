@@ -1,0 +1,19 @@
+meta {
+  name: Search by meaning
+  type: http
+  seq: 14
+}
+
+get {
+  url: {{baseUrl}}/api/search?q=waiting
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  Needs the embedder running (EMBEDDER_URL). `items` holds pieces with the word, `close` holds up to 5 pieces about the same thing without it (first line only, no marks, no matched line). No piece is in both. With the embedder stopped, `close` is [] and `items` still works. Signed in as the second writer, neither list may show the first writer's pieces.
+}

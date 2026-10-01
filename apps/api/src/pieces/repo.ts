@@ -1,7 +1,7 @@
 import type { Piece, PieceSummary, UpdatePieceInput } from "@ink/schemas";
 import type pg from "pg";
 import type { SearchWords } from "./fold.js";
-import { searchText } from "./fold.js";
+import { isLoose, searchText } from "./fold.js";
 import { mergeYdoc } from "./merge.js";
 
 export type PiecePatch = UpdatePieceInput;
@@ -111,7 +111,7 @@ export function pgPiecesRepo(db: pg.Pool): PiecesRepo {
           set("title", merged.meta.title);
           set("language", merged.meta.language);
           set("style", merged.meta.style);
-          set("search_text", searchText(merged.meta.title, merged.text));
+          set("search_text", searchText(merged.meta.title, merged.text, isLoose(merged.meta.language)));
           set("picture_ids", merged.pictureIds, "::uuid[]");
         }
         if (sets.length) sets.push("updated_at = now()");
@@ -175,6 +175,7 @@ export function pgPiecesRepo(db: pg.Pool): PiecesRepo {
 
     async search(userId, words, limit) {
       // Every word must be in one of the two copies: (evened words) OR (loose Latin words).
+      // Pieces labelled English only count by their exact words: the loose side is not enough for them.
       // Each side is escaped, so nothing the writer types is read as query syntax.
       const { rows } = await db.query<PieceRow>(
         `select ${SUMMARY_COLUMNS}
@@ -183,6 +184,7 @@ export function pgPiecesRepo(db: pg.Pool): PiecesRepo {
            and search_text operator(extensions.&@~) (
              '(' || extensions.pgroonga_query_escape($2) || ') OR (' || extensions.pgroonga_query_escape($3) || ')'
            )
+           and (language is distinct from 'en' or search_text operator(extensions.&@~) extensions.pgroonga_query_escape($2))
          order by extensions.pgroonga_score(tableoid, ctid) desc, updated_at desc
          limit $4`,
         [userId, words.even.join(" "), words.latin.filter(Boolean).join(" ") || words.even.join(" "), limit]

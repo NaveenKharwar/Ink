@@ -12,9 +12,10 @@ import {
 } from "@ink/schemas";
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { z } from "zod";
-import { describeMatch, openingLines, searchWords } from "./fold.js";
+import { describeMatch, isLoose, openingLines, searchWords } from "./fold.js";
 import { InvalidUpdateError } from "./merge.js";
 import type { EmbeddingQueue } from "../embeddings/queue.js";
+import { MIN_CLOSE_SIMILARITY, type Meaning } from "../search/meaning.js";
 import type { PiecesRepo } from "./repo.js";
 
 const idParams = z.object({ id: z.string().uuid() });
@@ -47,10 +48,11 @@ function invalid(reply: FastifyReply, error: z.ZodError) {
 }
 
 const SEARCH_LIMIT = 20;
+const CLOSE_LIMIT = 5;
 
 const notFound = (reply: FastifyReply) => reply.code(404).send({ error: "not_found", message: "This piece doesn't exist." });
 
-export function registerPieceRoutes(app: FastifyInstance, repo: PiecesRepo, embeddings: EmbeddingQueue) {
+export function registerPieceRoutes(app: FastifyInstance, repo: PiecesRepo, embeddings: EmbeddingQueue, meaning?: Meaning) {
   // Writing goes through here: the piece is created by its first sync, and two devices'
   // edits merge (Yjs), so neither overwrites the other.
   app.post("/api/pieces/:id/sync", async (request, reply) => {
@@ -104,16 +106,32 @@ export function registerPieceRoutes(app: FastifyInstance, repo: PiecesRepo, embe
     return response;
   });
 
-  // Word search over the writer's own pieces only.
+  // Search over the writer's own pieces only: the words first, then pieces close in meaning.
   app.get("/api/search", async (request, reply) => {
     const query = searchQuery.safeParse(request.query);
     if (!query.success) return invalid(reply, query.error);
     const words = searchWords(query.data.q);
     const rows = words.even.length ? await repo.search(request.userId, words, SEARCH_LIMIT) : [];
+
+    // Without an embedder, or when it can't be reached, the writer just gets the words.
+    let close: SearchResponse["close"] = [];
+    if (meaning && words.even.length) {
+      try {
+        const [vector] = await meaning.embedder.embed([query.data.q]);
+        const found = vector ? await meaning.repo.closeTo(request.userId, vector, rows.map((r) => r.id), MIN_CLOSE_SIMILARITY, CLOSE_LIMIT) : [];
+        close = found.map(({ id, text, language, style, isFragment, createdAt, updatedAt }) => ({
+          id, language, style, isFragment, createdAt, updatedAt, firstLine: { text: openingLines(text)[0] ?? "", marks: [] }, match: null
+        }));
+      } catch (err) {
+        request.log.warn({ err }, "Search by meaning is unavailable; answering with words only.");
+      }
+    }
+
     const response: SearchResponse = {
       items: rows.map(({ id, text, language, style, isFragment, createdAt, updatedAt }) => ({
-        id, language, style, isFragment, createdAt, updatedAt, ...describeMatch(text, query.data.q)
-      }))
+        id, language, style, isFragment, createdAt, updatedAt, ...describeMatch(text, query.data.q, isLoose(language))
+      })),
+      close
     };
     return response;
   });
