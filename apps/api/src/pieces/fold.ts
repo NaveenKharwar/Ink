@@ -110,10 +110,16 @@ export function loosen(input: string): string {
 
 const latin = (input: string) => loosen(romanize(input));
 
-/** What gets stored and indexed for a piece: both copies, one after the other. */
-export function searchText(title: string | null, text: string): string {
+/**
+ * Only pieces the writer labelled English are matched by their exact words. Everything else (Hindi,
+ * Hinglish, mixed, or no label yet) is matched loosely too, so the ways of spelling a word meet.
+ */
+export const isLoose = (language: string | null): boolean => language !== "en";
+
+/** What gets stored and indexed for a piece: the exact words, then (for loose pieces) the loose copy. */
+export function searchText(title: string | null, text: string, loose = true): string {
   const all = title ? `${title}\n${text}` : text;
-  return `${evenDevanagari(all)}\n${latin(all)}`;
+  return loose ? `${evenDevanagari(all)}\n${latin(all)}` : evenDevanagari(all);
 }
 
 export type SearchWords = { even: string[]; latin: string[] };
@@ -124,9 +130,9 @@ export function searchWords(query: string): SearchWords {
   return { even: words.map(evenDevanagari), latin: words.map(latin) };
 }
 
-function wordIn(words: SearchWords, i: number, piece: { even: string; latin: string }): boolean {
+function wordIn(words: SearchWords, i: number, piece: { even: string; latin: string }, loose: boolean): boolean {
   const latinWord = words.latin[i];
-  return piece.even.includes(words.even[i]!) || (!!latinWord && piece.latin.includes(latinWord));
+  return piece.even.includes(words.even[i]!) || (loose && !!latinWord && piece.latin.includes(latinWord));
 }
 
 const fold = (text: string) => ({ even: evenDevanagari(text), latin: latin(text) });
@@ -134,11 +140,11 @@ const fold = (text: string) => ({ even: evenDevanagari(text), latin: latin(text)
 export type MarkedLine = { text: string; marks: [number, number][] };
 
 // Marks whole words of the line that hold one of the searched words.
-function markLine(line: string, words: SearchWords): MarkedLine {
+function markLine(line: string, words: SearchWords, loose: boolean): MarkedLine {
   const marks: [number, number][] = [];
   for (const token of line.matchAll(/[\p{L}\p{M}\p{N}]+/gu)) {
     const folded = fold(token[0]);
-    if (words.even.some((_, i) => wordIn(words, i, folded))) marks.push([token.index!, token.index! + token[0].length]);
+    if (words.even.some((_, i) => wordIn(words, i, folded, loose))) marks.push([token.index!, token.index! + token[0].length]);
   }
   return { text: line, marks };
 }
@@ -161,16 +167,16 @@ function excerpt({ text, marks }: MarkedLine): MarkedLine {
 export type MatchDescription = { firstLine: MarkedLine; match: MarkedLine | null };
 
 /** A search result's first line, and the line the words were found in when that is another line. */
-export function describeMatch(text: string, query: string): MatchDescription {
+export function describeMatch(text: string, query: string, loose = true): MatchDescription {
   const words = searchWords(query);
   const lines = text.split("\n").map((line) => line.trim());
   const first = Math.max(0, lines.findIndex((line) => line));
   const folded = lines.map(fold);
-  const all = folded.findIndex((f, n) => lines[n] && words.even.every((_, i) => wordIn(words, i, f)));
-  const any = all >= 0 ? all : folded.findIndex((f, n) => lines[n] && words.even.some((_, i) => wordIn(words, i, f)));
+  const all = folded.findIndex((f, n) => lines[n] && words.even.every((_, i) => wordIn(words, i, f, loose)));
+  const any = all >= 0 ? all : folded.findIndex((f, n) => lines[n] && words.even.some((_, i) => wordIn(words, i, f, loose)));
   return {
-    firstLine: excerpt(markLine(lines[first] ?? "", words)),
-    match: any >= 0 && any !== first ? excerpt(markLine(lines[any]!, words)) : null
+    firstLine: excerpt(markLine(lines[first] ?? "", words, loose)),
+    match: any >= 0 && any !== first ? excerpt(markLine(lines[any]!, words, loose)) : null
   };
 }
 

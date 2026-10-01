@@ -7,6 +7,7 @@
     "dev": "tsx watch --env-file=../../.env src/server.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
+    "search:rebuild": "tsx --env-file=../../.env src/scripts/rebuild-search-text.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "echo \"(lint not configured yet)\"",
     "test": "tsx --test src/pieces/routes.test.ts src/pieces/fold.test.ts src/pictures/routes.test.ts src/related/routes.test.ts src/embeddings/embeddings.test.ts src/embeddings/embed-piece.test.ts"

@@ -8,7 +8,10 @@ import { memoryPicturesRepo } from "../pictures/repo.js";
 import { memoryRelatedRepo } from "../related/repo.js";
 import { memoryPictureStore } from "../pictures/store.js";
 import type { VerifyToken } from "../auth.js";
-import { searchText, searchWords } from "./fold.js";
+import { fakeEmbeddingProvider } from "../embeddings/fake.js";
+import type { EmbeddingProvider } from "../embeddings/provider.js";
+import { memoryMeaningRepo } from "../search/meaning.js";
+import { isLoose, searchText, searchWords } from "./fold.js";
 import { mergeYdoc } from "./merge.js";
 import type { PiecesRepo } from "./repo.js";
 import { decodeCursor, encodeCursor } from "./routes.js";
@@ -78,8 +81,9 @@ function memoryRepo(): PiecesRepo {
       return [...rows.values()]
         .filter((row) => row.userId === userId)
         .filter((row) => {
-          const stored = searchText(row.title, row.text);
-          return all(words.even, stored) || all(words.latin, stored);
+          const loose = isLoose(row.language);
+          const stored = searchText(row.title, row.text, loose);
+          return all(words.even, stored) || (loose && all(words.latin, stored));
         })
         .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
         .slice(0, limit)
@@ -134,10 +138,11 @@ function device() {
 }
 type Device = ReturnType<typeof device>;
 
-async function setup(repo: PiecesRepo = memoryRepo()) {
+async function setup(repo: PiecesRepo = memoryRepo(), embedder: EmbeddingProvider = fakeEmbeddingProvider()) {
   const queued: string[] = [];
   const embeddings = { enqueue: async (id: string) => void queued.push(id), stop: async () => {} };
-  const app = await buildApp({ repo, related: memoryRelatedRepo(repo), pictures: { store: memoryPictureStore(), repo: memoryPicturesRepo() }, verify, embeddings });
+  const meaning = { repo: memoryMeaningRepo(repo, embedder), embedder };
+  const app = await buildApp({ repo, related: memoryRelatedRepo(repo), pictures: { store: memoryPictureStore(), repo: memoryPicturesRepo() }, verify, embeddings, meaning });
   const as = (userId: string) => ({ authorization: `Bearer token-${userId}` });
   return { app, as, queued };
 }
@@ -455,6 +460,73 @@ test("search finds the writer's own pieces by the words they remember", async ()
   assert.deepEqual((await search("!!")).json().items, []);
   assert.equal((await search("   ")).statusCode, 400);
   assert.equal((await ctx.app.inject({ method: "GET", url: "/api/search", headers: ctx.as(ASHA) })).statusCode, 400);
+});
+
+test("English pieces match by their exact words; Hinglish and unlabelled pieces match loosely", async () => {
+  const ctx = await setup();
+  const save = async (language: string | null, ...lines: string[]) => {
+    const d = device();
+    d.write(lines);
+    if (language) d.setMeta({ language });
+    const id = randomUUID();
+    await syncFrom(ctx, ASHA, id, d, null);
+    return id;
+  };
+  const renew = await save("en", "Renew the passport before March");
+  await save("en", "She never talks to me");
+  const wah = await save("hi-Latn", "wah wah, kya baat hai");
+  const unlabelled = await save(null, "vah, kya baat");
+  const search = async (q: string) => (await ctx.app.inject({ method: "GET", url: `/api/search?q=${encodeURIComponent(q)}`, headers: ctx.as(ASHA) })).json().items;
+
+  // "new" is "nev" once loosened, which sits inside "never": English pieces must not match that way.
+  const found = await search("new");
+  assert.deepEqual(found.map((i: { id: string }) => i.id), [renew]);
+  assert.deepEqual(found[0].firstLine.marks, [[0, 5]]);
+  // Hinglish keeps the loose spellings: w and v meet.
+  assert.deepEqual((await search("vah")).map((i: { id: string }) => i.id).sort(), [unlabelled, wah].sort());
+});
+
+test("search adds pieces close in meaning after the words, never repeats one, and stays the writer's own", async () => {
+  const embedder = fakeEmbeddingProvider();
+  const ctx = await setup(memoryRepo(), embedder);
+  const save = async (user: string, ...lines: string[]) => {
+    const d = device();
+    d.write(lines);
+    if (lines[0]?.startsWith("hinglish:")) d.setMeta({ language: "hi-Latn" });
+    const id = randomUUID();
+    await syncFrom(ctx, user, id, d, null);
+    return id;
+  };
+  const hit = await save(ASHA, "kettle cold tea");
+  const near = await save(ASHA, "kettle cold tonight again");
+  await save(ASHA, "kettle cold"); // very close, but too short to count
+  await save(ASHA, "hinglish: kettle cold tonight again"); // labelled Hinglish: words only, never by meaning
+  await save(ASHA, "taxes receipts");
+  await save(RAVI, "kettle cold tonight again");
+
+  const res = await ctx.app.inject({ method: "GET", url: "/api/search?q=kettle%20cold%20tea", headers: ctx.as(ASHA) });
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(res.json().items.map((i: { id: string }) => i.id), [hit]);
+  const close = res.json().close;
+  assert.deepEqual(close.map((i: { id: string }) => i.id), [near]);
+  assert.deepEqual(close[0].firstLine, { text: "kettle cold tonight again", marks: [] });
+  assert.equal(close[0].match, null);
+
+  // The embedder being down must not break word search.
+  const broken: EmbeddingProvider = { model: "down", embed: async () => { throw new Error("down"); } };
+  const down = await setup(memoryRepo(), broken);
+  const d = device();
+  d.write(["kettle cold"]);
+  await syncFrom(down, ASHA, randomUUID(), d, null);
+  const fallback = await down.app.inject({ method: "GET", url: "/api/search?q=kettle", headers: down.as(ASHA) });
+  assert.equal(fallback.statusCode, 200);
+  assert.equal(fallback.json().items.length, 1);
+  assert.deepEqual(fallback.json().close, []);
+
+  // Not a word at all: nothing is embedded.
+  const before = embedder.calls.length;
+  assert.deepEqual((await ctx.app.inject({ method: "GET", url: "/api/search?q=!!", headers: ctx.as(ASHA) })).json(), { items: [], close: [] });
+  assert.equal(embedder.calls.length, before);
 });
 
 test("a save that writes queues the piece for embedding; a read or a refused save does not", async () => {
