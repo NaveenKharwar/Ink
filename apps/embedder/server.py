@@ -7,6 +7,7 @@ Listens on localhost only. Uses BGE-M3, run locally; the writing never leaves th
 """
 import json
 import os
+import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from sentence_transformers import SentenceTransformer
@@ -20,6 +21,9 @@ MAX_CHARS = 20000
 
 model = SentenceTransformer(MODEL, revision=REVISION)
 model.max_seq_length = 512
+# The server answers requests on separate threads (the background queue and a search can arrive
+# together), but the model crashes the whole process when two encodes run at once on Apple's GPU.
+encode_lock = threading.Lock()
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -47,7 +51,8 @@ class Handler(BaseHTTPRequestHandler):
             ok = False
         if not ok:
             return self._send(400, {"error": f"send {{\"texts\": [1 to {MAX_TEXTS} strings]}}"})
-        vectors = model.encode([t[:MAX_CHARS] for t in texts], normalize_embeddings=True)
+        with encode_lock:
+            vectors = model.encode([t[:MAX_CHARS] for t in texts], normalize_embeddings=True)
         self._send(200, {"model": MODEL, "vectors": vectors.tolist()})
 
     def log_message(self, *args):
