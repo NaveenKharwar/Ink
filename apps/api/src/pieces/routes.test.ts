@@ -135,9 +135,11 @@ function device() {
 type Device = ReturnType<typeof device>;
 
 async function setup(repo: PiecesRepo = memoryRepo()) {
-  const app = await buildApp({ repo, related: memoryRelatedRepo(repo), pictures: { store: memoryPictureStore(), repo: memoryPicturesRepo() }, verify });
+  const queued: string[] = [];
+  const embeddings = { enqueue: async (id: string) => void queued.push(id), stop: async () => {} };
+  const app = await buildApp({ repo, related: memoryRelatedRepo(repo), pictures: { store: memoryPictureStore(), repo: memoryPicturesRepo() }, verify, embeddings });
   const as = (userId: string) => ({ authorization: `Bearer token-${userId}` });
-  return { app, as };
+  return { app, as, queued };
 }
 
 test("every pieces route needs a valid token", async () => {
@@ -453,4 +455,20 @@ test("search finds the writer's own pieces by the words they remember", async ()
   assert.deepEqual((await search("!!")).json().items, []);
   assert.equal((await search("   ")).statusCode, 400);
   assert.equal((await ctx.app.inject({ method: "GET", url: "/api/search", headers: ctx.as(ASHA) })).statusCode, 400);
+});
+
+test("a save that writes queues the piece for embedding; a read or a refused save does not", async () => {
+  const ctx = await setup();
+  const id = randomUUID();
+  const d = device();
+  d.write(["The kettle clicks off"]);
+  await syncFrom(ctx, ASHA, id, d, null);
+  assert.deepEqual(ctx.queued, [id]);
+
+  await ctx.app.inject({ method: "GET", url: `/api/pieces/${id}`, headers: ctx.as(ASHA) });
+  await ctx.app.inject({ method: "PATCH", url: `/api/pieces/${id}`, headers: ctx.as(RAVI), payload: { isFragment: true } }); // not his piece
+  assert.deepEqual(ctx.queued, [id]);
+
+  await ctx.app.inject({ method: "PATCH", url: `/api/pieces/${id}`, headers: ctx.as(ASHA), payload: { includeInMemory: false } });
+  assert.deepEqual(ctx.queued, [id, id]);
 });

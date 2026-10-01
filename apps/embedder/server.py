@@ -1,0 +1,59 @@
+"""Turns text into meaning vectors for Ink's related writing.
+
+POST /embed  {"texts": ["..."]}  ->  {"model": "...", "vectors": [[...1024 numbers...]]}
+GET  /health                     ->  {"ok": true, "model": "..."}
+
+Listens on localhost only. Uses BGE-M3, run locally; the writing never leaves the machine.
+"""
+import json
+import os
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+from sentence_transformers import SentenceTransformer
+
+MODEL = "BAAI/bge-m3"
+REVISION = "5617a9f61b"
+HOST = os.environ.get("EMBEDDER_HOST", "127.0.0.1")
+PORT = int(os.environ.get("EMBEDDER_PORT", "8001"))
+MAX_TEXTS = 32
+MAX_CHARS = 20000
+
+model = SentenceTransformer(MODEL, revision=REVISION)
+model.max_seq_length = 512
+
+
+class Handler(BaseHTTPRequestHandler):
+    def _send(self, status, body):
+        data = json.dumps(body).encode()
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def do_GET(self):
+        if self.path == "/health":
+            return self._send(200, {"ok": True, "model": MODEL})
+        self._send(404, {"error": "not found"})
+
+    def do_POST(self):
+        if self.path != "/embed":
+            return self._send(404, {"error": "not found"})
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+            texts = json.loads(self.rfile.read(length))["texts"]
+            ok = isinstance(texts, list) and 0 < len(texts) <= MAX_TEXTS and all(isinstance(t, str) for t in texts)
+        except (ValueError, KeyError, TypeError):
+            ok = False
+        if not ok:
+            return self._send(400, {"error": f"send {{\"texts\": [1 to {MAX_TEXTS} strings]}}"})
+        vectors = model.encode([t[:MAX_CHARS] for t in texts], normalize_embeddings=True)
+        self._send(200, {"model": MODEL, "vectors": vectors.tolist()})
+
+    def log_message(self, *args):
+        pass
+
+
+if __name__ == "__main__":
+    print(f"embedder ready on http://{HOST}:{PORT}", flush=True)
+    ThreadingHTTPServer((HOST, PORT), Handler).serve_forever()

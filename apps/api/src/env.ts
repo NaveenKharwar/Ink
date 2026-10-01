@@ -8,7 +8,9 @@ const envSchema = z.object({
   DATABASE_SSL_CA: z.string().min(1).optional(),
   SUPABASE_URL: z.string().url(),
   // Lets the API (and only the API) read and write the private pictures bucket. Never sent to browsers.
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1)
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+  // Where the embedder service listens (apps/embedder). Without it nothing is embedded and Related uses shared words.
+  EMBEDDER_URL: z.string().url().optional()
 });
 
 export type Env = z.infer<typeof envSchema>;

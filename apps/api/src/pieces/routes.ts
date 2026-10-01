@@ -14,6 +14,7 @@ import type { FastifyInstance, FastifyReply } from "fastify";
 import { z } from "zod";
 import { describeMatch, openingLines, searchWords } from "./fold.js";
 import { InvalidUpdateError } from "./merge.js";
+import type { EmbeddingQueue } from "../embeddings/queue.js";
 import type { PiecesRepo } from "./repo.js";
 
 const idParams = z.object({ id: z.string().uuid() });
@@ -49,7 +50,7 @@ const SEARCH_LIMIT = 20;
 
 const notFound = (reply: FastifyReply) => reply.code(404).send({ error: "not_found", message: "This piece doesn't exist." });
 
-export function registerPieceRoutes(app: FastifyInstance, repo: PiecesRepo) {
+export function registerPieceRoutes(app: FastifyInstance, repo: PiecesRepo, embeddings: EmbeddingQueue) {
   // Writing goes through here: the piece is created by its first sync, and two devices'
   // edits merge (Yjs), so neither overwrites the other.
   app.post("/api/pieces/:id/sync", async (request, reply) => {
@@ -71,6 +72,7 @@ export function registerPieceRoutes(app: FastifyInstance, repo: PiecesRepo) {
       throw err;
     }
     if (!outcome) return notFound(reply);
+    if (body.data.update) void embeddings.enqueue(params.data.id);
     const response: SyncPieceOutput = { update: toBase64(outcome.update), stateVector: toBase64(outcome.stateVector), piece: outcome.piece };
     return response;
   });
@@ -130,6 +132,8 @@ export function registerPieceRoutes(app: FastifyInstance, repo: PiecesRepo) {
     if (!body.success) return invalid(reply, body.error);
 
     const updated = await repo.update(request.userId, params.data.id, body.data);
-    return updated ?? notFound(reply);
+    if (!updated) return notFound(reply);
+    void embeddings.enqueue(params.data.id);
+    return updated;
   });
 }

@@ -13,3 +13,5 @@ coverage/
 
 # turbo
 .turbo/
+.venv/
+__pycache__/

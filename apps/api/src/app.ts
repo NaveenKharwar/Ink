@@ -1,4 +1,5 @@
 import Fastify from "fastify";
+import { noEmbeddingQueue, type EmbeddingQueue } from "./embeddings/queue.js";
 import { requireUser, type VerifyToken } from "./auth.js";
 import { registerDocs } from "./docs.js";
 import { registerErrorHandling } from "./errors.js";
@@ -16,11 +17,12 @@ export type AppDeps = {
   related: RelatedRepo;
   pictures: { store: PictureStore; repo: PicturesRepo };
   verify: VerifyToken;
+  embeddings?: EmbeddingQueue;
   logger?: boolean;
   docs?: boolean;
 };
 
-export async function buildApp({ repo, related, pictures, verify, logger = false, docs = false }: AppDeps) {
+export async function buildApp({ repo, related, pictures, verify, embeddings = noEmbeddingQueue, logger = false, docs = false }: AppDeps) {
   const app = Fastify({ logger });
   app.decorateRequest("userId", "");
   registerErrorHandling(app);
@@ -30,7 +32,7 @@ export async function buildApp({ repo, related, pictures, verify, logger = false
 
   await app.register(async (api) => {
     api.addHook("preHandler", requireUser(verify));
-    registerPieceRoutes(api, repo);
+    registerPieceRoutes(api, repo, embeddings);
     registerRelatedRoutes(api, related);
     registerPictureRoutes(api, pictures.store, pictures.repo);
   });
