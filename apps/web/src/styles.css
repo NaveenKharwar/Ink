@@ -31,18 +31,18 @@
   --ink: #1a1a1a;
   --on-ink: #ffffff;
   --ink-muted: #666560;
-  --accent: #4d7c0f;
+  --accent: #456f0c;
   --accent-soft: color-mix(in srgb, var(--accent) 10%, var(--surface));
   --dash: color-mix(in srgb, var(--accent) 35%, var(--surface));
   --surface-hover: #f5efe3;
   --line-strong: #dccfb9;
-  --ink-subtle: #8a8a8a;
+  --ink-subtle: #777777;
   --stanza: color-mix(in srgb, var(--accent) 45%, var(--surface));
   --scrim: rgba(20, 20, 20, 0.28);
   --ad-line: #d6d6d4;
   --season-winter: #5b7fa6;
   --season-spring: #c2567e;
-  --season-summer: #b7791f;
+  --season-summer: #a96d14;
   --season-monsoon: #2f7d6d;
   --season-autumn: #c0582b;
   --notes-dot: rgba(26, 26, 26, 0.09);
@@ -148,7 +148,7 @@
 
   /* Sign-in is light only, so it uses the light values directly. */
   --color-auth-ink: #1a1a1a;
-  --color-auth-accent: #4d7c0f;
+  --color-auth-accent: #456f0c;
   --color-auth-cream: #faf8f3;
   --color-auth-line: #e2ded5;
   --color-auth-rule: #cfc9bd;
