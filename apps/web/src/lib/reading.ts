@@ -12,9 +12,11 @@ export type ReadingState = {
   active: string | null;
   /** The writer asked for the menu and it has no room beside the reading paper: the paper waits, tabs kept. */
   away: boolean;
+  /** Which sheet put the paper away; on a narrow window only that sheet comes back, never both. */
+  awayBy: "menu" | "panel" | null;
 };
 
-export const NOT_READING: ReadingState = { tabs: [], active: null, away: false };
+export const NOT_READING: ReadingState = { tabs: [], active: null, away: false, awayBy: null };
 
 export type ReadingAction =
   | { type: "open"; tab: BesideTab }
@@ -40,7 +42,8 @@ export function readingReducer(state: ReadingState, action: ReadingAction): Read
       return {
         tabs: state.tabs.some((t) => t.id === action.tab.id) ? state.tabs : [...state.tabs, action.tab],
         active: action.tab.id,
-        away: false
+        away: false,
+        awayBy: null
       };
     case "select":
       return state.tabs.some((t) => t.id === action.id) ? { ...state, active: action.id } : state;
@@ -52,12 +55,12 @@ export function readingReducer(state: ReadingState, action: ReadingAction): Read
     case "clear":
       return state === NOT_READING ? state : NOT_READING;
     case "menuOpened":
-      return action.takesRoom ? { ...state, away: true } : state;
+      return action.takesRoom ? { ...state, away: true, awayBy: "menu" } : state;
     case "menuClosed":
-      return state.away ? { ...state, away: false } : state;
+      return state.away && state.awayBy !== "panel" ? { ...state, away: false, awayBy: null } : state;
     case "panelOpened":
-      return state.tabs.length ? { ...state, away: true } : state;
+      return state.tabs.length ? { ...state, away: true, awayBy: "panel" } : state;
     case "panelClosed":
-      return state.away ? { ...state, away: false } : state;
+      return state.away && state.awayBy !== "menu" ? { ...state, away: false, awayBy: null } : state;
   }
 }

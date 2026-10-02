@@ -18,8 +18,10 @@ type Props = {
   exists: boolean;
   seasonSet: SeasonSet;
   onClose: () => void;
-  /** Phone: the panel is the screen on show (it slides in and out of view without unmounting). */
+  /** The panel is on show (it slides in and out of view without unmounting). */
   shown?: boolean;
+  /** The note that was just read, now that its words are no longer beside the page: shown chosen. */
+  chosen?: string | null;
   /** The pieces open in the reading paper right now (desktop, while it is on screen). */
   reading?: string[];
   /** Reads an older piece beside the page (desktop) or as the next screen (phone). */
@@ -34,7 +36,7 @@ const linkClass = `cursor-pointer border-0 border-b-[1.5px] border-dotted border
 // "Ink sees this too": older writing beside the piece, as plain notes under heading bars. Related
 // (soft blue: it leads to other writing), Forgotten (old pieces not opened for a long while) and
 // Loose lines (short ones). The panel is the only card; nothing inside it is boxed.
-export function InkSeesPanel({ phone = false, shown = true, pieceId, exists, seasonSet, reading = [], onClose, onOpenBeside }: Props) {
+export function InkSeesPanel({ phone = false, shown = true, chosen = null, pieceId, exists, seasonSet, reading = [], onClose, onOpenBeside }: Props) {
   const found = useRelated(pieceId, exists);
   const dismissals = useDismissals(pieceId);
   const [selected, setSelected] = useState<string | null>(null);
@@ -43,12 +45,21 @@ export function InkSeesPanel({ phone = false, shown = true, pieceId, exists, sea
   const timeZone = deviceTimeZone();
   const panel = useRef<HTMLElement>(null);
 
-  // Coming back to the panel (the phone's reader closes), bring the note that was read into the
-  // middle of the screen: it stays chosen, so the writer sees which one it was.
+  // The note just read stays chosen when the reading paper is not beside the page (the phone's
+  // reader closed, or a narrow window gave the room back): its dash, the others muted.
   useEffect(() => {
-    if (!phone || !shown) return;
-    panel.current?.querySelector('[aria-pressed="true"]')?.scrollIntoView({ block: "center", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
-  }, [phone, shown]);
+    if (chosen) setSelected(chosen);
+  }, [chosen]);
+
+  // Coming back to the panel, bring the chosen note into the middle of the screen: that is how the
+  // writer sees which one it was.
+  useEffect(() => {
+    if (!shown) return;
+    const frame = requestAnimationFrame(() =>
+      panel.current?.querySelector('[aria-pressed="true"]')?.scrollIntoView({ block: "center", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" })
+    );
+    return () => cancelAnimationFrame(frame);
+  }, [shown]);
 
   const seen = (note: RelatedNote) => dismissals.state[note.id] !== "gone";
   const alive = (note: RelatedNote) => !dismissals.state[note.id];

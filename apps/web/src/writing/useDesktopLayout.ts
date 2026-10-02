@@ -32,7 +32,8 @@ export function useDesktopLayout({ menuPreferred, setMenuPreferred, panelOpen, p
     menuPreferred,
     panelOpen,
     reading,
-    readerAway: state.away
+    readerAway: state.away,
+    awayBy: state.awayBy
   });
 
   // ☰ and ⌘\: asking for the menu while it has stepped aside puts the reading paper away (tabs

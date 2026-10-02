@@ -95,6 +95,13 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
   // being read: all of it in one place, see useDesktopLayout.
   const shell = useDesktopLayout({ menuPreferred: menuOpen, setMenuPreferred: setMenuOpen, panelOpen, pieceId: openPieceId });
   const { tabs } = shell;
+  // The older piece read last: when its words are no longer beside the page (the paper waits, or
+  // reading ended) the panel shows that note chosen, so the writer sees which one it was.
+  const [lastRead, setLastRead] = useState<string | null>(null);
+  useEffect(() => {
+    if (shell.active) setLastRead(shell.active);
+  }, [shell.active]);
+  useEffect(() => setLastRead(null), [openPieceId]);
   // A narrow paper gets smaller side margins so its words keep as much width as they can.
   const viewport = useViewportWidth();
   const pageWidth = shell.layout.reading ? shell.layout.reading.page : viewport - 2 * sheetRoom(viewport);
@@ -418,6 +425,8 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
         >
           <InkSeesPanel
             key={openPieceId ?? "none"}
+            shown={panelShown}
+            chosen={panelShown && !shell.layout.reading ? lastRead : null}
             pieceId={openPieceId}
             exists={view.kind === "piece" && view.target.open}
             seasonSet={seasonSet}

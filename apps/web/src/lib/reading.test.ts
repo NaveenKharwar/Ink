@@ -59,3 +59,14 @@ test("asking for the panel puts the reading paper away, and closing the panel br
   // Nothing to put away when nothing is being read.
   assert.equal(readingReducer(NOT_READING, { type: "panelOpened" }), NOT_READING);
 });
+
+test("a sheet that did not put the paper away cannot bring it back", () => {
+  const byPanel = readingReducer(open(["a"]), { type: "panelOpened" });
+  assert.equal(byPanel.awayBy, "panel");
+  assert.equal(readingReducer(byPanel, { type: "menuClosed" }).away, true);
+  assert.equal(readingReducer(byPanel, { type: "panelClosed" }).away, false);
+  const byMenu = readingReducer(open(["a"]), { type: "menuOpened", takesRoom: true });
+  assert.equal(byMenu.awayBy, "menu");
+  assert.equal(readingReducer(byMenu, { type: "panelClosed" }).away, true);
+  assert.equal(readingReducer(byMenu, { type: "menuClosed" }).away, false);
+});
