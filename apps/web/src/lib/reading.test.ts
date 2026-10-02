@@ -49,3 +49,13 @@ test("a tab is named by the piece's title, else its first line, else Untitled", 
   assert.equal(tabFor({ ...base, title: null, lines: [long] }).title, long.slice(0, 32));
   assert.equal(tabFor({ ...base, title: null, lines: [] }).title, "Untitled");
 });
+
+test("asking for the panel puts the reading paper away, and closing the panel brings it back", () => {
+  const reading = open(["a", "b"]);
+  const away = readingReducer(reading, { type: "panelOpened" });
+  assert.equal(away.away, true);
+  assert.equal(away.tabs.length, 2);
+  assert.equal(readingReducer(away, { type: "panelClosed" }).away, false);
+  // Nothing to put away when nothing is being read.
+  assert.equal(readingReducer(NOT_READING, { type: "panelOpened" }), NOT_READING);
+});

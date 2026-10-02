@@ -23,7 +23,10 @@ export type ReadingAction =
   | { type: "clear" }
   /** The menu was asked for; `takesRoom` says it has no room beside the reading paper (see lib/beside.ts). */
   | { type: "menuOpened"; takesRoom: boolean }
-  | { type: "menuClosed" };
+  | { type: "menuClosed" }
+  /** The panel was asked for while it had stepped aside for the reading paper: the paper waits, tabs kept. */
+  | { type: "panelOpened" }
+  | { type: "panelClosed" };
 
 /** The tab an older note opens as: its title, else the start of its first line. */
 export function tabFor(note: Pick<RelatedNote, "id" | "title" | "lines" | "createdAt">): BesideTab {
@@ -51,6 +54,10 @@ export function readingReducer(state: ReadingState, action: ReadingAction): Read
     case "menuOpened":
       return action.takesRoom ? { ...state, away: true } : state;
     case "menuClosed":
+      return state.away ? { ...state, away: false } : state;
+    case "panelOpened":
+      return state.tabs.length ? { ...state, away: true } : state;
+    case "panelClosed":
       return state.away ? { ...state, away: false } : state;
   }
 }
