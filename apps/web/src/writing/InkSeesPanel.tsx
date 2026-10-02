@@ -97,7 +97,8 @@ export function InkSeesPanel({ phone = false, pieceId, exists, seasonSet, onClos
     );
   };
 
-  const empty = found.ready && !found.failed && sections.length === 0;
+  // Also true on a new page that is not saved yet (nothing asked, nothing loading): never a bare panel.
+  const empty = !found.loading && !found.failed && sections.length === 0;
 
   return (
     <aside
