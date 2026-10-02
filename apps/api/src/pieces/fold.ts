@@ -152,7 +152,7 @@ function markLine(line: string, words: SearchWords, loose: boolean): MarkedLine 
 const MAX_LINE = 160;
 
 // A long line is cut down around its first match, so the match is always in view.
-function excerpt({ text, marks }: MarkedLine): MarkedLine {
+export function excerpt({ text, marks }: MarkedLine): MarkedLine {
   if (text.length <= MAX_LINE) return { text, marks };
   const start = marks.length && marks[0]![0] > 60 ? marks[0]![0] - 40 : 0;
   const end = Math.min(text.length, start + MAX_LINE);

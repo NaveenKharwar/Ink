@@ -14,6 +14,7 @@ import type { FastifyInstance, FastifyReply } from "fastify";
 import { z } from "zod";
 import { describeMatch, isLoose, openingLines, searchWords } from "./fold.js";
 import { InvalidUpdateError } from "./merge.js";
+import { describeNear, NEAR_POOL, nearest } from "./typo.js";
 import type { EmbeddingQueue } from "../embeddings/queue.js";
 import { MIN_CLOSE_SIMILARITY, type Meaning } from "../search/meaning.js";
 import type { PiecesRepo } from "./repo.js";
@@ -111,7 +112,10 @@ export function registerPieceRoutes(app: FastifyInstance, repo: PiecesRepo, embe
     const query = searchQuery.safeParse(request.query);
     if (!query.success) return invalid(reply, query.error);
     const words = searchWords(query.data.q);
-    const rows = words.even.length ? await repo.search(request.userId, words, SEARCH_LIMIT) : [];
+    let rows = words.even.length ? await repo.search(request.userId, words, SEARCH_LIMIT) : [];
+    // Nothing holds the words as typed: look again allowing a typo ("moonlihgt" finds "moonlight").
+    const typed = rows.length === 0 && words.even.length > 0;
+    if (typed) rows = nearest(await repo.nearPool(request.userId, NEAR_POOL), words, SEARCH_LIMIT);
 
     // Without an embedder, or when it can't be reached, the writer just gets the words. The words
     // are quick and meaning is not (it waits for the embedder), so the dialog can ask for each alone:
@@ -135,7 +139,7 @@ export function registerPieceRoutes(app: FastifyInstance, repo: PiecesRepo, embe
         query.data.part === "close"
           ? []
           : rows.map(({ id, text, language, style, isFragment, createdAt, updatedAt }) => ({
-              id, language, style, isFragment, createdAt, updatedAt, ...describeMatch(text, query.data.q, isLoose(language))
+              id, language, style, isFragment, createdAt, updatedAt, ...(typed ? describeNear(text, words) : describeMatch(text, query.data.q, isLoose(language)))
             })),
       close
     };

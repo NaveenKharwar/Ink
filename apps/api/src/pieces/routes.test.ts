@@ -89,6 +89,13 @@ function memoryRepo(): PiecesRepo {
         .slice(0, limit)
         .map((row) => summary(strip(row)));
     },
+    async nearPool(userId, limit) {
+      return [...rows.values()]
+        .filter((row) => row.userId === userId)
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+        .slice(0, limit)
+        .map((row) => summary(strip(row)));
+    },
     async update(userId, id, patch) {
       const row = rows.get(id);
       if (!row || row.userId !== userId) return null;
@@ -517,6 +524,30 @@ test("search finds the writer's own pieces by the words they remember", async ()
   assert.deepEqual((await search("!!")).json().items, []);
   assert.equal((await search("   ")).statusCode, 400);
   assert.equal((await ctx.app.inject({ method: "GET", url: "/api/search", headers: ctx.as(ASHA) })).statusCode, 400);
+});
+
+test("search forgives a typo only when the exact words find nothing, and only in the writer's own pieces", async () => {
+  const ctx = await setup();
+  const save = async (user: string, ...lines: string[]) => {
+    const d = device();
+    d.write(lines);
+    const id = randomUUID();
+    await syncFrom(ctx, user, id, d, null);
+    return id;
+  };
+  const moon = await save(ASHA, "First line", "Sitting under the moonlight again");
+  await save(RAVI, "moonlight on the roof");
+  const search = async (q: string) => (await ctx.app.inject({ method: "GET", url: `/api/search?q=${encodeURIComponent(q)}&part=words`, headers: ctx.as(ASHA) })).json().items;
+
+  const found = await search("moonlihgt");
+  assert.deepEqual(found.map((i: { id: string }) => i.id), [moon]);
+  assert.deepEqual(found[0].match, { text: "Sitting under the moonlight again", marks: [[18, 27]] });
+  assert.equal((await search("moonligth again")).length, 1);
+  // Short words are never guessed at, and a word that is not close finds nothing.
+  assert.deepEqual(await search("mon"), []);
+  assert.deepEqual(await search("moonbeam"), []);
+  // When the exact words are found, nothing else is added.
+  assert.equal((await search("moonlight")).length, 1);
 });
 
 test("English pieces match by their exact words; Hinglish and unlabelled pieces match loosely", async () => {
