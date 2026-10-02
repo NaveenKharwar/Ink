@@ -18,6 +18,8 @@ type Props = {
   exists: boolean;
   seasonSet: SeasonSet;
   onClose: () => void;
+  /** The pieces open in the reading paper right now (desktop, while it is on screen). */
+  reading?: string[];
   /** Reads an older piece beside the page (desktop) or as the next screen (phone). */
   onOpenBeside: (note: RelatedNote) => void;
 };
@@ -30,7 +32,7 @@ const linkClass = `cursor-pointer border-0 border-b-[1.5px] border-dotted border
 // "Ink sees this too": older writing beside the piece, as plain notes under heading bars. Related
 // (soft blue: it leads to other writing), Forgotten (old pieces not opened for a long while) and
 // Loose lines (short ones). The panel is the only card; nothing inside it is boxed.
-export function InkSeesPanel({ phone = false, pieceId, exists, seasonSet, onClose, onOpenBeside }: Props) {
+export function InkSeesPanel({ phone = false, pieceId, exists, seasonSet, reading = [], onClose, onOpenBeside }: Props) {
   const found = useRelated(pieceId, exists);
   const dismissals = useDismissals(pieceId);
   const [selected, setSelected] = useState<string | null>(null);
@@ -56,8 +58,13 @@ export function InkSeesPanel({ phone = false, pieceId, exists, seasonSet, onClos
           phone={phone}
           selected={selected === n.id}
           dimmed={selected !== null && selected !== n.id}
+          reading={reading.includes(n.id)}
           onSelect={() => setSelected(n.id)}
-          onOpenBeside={() => onOpenBeside(n)}
+          onOpenBeside={() => {
+            // The words move to the reading paper: nothing here stays chosen or faded.
+            setSelected(null);
+            onOpenBeside(n);
+          }}
           onDismiss={() => {
             setSelected(null);
             dismissals.dismiss(n);

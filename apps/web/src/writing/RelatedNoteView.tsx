@@ -10,6 +10,8 @@ type Props = {
   selected: boolean;
   /** Something else is chosen: this one steps back. */
   dimmed: boolean;
+  /** The piece is open in the reading paper beside the page: its words are there, so only its label stays here. */
+  reading?: boolean;
   onSelect: () => void;
   onOpenBeside: () => void;
   onDismiss: () => void;
@@ -21,10 +23,28 @@ const focus = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visi
 // chosen, its two actions. No box, no reason. The chosen note gets a short dash in its season's
 // colour (the same dash as on the page, in the gutter so nothing shifts) and the others step back by taking the muted ink colour
 // (never by opacity: faded text fell under 4.5:1).
-export function RelatedNoteView({ note, label, color, phone, selected, dimmed, onSelect, onOpenBeside, onDismiss }: Props) {
+export function RelatedNoteView({ note, label, color, phone, selected, dimmed, reading = false, onSelect, onOpenBeside, onDismiss }: Props) {
   const action = `absolute top-1.5 z-10 flex cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-ink-muted hover:text-ink ${focus} ${
     phone ? "h-11 w-11" : "h-7 w-7"
   }`;
+  if (reading) {
+    // Its words are in the reading paper: never shown twice. One line, the season dash, and the
+    // open-beside mark; choosing it brings that tab forward.
+    return (
+      <div className="relative -mx-3 mb-5 rounded-md py-1 pr-3 pl-3">
+        <span aria-hidden="true" className="absolute top-[18px] left-0 h-0.5 w-2 rounded-[1px]" style={{ background: color }} />
+        <button
+          type="button"
+          onClick={onOpenBeside}
+          aria-label={`Reading beside the page: ${label}`}
+          className={`flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left text-ink-muted hover:text-ink ${phone ? "h-11" : "h-9"} ${focus}`}
+        >
+          <span className="min-w-0 grow truncate text-[12px] leading-4 font-medium tracking-[0.08em] uppercase">{label}</span>
+          <OpenBesideIcon />
+        </button>
+      </div>
+    );
+  }
   return (
     <div className="group relative -mx-3 mb-5 rounded-md py-2.5 pr-3 pb-3 pl-3">
       {/* The dash sits in the gutter beside the words (the panel's side margin), so choosing a note

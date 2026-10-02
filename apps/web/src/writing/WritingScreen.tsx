@@ -408,6 +408,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
             pieceId={openPieceId}
             exists={view.kind === "piece" && view.target.open}
             seasonSet={seasonSet}
+            reading={shell.layout.reading ? shell.tabs.map((t) => t.id) : []}
             onClose={() => setPanelOpen(false)}
             onOpenBeside={openBeside}
           />
