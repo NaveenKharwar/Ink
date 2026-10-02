@@ -99,8 +99,8 @@ export function registerPieceRoutes(app: FastifyInstance, repo: PiecesRepo, embe
   app.get("/api/library", async (request) => {
     const rows = await repo.library(request.userId);
     const response: LibraryResponse = {
-      items: rows.map(({ id, title, text, language, style, isFragment, createdAt, updatedAt }) => ({
-        id, title, lines: openingLines(text), language, style, isFragment, createdAt, updatedAt
+      items: rows.map(({ id, title, text, status, language, style, isFragment, createdAt, updatedAt }) => ({
+        id, title, status, lines: openingLines(text), language, style, isFragment, createdAt, updatedAt
       }))
     };
     return response;

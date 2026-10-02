@@ -1,3 +1,4 @@
+import type { PieceStatus } from "@ink/schemas";
 import { FadeScroll } from "../ui/FadeScroll";
 import { AccountMenu } from "./AccountMenu";
 import { DocumentIcon, MenuIcon, PencilIcon, PictureIcon, SearchIcon, SeasonIcon } from "./icons";
@@ -15,12 +16,17 @@ type Props = {
   seasons: SeasonLink[];
   /** The season All writing is narrowed to, marked with the accent dot. */
   activeSeason: string | null;
+  /** Drafts or Finished, when All writing is narrowed to one of them (never together with a season). */
+  activeFilter: PieceStatus | null;
+  /** How many pieces are drafts and how many are finished. */
+  counts: Record<PieceStatus, number>;
   onClose: () => void;
   onSearch: () => void;
   onWrite: () => void;
   onAll: () => void;
   onPictures: () => void;
   onSeason: (key: string) => void;
+  onFilter: (status: PieceStatus) => void;
   onProfile: () => void;
   onSignOut: () => Promise<void>;
 };
@@ -31,7 +37,7 @@ const navItem = `box-border flex h-9 w-full cursor-pointer items-center gap-3 ro
 // The menu: search, Write, All writing, Pictures and the seasons, with the account at the foot.
 // Desktop: a side sheet from the left edge. Phone: the left side of the sliding track.
 export function Sidebar(props: Props) {
-  const { phone = false, name, screen, seasons, activeSeason, onClose, onSearch, onWrite, onAll, onPictures, onSeason, onProfile, onSignOut } = props;
+  const { phone = false, name, screen, seasons, activeSeason, activeFilter, counts, onClose, onSearch, onWrite, onAll, onPictures, onSeason, onFilter, onProfile, onSignOut } = props;
 
   return (
     <nav
@@ -86,12 +92,30 @@ export function Sidebar(props: Props) {
         <button
           type="button"
           onClick={onAll}
-          aria-current={screen === "all" && !activeSeason ? "page" : undefined}
-          className={`${navItem} ${screen === "all" && !activeSeason ? "bg-surface-hover font-semibold" : "bg-transparent"}`}
+          aria-current={screen === "all" && !activeSeason && !activeFilter ? "page" : undefined}
+          className={`${navItem} ${screen === "all" && !activeSeason && !activeFilter ? "bg-surface-hover font-semibold" : "bg-transparent"}`}
         >
           <DocumentIcon />
           All writing
         </button>
+        {/* Drafts and Finished narrow All writing, like a season does. Nothing in any list is labelled. */}
+        {(["draft", "finished"] as const).map((status) => {
+          const active = screen === "all" && activeFilter === status;
+          return (
+            <button
+              key={status}
+              type="button"
+              onClick={() => onFilter(status)}
+              aria-current={active ? "page" : undefined}
+              className={`box-border flex h-[31px] w-full cursor-pointer items-center rounded-md border-0 pr-3 pl-[41px] text-left text-ink ${focusRing} ${
+                active ? "bg-surface-hover" : "bg-transparent"
+              }`}
+            >
+              <span className={`grow ${active ? "font-semibold" : ""}`}>{status === "draft" ? "Drafts" : "Finished"}</span>
+              <span className="text-[13px] text-ink-muted">{counts[status]}</span>
+            </button>
+          );
+        })}
         <button
           type="button"
           onClick={onPictures}

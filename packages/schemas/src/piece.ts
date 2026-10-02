@@ -128,7 +128,7 @@ export type ListPiecesResponse = { items: PieceSummary[]; nextCursor: string | n
 
 // The writer's whole library in one light list (no paging): each piece's first two lines,
 // newest first. Seasons are worked out on the device from `createdAt`.
-export type LibraryItem = Pick<Piece, "id" | "title" | "language" | "style" | "isFragment" | "createdAt" | "updatedAt"> & {
+export type LibraryItem = Pick<Piece, "id" | "title" | "status" | "language" | "style" | "isFragment" | "createdAt" | "updatedAt"> & {
   lines: string[];
 };
 export type LibraryResponse = { items: LibraryItem[] };

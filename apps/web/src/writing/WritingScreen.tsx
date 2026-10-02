@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
-import type { RelatedNote } from "@ink/schemas";
+import type { PieceStatus, RelatedNote } from "@ink/schemas";
 import { TETHER_VISITS, countTetherVisit, type Account } from "../lib/account";
 import { sync } from "../lib/localSave";
 import { ALL_WRITING, PICTURES, PROFILE, parseRoute, pieceAddress } from "../lib/route";
@@ -38,12 +38,12 @@ const typingInPage = () => !!document.activeElement?.closest(".ProseMirror");
 // What the address says to show: a blank page, a piece to open, or All writing. A piece that
 // cannot exist (`/p/nonsense`) is shown as not found, like someone else's piece.
 type Target = { id: string; open: boolean };
-type View = { kind: "piece"; target: Target } | { kind: "all"; season: string | null } | { kind: "pictures" } | { kind: "profile" };
+type View = { kind: "piece"; target: Target } | { kind: "all"; season: string | null; filter: PieceStatus | null } | { kind: "pictures" } | { kind: "profile" };
 
 const blank = (): View => ({ kind: "piece", target: { id: newId(), open: false } });
 function viewFromAddress(): View {
   const route = parseRoute(window.location.pathname);
-  if (route.kind === "all") return { kind: "all", season: null };
+  if (route.kind === "all") return { kind: "all", season: null, filter: null };
   if (route.kind === "profile") return { kind: "profile" };
   if (route.kind === "pictures") return { kind: "pictures" };
   if (route.kind === "piece") return { kind: "piece", target: { id: route.id, open: true } };
@@ -111,7 +111,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
   };
   const newPiece = () => go("/", blank());
   const openPiece = (id: string) => go(pieceAddress(id), { kind: "piece", target: { id, open: true } });
-  const openAll = (season: string | null = null) => go(ALL_WRITING, { kind: "all", season });
+  const openAll = (season: string | null = null, filter: PieceStatus | null = null) => go(ALL_WRITING, { kind: "all", season, filter });
   const openPictures = () => go(PICTURES, { kind: "pictures" });
   // Back to writing returns to where Profile was opened from (a blank page if opened directly).
   const beforeProfile = useRef<{ address: string; view: View } | null>(null);
@@ -242,12 +242,32 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
   );
 
   const activeSeason = view.kind === "all" ? view.season : null;
+  const activeFilter = view.kind === "all" ? view.filter : null;
+  const counts = useMemo(() => {
+    const items = library.items ?? [];
+    return { draft: items.filter((i) => i.status === "draft").length, finished: items.filter((i) => i.status === "finished").length };
+  }, [library.items]);
+  // Drafts or Finished: the same seasons, with only those pieces in them.
+  const filteredGroups = useMemo(
+    () =>
+      library.items && activeFilter
+        ? groupBySeason(library.items.filter((i) => i.status === activeFilter), new Date(), timeZone, seasonSet)
+        : null,
+    [library.items, activeFilter, timeZone, seasonSet]
+  );
   const seasonGroup = activeSeason ? groups?.find((g) => g.key === activeSeason) : null;
   // What All writing lists: every season, or only the chosen one (under its full name). Kept
   // stable between renders so the list's scroll tracking isn't rebuilt each time.
   const shownGroups = useMemo(
-    () => (seasonGroup ? [{ ...seasonGroup, divider: null, label: seasonGroup.text }] : activeSeason && groups ? [] : groups),
-    [seasonGroup, activeSeason, groups]
+    () =>
+      activeFilter
+        ? filteredGroups
+        : seasonGroup
+          ? [{ ...seasonGroup, divider: null, label: seasonGroup.text }]
+          : activeSeason && groups
+            ? []
+            : groups,
+    [activeFilter, filteredGroups, seasonGroup, activeSeason, groups]
   );
   const pieceSeason = (id: string) => {
     const item = library.items?.find((i) => i.id === id);
@@ -268,11 +288,14 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
     screen: view.kind === "piece" ? ("write" as const) : view.kind,
     seasons,
     activeSeason: menuSeason,
+    activeFilter,
+    counts,
     onSearch: () => setSearchOpen(true),
     onWrite: newPiece,
     onAll: () => openAll(),
     onPictures: openPictures,
     onSeason: (key: string) => openAll(key),
+    onFilter: (status: PieceStatus) => openAll(null, status),
     onProfile: openProfile,
     onSignOut: signOut
   };
@@ -308,8 +331,8 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
         groups={shownGroups}
         failed={library.failed}
         onRetry={refresh}
-        season={seasonGroup?.text ?? null}
-        onClearSeason={() => setView({ kind: "all", season: null })}
+        narrowedTo={seasonGroup ? { label: seasonGroup.text, clear: `Show all seasons, not only ${seasonGroup.text}` } : activeFilter ? { label: activeFilter === "draft" ? "Drafts" : "Finished", clear: `Show all writing, not only ${activeFilter === "draft" ? "drafts" : "finished pieces"}` } : null}
+        onClearNarrowing={() => setView({ kind: "all", season: null, filter: null })}
         onOpen={openPiece}
       />
     ) : (

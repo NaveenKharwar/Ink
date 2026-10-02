@@ -22,15 +22,15 @@ type Props = {
   groups: SeasonGroup<LibraryItem>[] | null;
   failed: boolean;
   onRetry: () => void;
-  /** The season the list is narrowed to, as it reads on its own ("Monsoon 2025"). */
-  season: string | null;
-  onClearSeason: () => void;
+  /** What the list is narrowed to: a season as it reads on its own ("Monsoon 2025"), or Drafts or Finished. */
+  narrowedTo: { label: string; clear: string } | null;
+  onClearNarrowing: () => void;
   onOpen: (id: string) => void;
 };
 
 // All writing: every piece, grouped by the season it was written in, newest first.
 // Each row is the writer's own first lines, not a title.
-export function AllWriting({ wide, showMenuButton, onMenu, groups, failed, onRetry, season, onClearSeason, onOpen }: Props) {
+export function AllWriting({ wide, showMenuButton, onMenu, groups, failed, onRetry, narrowedTo, onClearNarrowing, onOpen }: Props) {
   const total = groups?.reduce((n, g) => n + g.items.length, 0) ?? 0;
 
   // Desktop: a column beside the paper lists the seasons and marks the one being read.
@@ -97,10 +97,10 @@ export function AllWriting({ wide, showMenuButton, onMenu, groups, failed, onRet
           </button>
         )}
         <span className={`whitespace-nowrap ${showMenuButton ? "" : "pl-2.5"}`}>All writing</span>
-        {season && (
+        {narrowedTo && (
           <>
             <span className="text-ink-muted">/</span>
-            <span className="truncate">{season}</span>
+            <span className="truncate">{narrowedTo.label}</span>
           </>
         )}
       </div>
@@ -108,21 +108,21 @@ export function AllWriting({ wide, showMenuButton, onMenu, groups, failed, onRet
       {/* No top padding on the scroll box itself, so season labels stick flush to its top edge. */}
       <FadeScroll scrollbar="visible" ref={scroller} className={`grow px-[var(--page-gutter)] ${wide ? "pb-12" : "pb-10"}`}>
         <div className={`mx-auto max-w-[680px] ${wide ? "pt-7" : "pt-4"}`}>
-          <h1 className={`m-0 font-display font-normal ${wide ? "text-[30px] leading-9" : "text-[26px] leading-8"}`}>{season ?? "All writing"}</h1>
+          <h1 className={`m-0 font-display font-normal ${wide ? "text-[30px] leading-9" : "text-[26px] leading-8"}`}>{narrowedTo?.label ?? "All writing"}</h1>
           {groups && (
             <div className="mt-1 text-[13px] text-ink-muted">
               {total} {total === 1 ? "piece" : "pieces"}
             </div>
           )}
-          {season && (
+          {narrowedTo && (
             <div className="mt-4 flex">
               <button
                 type="button"
-                onClick={onClearSeason}
-                aria-label={`Show all seasons, not only ${season}`}
+                onClick={onClearNarrowing}
+                aria-label={narrowedTo.clear}
                 className={`flex cursor-pointer items-center gap-1.5 rounded-full border border-accent bg-surface py-1.5 pr-2.5 pl-3 text-[13px] text-accent ${focusRing}`}
               >
-                {season}
+                {narrowedTo.label}
                 <CloseIcon size={14} />
               </button>
             </div>
