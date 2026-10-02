@@ -36,7 +36,7 @@ export function PictureOptions({ options, busy = false, shown = false, className
                 e.stopPropagation();
                 option.onClick();
               }}
-              className="h-7 cursor-pointer rounded-md border-0 bg-transparent px-2.5 font-sans text-[13px] font-medium text-ink/70 transition-colors duration-150 hover:text-ink focus-visible:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent motion-reduce:transition-none"
+              className="touch-44 h-7 cursor-pointer rounded-md border-0 bg-transparent px-2.5 font-sans text-[13px] font-medium text-ink/70 transition-colors duration-150 hover:text-ink focus-visible:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent motion-reduce:transition-none"
             >
               {option.label}
             </button>

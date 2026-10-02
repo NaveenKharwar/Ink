@@ -154,7 +154,7 @@ export function BesidePaper({ tabs, active, seasonSet, phone = false, narrow = f
                     type="button"
                     onClick={() => onClose(tab.id)}
                     aria-label={`Close ${tab.title}`}
-                    className={`flex h-[26px] w-[26px] shrink-0 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-ink-muted hover:text-ink ${focus}`}
+                    className={`touch-44 flex h-[26px] w-[26px] shrink-0 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-ink-muted hover:text-ink ${focus}`}
                   >
                     <CloseIcon size={13} />
                   </button>

@@ -70,7 +70,7 @@ export function PicturesPage({ wide, showMenuButton, onMenu, seasonOf, onOpenPie
             type="button"
             onClick={onMenu}
             aria-label="Open menu"
-            className={`flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-ink ${focusRing}`}
+            className={`touch-44 flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-ink ${focusRing}`}
           >
             <MenuIcon />
           </button>
@@ -277,7 +277,7 @@ function PictureViewer({
                 type="button"
                 onClick={() => setConfirming(true)}
                 disabled={uses === null}
-                className={`h-8 cursor-pointer border-0 bg-transparent p-0 text-[14px] text-ink/75 transition-colors duration-150 hover:text-ink disabled:cursor-default motion-reduce:transition-none ${focusRing}`}
+                className={`touch-44 h-8 cursor-pointer border-0 bg-transparent p-0 text-[14px] text-ink/75 transition-colors duration-150 hover:text-ink disabled:cursor-default motion-reduce:transition-none ${focusRing}`}
               >
                 Delete picture
               </button>

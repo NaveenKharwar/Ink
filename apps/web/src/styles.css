@@ -548,3 +548,18 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .year-open { animation: none; }
 }
+
+/* A small control keeps its look but gets a 44px hit area for a finger: an invisible square centred on it.
+   Only for touch (a mouse needs no help, and neighbours would overlap); not a layout breakpoint. */
+@media (pointer: coarse) {
+  .touch-44:not(.absolute):not(.fixed) { position: relative; }
+  .touch-44::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
+}

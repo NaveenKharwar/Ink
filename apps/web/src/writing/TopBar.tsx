@@ -62,7 +62,7 @@ export function TopBar({
     <div className={`flex shrink-0 items-center justify-between gap-2 ${wide ? "h-14 pr-4 pl-4" : "h-[52px] pr-1.5 pl-1"}`}>
       <div className="flex min-w-0 items-center gap-2.5">
         {showMenuButton && (
-          <button type="button" onClick={onMenu} aria-label="Open menu" className={`h-10 w-10 shrink-0 ${iconButton}`}>
+          <button type="button" onClick={onMenu} aria-label="Open menu" className={`touch-44 h-10 w-10 shrink-0 ${iconButton}`}>
             <MenuIcon />
           </button>
         )}

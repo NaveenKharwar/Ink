@@ -61,7 +61,7 @@ export function LinkField({
         type="button"
         onMouseDown={(e) => e.preventDefault()}
         onClick={apply}
-        className={`h-9 cursor-pointer rounded-md border-0 bg-ink px-3 text-[13px] font-medium text-on-ink ${focusRing}`}
+        className={`touch-44 h-9 cursor-pointer rounded-md border-0 bg-ink px-3 text-[13px] font-medium text-on-ink ${focusRing}`}
       >
         {!current ? "Add" : value.trim() ? "Save" : "Remove"}
       </button>

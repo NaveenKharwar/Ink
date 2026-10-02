@@ -68,7 +68,7 @@ function Tool({
       // Keep the writer's selection in the page.
       onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
-      className={`flex h-10 shrink-0 cursor-pointer items-center justify-center rounded-md border-0 p-0 text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+      className={`touch-44 flex h-10 shrink-0 cursor-pointer items-center justify-center rounded-md border-0 p-0 text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
         wide ? "w-10" : "w-[34px]"
       } ${active ? "bg-surface-hover" : "bg-transparent"}`}
     >

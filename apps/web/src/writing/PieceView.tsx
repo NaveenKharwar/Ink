@@ -25,7 +25,7 @@ export function PieceView({ open, onWrite, ...page }: Props) {
             type="button"
             onClick={page.onMenu}
             aria-label="Open menu"
-            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            className="touch-44 flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >
             <MenuIcon />
           </button>

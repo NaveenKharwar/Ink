@@ -60,7 +60,7 @@ export function PasswordStep({ email, onUseCode, onChangeEmail }: Props) {
           type="button"
           aria-pressed={shown}
           onClick={() => setShown(!shown)}
-          className="absolute top-1.5 right-1.5 h-9 cursor-pointer rounded-md border-0 bg-transparent px-2.5 text-[13px] text-auth-ink"
+          className="touch-44 absolute top-1.5 right-1.5 h-9 cursor-pointer rounded-md border-0 bg-transparent px-2.5 text-[13px] text-auth-ink"
         >
           {shown ? "Hide" : "Show"}
         </button>

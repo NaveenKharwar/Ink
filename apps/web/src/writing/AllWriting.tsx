@@ -91,7 +91,7 @@ export function AllWriting({ wide, showMenuButton, onMenu, groups, failed, onRet
             type="button"
             onClick={onMenu}
             aria-label="Open menu"
-            className={`flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-ink ${focusRing}`}
+            className={`touch-44 flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-ink ${focusRing}`}
           >
             <MenuIcon />
           </button>

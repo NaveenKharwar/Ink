@@ -83,7 +83,7 @@ export function Dropdown<T extends string>({ label, value, options, onChange, pl
             setOpen(true);
           }
         }}
-        className={`flex h-9 cursor-pointer items-center gap-1.5 rounded-md border-0 bg-transparent px-2.5 text-[14px] transition-colors duration-150 motion-reduce:transition-none ${focusRing} ${
+        className={`touch-44 flex h-9 cursor-pointer items-center gap-1.5 rounded-md border-0 bg-transparent px-2.5 text-[14px] transition-colors duration-150 motion-reduce:transition-none ${focusRing} ${
           open ? "text-ink" : "text-ink/75 hover:text-ink"
         }`}
       >

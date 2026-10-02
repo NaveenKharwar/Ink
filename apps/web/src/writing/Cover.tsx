@@ -45,7 +45,7 @@ export function Cover({ cover, onCover, wide }: Props) {
           <button
             type="button"
             onClick={() => setPicking({})}
-            className="-ml-0.5 inline-flex h-8 cursor-pointer items-center gap-2 border-0 bg-transparent p-0 font-sans text-[13px] text-ink-muted transition-colors duration-150 hover:text-ink focus-visible:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent motion-reduce:transition-none"
+            className="touch-44 -ml-0.5 inline-flex h-8 cursor-pointer items-center gap-2 border-0 bg-transparent p-0 font-sans text-[13px] text-ink-muted transition-colors duration-150 hover:text-ink focus-visible:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent motion-reduce:transition-none"
           >
             <PictureIcon />
             Add a cover

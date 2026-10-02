@@ -18,7 +18,7 @@ export function PlaceLink({ label, active, onClick }: { label: string; active: b
       type="button"
       onClick={onClick}
       aria-current={active ? "location" : undefined}
-      className={`-ml-px box-border flex h-[30px] w-full cursor-pointer items-center border-0 border-l-2 bg-transparent pl-4 text-left text-[14px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+      className={`touch-44 -ml-px box-border flex h-[30px] w-full cursor-pointer items-center border-0 border-l-2 bg-transparent pl-4 text-left text-[14px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
         active ? "border-accent font-semibold text-ink" : "border-transparent text-ink-muted hover:text-ink"
       }`}
     >

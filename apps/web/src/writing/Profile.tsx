@@ -59,7 +59,7 @@ export function Profile({ account, items, wide, showMenuButton, onMenu, onBack, 
             type="button"
             onClick={onMenu}
             aria-label="Open menu"
-            className={`flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-ink ${focusRing}`}
+            className={`touch-44 flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-ink ${focusRing}`}
           >
             <MenuIcon />
           </button>
@@ -67,7 +67,7 @@ export function Profile({ account, items, wide, showMenuButton, onMenu, onBack, 
         <button
           type="button"
           onClick={onBack}
-          className={`flex h-10 cursor-pointer items-center gap-2 rounded-md border-0 bg-transparent px-2 text-ink/75 transition-colors duration-150 hover:text-ink motion-reduce:transition-none ${focusRing}`}
+          className={`touch-44 flex h-10 cursor-pointer items-center gap-2 rounded-md border-0 bg-transparent px-2 text-ink/75 transition-colors duration-150 hover:text-ink motion-reduce:transition-none ${focusRing}`}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M15 6l-6 6 6 6" />
@@ -479,7 +479,7 @@ function SigningIn({ email, google, hasPassword }: { email: string; google: bool
               type="button"
               onClick={() => setShown(!shown)}
               aria-pressed={shown}
-              className={`absolute top-1.5 right-1.5 h-9 cursor-pointer rounded-md border-0 bg-transparent px-2.5 text-[13px] text-ink ${focusRing}`}
+              className={`touch-44 absolute top-1.5 right-1.5 h-9 cursor-pointer rounded-md border-0 bg-transparent px-2.5 text-[13px] text-ink ${focusRing}`}
             >
               {shown ? "Hide" : "Show"}
             </button>

@@ -210,7 +210,7 @@ export function SearchDialog({ wide, recent, seasonSet, onOpen, onClose }: Props
             type="button"
             onClick={onClose}
             aria-label="Close search"
-            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            className="touch-44 flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >
             <CloseIcon />
           </button>
