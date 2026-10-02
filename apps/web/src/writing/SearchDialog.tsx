@@ -6,11 +6,12 @@ import { deviceTimeZone, seasonText, type SeasonSet } from "../lib/seasons";
 import { CloseIcon, SearchIcon } from "./icons";
 import { FadeScroll } from "../ui/FadeScroll";
 
-type Result = { id: string; first: MarkedLine; match: MarkedLine | null; season: string; style: string };
+type Result = { id: string; first: MarkedLine; match: MarkedLine | null; season: string; style: string | null };
 
-// A piece without a style is a Poem.
-const STYLE_NAMES: Record<PieceStyle, string> = { poem: "Poem", story: "Story", notes: "Notes" };
-const styleName = (style: PieceStyle | null) => STYLE_NAMES[style ?? "poem"];
+// A piece without a style is a Poem. The meta line names a style only when it is not a Poem, so
+// the usual case stays quiet and a Story or Notes stands out ("Monsoon 2025 · Story").
+const STYLE_NAMES: Record<Exclude<PieceStyle, "poem">, string> = { story: "Story", notes: "Notes" };
+const styleName = (style: PieceStyle | null): string | null => (style && style !== "poem" ? STYLE_NAMES[style] : null);
 
 type Props = {
   wide: boolean;
@@ -155,7 +156,7 @@ export function SearchDialog({ wide, recent, seasonSet, onOpen, onClose }: Props
     >
       <Marked line={r.first} className="line-clamp-2 font-serif text-[18px] leading-[25px]" />
       {r.match && <Marked line={r.match} className="mt-1 line-clamp-2 font-serif text-[16px] leading-[23px] text-ink-muted" />}
-      <div className="mt-1 text-[12px] leading-4 text-ink-muted">{r.season} · {r.style}</div>
+      <div className="mt-1 text-[12px] leading-4 text-ink-muted">{r.style ? `${r.season} · ${r.style}` : r.season}</div>
     </li>
   );
 
