@@ -2,12 +2,14 @@ import type { LibraryItem, PieceLanguage } from "@ink/schemas";
 import { useEffect, useRef, useState } from "react";
 import { ScreenLoader } from "../ui/Loader";
 import { prefersReducedMotion } from "../lib/motion";
-import type { SeasonGroup } from "../lib/seasons";
+import type { SeasonGroup, SeasonSet } from "../lib/seasons";
 import { AdSlot } from "./AdSlot";
 import { FadeScroll } from "../ui/FadeScroll";
 import { CloseIcon, MenuIcon } from "./icons";
 import { SeasonPainting } from "./SeasonPainting";
+import { Noticed } from "./Noticed";
 import { PlaceLink, SideColumn } from "./SideColumn";
+import { useNoticed } from "./useNoticed";
 
 const LANGUAGE: Record<PieceLanguage, string | null> = { en: "English", hi: "हिन्दी", "hi-Latn": "Hinglish", mixed: null };
 
@@ -19,6 +21,7 @@ type Props = {
   wide: boolean;
   showMenuButton: boolean;
   onMenu: () => void;
+  seasonSet: SeasonSet;
   groups: SeasonGroup<LibraryItem>[] | null;
   failed: boolean;
   onRetry: () => void;
@@ -30,7 +33,8 @@ type Props = {
 
 // All writing: every piece, grouped by the season it was written in, newest first.
 // Each row is the writer's own first lines, not a title.
-export function AllWriting({ wide, showMenuButton, onMenu, groups, failed, onRetry, narrowedTo, onClearNarrowing, onOpen }: Props) {
+export function AllWriting({ wide, showMenuButton, onMenu, seasonSet, groups, failed, onRetry, narrowedTo, onClearNarrowing, onOpen }: Props) {
+  const noticed = useNoticed();
   const total = groups?.reduce((n, g) => n + g.items.length, 0) ?? 0;
 
   // Desktop: a column beside the paper lists the seasons and marks the one being read.
@@ -114,6 +118,8 @@ export function AllWriting({ wide, showMenuButton, onMenu, groups, failed, onRet
               {total} {total === 1 ? "piece" : "pieces"}
             </div>
           )}
+          {/* Only on the whole list: narrowed to a season or a filter, the list starts under the title. */}
+          {!narrowedTo && groups && total > 0 && noticed && <Noticed noticed={noticed} seasonSet={seasonSet} />}
           {narrowedTo && (
             <div className="mt-4 flex">
               <button

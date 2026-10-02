@@ -343,6 +343,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
         wide={wide}
         showMenuButton={!wide || !menuVisible}
         onMenu={onMenu}
+        seasonSet={seasonSet}
         groups={shownGroups}
         failed={library.failed}
         onRetry={refresh}

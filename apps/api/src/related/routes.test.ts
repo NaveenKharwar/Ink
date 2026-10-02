@@ -5,6 +5,7 @@ import type { VerifyToken } from "../auth.js";
 import { memoryPicturesRepo } from "../pictures/repo.js";
 import { memoryPictureStore } from "../pictures/store.js";
 import type { PiecesRepo } from "../pieces/repo.js";
+import { noticeReturn } from "./noticed.js";
 import { rankRelated, type Candidate } from "./rank.js";
 import type { RelatedRepo } from "./repo.js";
 
@@ -91,6 +92,9 @@ function stubRepo() {
   const dismissed: string[] = [];
   const mine = new Set([`${ASHA}|${A}`, `${ASHA}|${B}`]);
   const repo: RelatedRepo = {
+    async latest(userId) {
+      return mine.has(`${userId}|${A}`) ? A : null;
+    },
     async candidates(userId, pieceId) {
       asked.push(`${userId}|${pieceId}`);
       if (!mine.has(`${userId}|${pieceId}`)) return null;
@@ -187,4 +191,38 @@ test("Forgotten and Loose lines need a clearly close match; with nothing close e
 
   const none = rankRelated(current, [near("q1", "An old page about taxes and forms", "2025-01-01T00:00:00Z", 0.4), near("q2", "parking ticket", "2026-09-01T00:00:00Z", 0.3)], NOW);
   assert.deepEqual(none, { related: [], forgotten: [], loose: [], looked: true });
+});
+
+test("an old piece comes back only when the latest piece is clearly close, in Hindi or English, with a vector", () => {
+  const current = { ...piece(A, "The rain kept the window company", "2026-09-29T00:00:00Z"), similarity: null };
+  const old = (id: string, similarity: number | null, language: Candidate["language"] = "en") => ({
+    ...piece(id, `An old page ${id} about monsoon windows, long enough not to be a loose line at all, going on well past the short limit`, "2025-02-01T00:00:00Z"),
+    language, similarity
+  });
+  assert.deepEqual(noticeReturn(current, [old("o1", 0.6)], NOW)?.note.id, "o1");
+  assert.equal(noticeReturn(current, [old("o1", 0.6)], NOW)?.kind, "returns");
+  // The closest comes first; below the floor nothing shows.
+  assert.equal(noticeReturn(current, [old("o1", 0.56), old("o2", 0.7)], NOW)?.note.id, "o2");
+  assert.equal(noticeReturn(current, [old("o1", 0.5)], NOW), null);
+  // A shared word is not enough without a vector, and Hinglish is left out on either side.
+  assert.equal(noticeReturn(current, [old("o1", null)], NOW), null);
+  assert.equal(noticeReturn(current, [old("o1", 0.7, "hi-Latn")], NOW), null);
+  assert.equal(noticeReturn({ ...current, language: "hi-Latn" }, [old("o1", 0.7)], NOW), null);
+  // Nothing recent, nothing to come back to.
+  assert.equal(noticeReturn({ ...current, updatedAt: "2026-06-01T00:00:00Z" }, [old("o1", 0.7)], NOW), null);
+  // Pieces that are not old enough are the panel's business, not a remark.
+  assert.equal(noticeReturn(current, [{ ...old("o1", 0.7), updatedAt: "2026-09-01T00:00:00Z" }], NOW), null);
+});
+
+test("the noticed route needs a token and looks only at the signed-in writer's pieces", async () => {
+  const { app, as, asked } = await setup();
+  assert.equal((await app.inject({ method: "GET", url: "/api/noticed" })).statusCode, 401);
+  const mine = await app.inject({ method: "GET", url: "/api/noticed", headers: as(ASHA) });
+  assert.equal(mine.statusCode, 200);
+  assert.deepEqual(mine.json(), { noticed: null });
+  assert.deepEqual(asked, [`${ASHA}|${A}`]);
+  // A writer with no pieces gets nothing, and nothing of anyone else's.
+  const theirs = await app.inject({ method: "GET", url: "/api/noticed", headers: as(RAVI) });
+  assert.deepEqual(theirs.json(), { noticed: null });
+  assert.deepEqual(asked, [`${ASHA}|${A}`]);
 });
