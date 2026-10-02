@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { desktopLayout, EDGE, menuWouldTakeReadingRoom, PAGE_IDEAL, PAGE_MIN, READER_GAP, READER_IDEAL, READER_MIN } from "./beside";
+import { desktopLayout, EDGE, menuWouldTakeReadingRoom, PAGE_IDEAL, PAGE_MIN, READER_GAP, READER_IDEAL, READER_MIN, sheetRoom, sheetWidth } from "./beside";
 
 const base = { panelOpen: true, reading: true, readerAway: false };
 
@@ -15,8 +15,9 @@ test("when nothing is being read, the writer's menu choice stands and there is n
 test("with room for everything the menu stays and both papers are at full size", () => {
   const out = desktopLayout({ ...base, viewport: 2200, menuPreferred: true });
   assert.equal(out.menuVisible, true);
-  assert.equal(out.reading!.page, PAGE_IDEAL);
-  assert.equal(out.reading!.reader, READER_IDEAL);
+  // At least the ideal sizes; with this much room they keep filling what is left.
+  assert.ok(out.reading!.page >= PAGE_IDEAL);
+  assert.ok(out.reading!.reader >= READER_IDEAL);
 });
 
 test("when the room is short the menu steps aside, at any width from the breakpoint up", () => {
@@ -37,8 +38,8 @@ test("from 1200 up the reading paper always fits, and the papers never overlap o
       for (const panelOpen of [false, true]) {
         const { reading, menuVisible } = desktopLayout({ viewport, menuPreferred, panelOpen, reading: true, readerAway: false });
         const r = reading!;
-        assert.ok(r.page >= PAGE_MIN && r.page <= PAGE_IDEAL, `page ${r.page} at ${viewport}`);
-        assert.ok(r.reader >= READER_MIN && r.reader <= READER_IDEAL, `reader ${r.reader} at ${viewport}`);
+        assert.ok(r.page >= PAGE_MIN, `page ${r.page} at ${viewport}`);
+        assert.ok(r.reader >= READER_MIN, `reader ${r.reader} at ${viewport}`);
         assert.ok(r.left + r.page + READER_GAP + r.reader + r.right <= viewport, `overflow at ${viewport}`);
         assert.equal(r.left > EDGE, menuVisible);
         // A paper never touches the window, on either side.
@@ -48,16 +49,26 @@ test("from 1200 up the reading paper always fits, and the papers never overlap o
   }
 });
 
-test("the papers grow with the room, so a big screen is not left with a wide empty gap", () => {
-  const sizes = [1200, 1400, 1600, 1800, 2000].map((viewport) => {
+test("the papers grow with the room and fill it, so a big screen has no wide empty gap", () => {
+  const sizes = [1200, 1400, 1600, 1800, 2000, 2560].map((viewport) => {
     const r = desktopLayout({ ...base, viewport, menuPreferred: false }).reading!;
     return r.page + r.reader;
   });
   for (let i = 1; i < sizes.length; i++) assert.ok(sizes[i]! >= sizes[i - 1]!);
-  // At 1848 wide (menu hidden) the leftover room is small, not hundreds of pixels a side.
-  const r = desktopLayout({ ...base, viewport: 1848, menuPreferred: false }).reading!;
-  const left = 1848 - r.right - r.left - (r.page + READER_GAP + r.reader);
-  assert.ok(left / 2 < 120, `${left / 2}px left on each side`);
+  // Past the ideal sizes nothing is left over: the sheets touch the window edges.
+  for (const viewport of [1900, 2200, 2560]) {
+    const r = desktopLayout({ ...base, viewport, menuPreferred: true }).reading!;
+    assert.equal(r.left + r.page + READER_GAP + r.reader + r.right, viewport);
+  }
+});
+
+test("a side sheet is 290px up to 1448px wide, then grows to 360px", () => {
+  assert.equal(sheetWidth(1200), 290);
+  assert.equal(sheetWidth(1448), 290);
+  assert.ok(sheetWidth(1700) > 290 && sheetWidth(1700) < 360);
+  assert.equal(sheetWidth(1920), 360);
+  assert.equal(sheetWidth(2560), 360);
+  assert.equal(sheetRoom(1920), 384);
 });
 
 test("opening the menu while it has stepped aside puts the reading paper away, and closing the menu brings it back", () => {

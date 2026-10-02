@@ -10,15 +10,23 @@
 //    the menu meanwhile, the menu wins the room and the reading paper is put away, tabs kept; it
 //    comes back as it was when the menu is closed.
 //  - Both papers grow with the room, together: each goes from its smallest size to its ideal size
-//    in step (one shared factor), so no width is cut off at a fixed maximum while the screen still
-//    has space. Any room left over sits evenly on both sides, as around the single page.
+//    in step (one shared factor), then keeps filling what is left in the same proportion, so the
+//    side sheets touch the window edges on a big screen and no ground is left empty.
 
-export const SHEET = 314; // a side sheet (290px) and its 24px gap; keep equal to styles.css
+export const SHEET_GAP = 24;
+export const SHEET_MIN = 290;
+export const SHEET_MAX = 360;
+const SHEET_GROWS_FROM = 1448; // the window width where the sheets start to grow (and the paper stops at 820)
+const SHEET_GROWTH = 0.15;
+/** A side sheet's width: 290px up to 1448px wide, then growing with the window to 360px. Keep equal to --sheet-width in styles.css. */
+export const sheetWidth = (viewport: number) => Math.round(Math.min(SHEET_MAX, Math.max(SHEET_MIN, SHEET_MIN + (viewport - SHEET_GROWS_FROM) * SHEET_GROWTH)));
+/** A side sheet and its gap: the room a paper keeps clear on a side that has one. */
+export const sheetRoom = (viewport: number) => sheetWidth(viewport) + SHEET_GAP;
 export const READER_GAP = 24;
 /** Room kept clear at a window edge that has no sheet, so a paper never touches the window. */
 export const EDGE = 24;
 export const PAGE_MIN = 480;
-export const PAGE_IDEAL = 820; // the page's width when nothing is open beside it (styles.css --paper-max)
+export const PAGE_IDEAL = 820; // the page's width when it has the room; with more room it keeps growing (its text stays in a 640px column)
 export const READER_MIN = 320;
 export const READER_IDEAL = 560;
 
@@ -43,16 +51,19 @@ export type DesktopLayout = {
 };
 
 function share(viewport: number, menuShown: boolean, panelOpen: boolean) {
-  const left = menuShown ? SHEET : EDGE;
-  const right = panelOpen ? SHEET : EDGE;
+  const left = menuShown ? sheetRoom(viewport) : EDGE;
+  const right = panelOpen ? sheetRoom(viewport) : EDGE;
   const free = viewport - left - right - READER_GAP;
   const least = PAGE_MIN + READER_MIN;
   const ideal = PAGE_IDEAL + READER_IDEAL;
   // 0 at the smallest sizes, 1 at the ideal ones; both papers move by the same share.
   const t = Math.min(1, Math.max(0, (free - least) / (ideal - least)));
+  // Past the ideal sizes the papers keep filling what is left (in the same proportion), so the
+  // sheets touch the window edges and no ground is left empty; their text stays in its own column.
+  const page = free > ideal ? Math.round((free * PAGE_IDEAL) / ideal) : Math.round(PAGE_MIN + t * (PAGE_IDEAL - PAGE_MIN));
   return {
-    page: Math.round(PAGE_MIN + t * (PAGE_IDEAL - PAGE_MIN)),
-    reader: Math.round(READER_MIN + t * (READER_IDEAL - READER_MIN)),
+    page,
+    reader: free > ideal ? free - page : Math.round(READER_MIN + t * (READER_IDEAL - READER_MIN)),
     left,
     right,
     fits: free >= least
