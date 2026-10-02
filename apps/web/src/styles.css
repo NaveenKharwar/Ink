@@ -62,7 +62,7 @@
     --on-ink: #121314;
     --ink-muted: #a3a3a0;
     --accent: #a8d86a;
-    --accent-soft: color-mix(in srgb, var(--accent) 18%, var(--surface));
+    --accent-soft: color-mix(in srgb, var(--accent) 9%, var(--surface));
     --dash: color-mix(in srgb, var(--accent) 40%, var(--surface));
     --surface-hover: #252119;
     --line-strong: #36302a;
@@ -92,7 +92,7 @@
   --on-ink: #121314;
   --ink-muted: #a3a3a0;
   --accent: #a8d86a;
-  --accent-soft: color-mix(in srgb, var(--accent) 18%, var(--surface));
+  --accent-soft: color-mix(in srgb, var(--accent) 9%, var(--surface));
   --dash: color-mix(in srgb, var(--accent) 40%, var(--surface));
   --surface-hover: #252119;
   --line-strong: #36302a;
