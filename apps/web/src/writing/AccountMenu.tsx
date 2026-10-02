@@ -38,7 +38,7 @@ export function AccountMenu({ phone = false, name, onProfile, onSignOut }: Props
               role="radio"
               aria-checked={theme === t.value}
               onClick={() => setTheme(t.value)}
-              className={`${link} ${reach} ${theme === t.value ? "border-ink text-ink" : "border-transparent text-ink-muted hover:text-ink"}`}
+              className={`${link} ${reach} text-ink ${theme === t.value ? "border-ink font-semibold" : "border-transparent hover:border-line-strong"}`}
             >
               {t.label}
             </button>
@@ -58,7 +58,7 @@ export function AccountMenu({ phone = false, name, onProfile, onSignOut }: Props
             setSigningOut(true);
             void onSignOut().finally(() => setSigningOut(false));
           }}
-          className={`${link} ${reach} border-transparent text-ink-muted hover:text-ink disabled:cursor-default`}
+          className={`${link} ${reach} border-transparent text-ink hover:border-ink disabled:cursor-default`}
         >
           <span className={signingOut ? "opacity-0" : undefined}>Sign out</span>
           {signingOut && <Loader size={12} label="Signing out" className="absolute inset-0 items-center justify-center" />}
