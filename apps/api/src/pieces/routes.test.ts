@@ -462,6 +462,20 @@ test("the library lists every piece's first two lines, newest first, only the wr
   assert.equal("text" in items[0], false);
 });
 
+test("the library tells which pieces are drafts and which are finished", async () => {
+  const ctx = await setup();
+  const [a, b] = [randomUUID(), randomUUID()];
+  for (const id of [a, b]) {
+    const d = device();
+    d.write(["A line to find later"]);
+    await syncFrom(ctx, ASHA, id, d, null);
+  }
+  await ctx.app.inject({ method: "PATCH", url: `/api/pieces/${b}`, headers: ctx.as(ASHA), payload: { status: "finished" } });
+  const items = (await ctx.app.inject({ method: "GET", url: "/api/library", headers: ctx.as(ASHA) })).json().items;
+  assert.equal(items.find((i: { id: string }) => i.id === a).status, "draft");
+  assert.equal(items.find((i: { id: string }) => i.id === b).status, "finished");
+});
+
 test("search finds the writer's own pieces by the words they remember", async () => {
   const ctx = await setup();
   const poem = device();
