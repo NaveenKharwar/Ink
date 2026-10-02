@@ -228,7 +228,7 @@ export function SearchDialog({ wide, recent, seasonSet, onOpen, onClose }: Props
                     // The link goes away; keep focus in the dialog so Esc and Tab still work.
                     input.current?.focus();
                   }}
-                  className={`cursor-pointer border-0 border-b-[1.5px] border-dotted border-accent bg-transparent p-0 text-[14px] text-accent ${focus}`}
+                  className={`relative cursor-pointer border-0 border-b-[1.5px] border-dotted border-accent bg-transparent p-0 text-[14px] text-accent ${wide ? "" : "before:absolute before:-inset-x-3 before:-inset-y-[14px] before:content-['']"} ${focus}`}
                 >
                   Show {hiddenWords} more
                 </button>

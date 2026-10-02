@@ -33,6 +33,9 @@ export const PAGE_MIN = 480;
 export const PAGE_IDEAL = 820; // the page's width when it has the room; with more room it keeps growing (its text stays in a 640px column)
 export const READER_MIN = 320;
 export const READER_IDEAL = 560;
+/** With the menu beside them the papers should keep at least this much; below it the menu steps aside (the papers are never just at their smallest). */
+export const PAGE_COMFORT = 560;
+export const READER_COMFORT = 380;
 
 export type DesktopLayoutInput = {
   viewport: number;
@@ -76,7 +79,9 @@ function share(viewport: number, menuShown: boolean, panelOpen: boolean) {
     reader: free > ideal ? free - page : Math.round(READER_MIN + t * (READER_IDEAL - READER_MIN)),
     left,
     right,
-    fits: free >= least
+    fits: free >= least,
+    // Roomy enough that a sheet beside them is not paid for in cramped words.
+    roomy: free >= least && page >= PAGE_COMFORT && (free > ideal ? free - page : Math.round(READER_MIN + t * (READER_IDEAL - READER_MIN))) >= READER_COMFORT
   };
 }
 
@@ -105,7 +110,7 @@ export function desktopLayout({ viewport, menuPreferred, panelOpen, reading, rea
   }
 
   const withMenu = menuPreferred ? share(viewport, true, panelOpen) : null;
-  if (withMenu?.fits) return { menuVisible: true, menuSteppedAside: false, panelVisible: panelOpen, panelSteppedAside: false, reading: withMenu };
+  if (withMenu?.roomy) return { menuVisible: true, menuSteppedAside: false, panelVisible: panelOpen, panelSteppedAside: false, reading: withMenu };
   // No room for both, and the writer asked for the menu: it wins, the reading paper waits.
   if (menuPreferred && readerAway) return { menuVisible: true, menuSteppedAside: false, panelVisible: panelOpen, panelSteppedAside: false, reading: null };
   const without = share(viewport, false, panelOpen);
@@ -124,5 +129,5 @@ export function desktopLayout({ viewport, menuPreferred, panelOpen, reading, rea
  * whatever its remembered state was.
  */
 export function menuWouldTakeReadingRoom(viewport: number, panelOpen: boolean): boolean {
-  return viewport < PANEL_ASIDE_BELOW || !share(viewport, true, panelOpen).fits;
+  return viewport < PANEL_ASIDE_BELOW || !share(viewport, true, panelOpen).roomy;
 }
