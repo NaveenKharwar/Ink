@@ -1,6 +1,6 @@
 import type { PictureSummary } from "@ink/schemas";
 import type pg from "pg";
-import { searchText } from "../pieces/fold.js";
+import { isLoose, searchText } from "../pieces/fold.js";
 import { withoutPicture } from "../pieces/merge.js";
 import type { PictureType } from "./store.js";
 
@@ -62,7 +62,7 @@ export function pgPicturesRepo(db: pg.Pool): PicturesRepo {
           if (!merged) continue;
           await client.query(
             `update pieces set ydoc = $3, content = $4::jsonb, text = $5, title = $6, language = $7, style = $8,
-               search_text = $9, picture_ids = $10::uuid[], updated_at = now()
+               search_text = $9, picture_ids = $10::uuid[]
              where id = $1 and user_id = $2`,
             [
               piece.id,
@@ -73,7 +73,7 @@ export function pgPicturesRepo(db: pg.Pool): PicturesRepo {
               merged.meta.title,
               merged.meta.language,
               merged.meta.style,
-              searchText(merged.meta.title, merged.text),
+              searchText(merged.meta.title, merged.text, isLoose(merged.meta.language)),
               merged.pictureIds
             ]
           );

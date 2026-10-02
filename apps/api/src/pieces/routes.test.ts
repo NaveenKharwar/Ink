@@ -92,7 +92,7 @@ function memoryRepo(): PiecesRepo {
     async update(userId, id, patch) {
       const row = rows.get(id);
       if (!row || row.userId !== userId) return null;
-      const next = { ...row, ...patch, title: patch.title === "" ? null : patch.title === undefined ? row.title : patch.title, updatedAt: Object.keys(patch).every((key) => key === "status") ? row.updatedAt : tick() };
+      const next = { ...row, ...patch, title: patch.title === "" ? null : patch.title === undefined ? row.title : patch.title, updatedAt: row.updatedAt };
       rows.set(id, next as Row);
       return strip(next as Row);
     }
@@ -326,7 +326,7 @@ test("title and language are part of the document; patch changes only the flags"
   assert.equal(created.statusCode, 404);
 });
 
-test("marking a piece finished keeps its last-edited time; writing in it again reopens it", async () => {
+test("marking a piece finished, or changing its memory flags, keeps its last-edited time; writing in it again reopens it", async () => {
   const ctx = await setup();
   const id = randomUUID();
   const d = device();
@@ -338,6 +338,10 @@ test("marking a piece finished keeps its last-edited time; writing in it again r
   const patched = await ctx.app.inject({ method: "PATCH", url: `/api/pieces/${id}`, headers: ctx.as(ASHA), payload: { status: "finished" } });
   assert.equal(patched.json().status, "finished");
   assert.equal(patched.json().updatedAt, before.updatedAt);
+
+  const flagged = await ctx.app.inject({ method: "PATCH", url: `/api/pieces/${id}`, headers: ctx.as(ASHA), payload: { includeInMemory: false } });
+  assert.equal(flagged.json().updatedAt, before.updatedAt);
+  await ctx.app.inject({ method: "PATCH", url: `/api/pieces/${id}`, headers: ctx.as(ASHA), payload: { includeInMemory: true } });
 
   const reopened = await ctx.app.inject({ method: "PATCH", url: `/api/pieces/${id}`, headers: ctx.as(ASHA), payload: { status: "draft" } });
   assert.equal(reopened.json().updatedAt, before.updatedAt);
