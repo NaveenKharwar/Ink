@@ -106,9 +106,9 @@ export function StyleCards({ shown, wide, onPick, selected, onSelect }: Props) {
   );
 }
 
-// The narrowest the three cards may sit side by side: about a 500px screen less the page's
-// margins. Anything narrower gets the stage and windows.
-const ROW_MIN_PX = 460;
+// The narrowest the three cards may sit side by side: about 200px each. Anything narrower (a
+// phone, or a desktop page squeezed by the menu and the panel) gets the stage and windows.
+const ROW_MIN_PX = 600;
 
 const cardClass =
   "style-card flex cursor-pointer flex-col rounded-md border-0 p-0 text-left text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
