@@ -84,6 +84,9 @@ export function Profile({ account, items, wide, showMenuButton, onMenu, onBack, 
             <Seasons initial={account.seasons} onChange={setSeasons} />
           </Section>
           <Section>
+            <Memory />
+          </Section>
+          <Section>
             <SigningIn email={account.email} google={account.via === "google"} hasPassword={account.hasPassword} />
           </Section>
           <Section>
@@ -292,6 +295,24 @@ function Seasons({ initial, onChange }: { initial: SeasonChoice; onChange: (choi
       </div>
       <SaveStatus state={state} />
     </fieldset>
+  );
+}
+
+// A plain note on what Ink does with the writing. No switches, no counts: the writer's choices
+// are elsewhere or not needed yet; the privacy page has the full detail.
+function Memory() {
+  return (
+    <>
+      <h2 className="m-0 text-[14px] leading-5 font-semibold">Memory</h2>
+      <p className="mt-2 mb-0 max-w-[440px] text-ink-muted">
+        Ink reads what you write so it can bring old lines back and notice what you keep returning to. Each piece gets a private
+        set of numbers so Ink can find the ones that are close. Only you can see them. Nothing is shared, and nothing is used
+        to train anything.{" "}
+        <a href="/privacy" className={`font-medium text-ink underline underline-offset-2 ${focusRing}`}>
+          Privacy
+        </a>
+      </p>
+    </>
   );
 }
 
