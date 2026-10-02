@@ -1,7 +1,8 @@
-import type { RelatedResponse } from "@ink/schemas";
+import type { NoticedResponse, RelatedResponse } from "@ink/schemas";
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { z } from "zod";
 import type { RelatedRepo } from "./repo.js";
+import { noticeOne } from "./noticed.js";
 import { rankRelated } from "./rank.js";
 
 const pairParams = z.object({ id: z.string().uuid(), otherId: z.string().uuid() });
@@ -17,6 +18,15 @@ export function registerRelatedRoutes(app: FastifyInstance, repo: RelatedRepo) {
     const found = await repo.candidates(request.userId, params.data.id);
     if (!found) return notFound(reply);
     const response: RelatedResponse = rankRelated(found.current, found.others, new Date());
+    return response;
+  });
+
+  // The one remark under the All writing title. Looks from the writer's latest piece, only at
+  // the writer's own pieces; nothing close is `null`, which shows nothing.
+  app.get("/api/noticed", async (request) => {
+    const latest = await repo.latest(request.userId);
+    const found = latest ? await repo.candidates(request.userId, latest) : null;
+    const response: NoticedResponse = { noticed: found ? noticeOne(found.current, found.others, new Date()) : null };
     return response;
   });
 

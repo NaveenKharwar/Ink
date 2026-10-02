@@ -4,6 +4,7 @@
 import "@fontsource-variable/dm-sans/wght.css";
 import "@fontsource-variable/lora/wght.css";
 import "@fontsource-variable/lora/wght-italic.css";
+import "@fontsource-variable/source-serif-4/wght-italic.css";
 import "@fontsource-variable/noto-sans-devanagari";
 import "@fontsource/noto-serif-devanagari/400.css";
 import "@fontsource/kalam/400.css";

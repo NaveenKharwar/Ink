@@ -9,6 +9,8 @@ export interface RelatedRepo {
    * pieces kept out of memory. Null when the piece is not the writer's.
    */
   candidates(userId: string, pieceId: string): Promise<{ current: Candidate; others: Candidate[] } | null>;
+  /** The id of the writer's most recently edited piece that has words and counts for memory, if any. */
+  latest(userId: string): Promise<string | null>;
   /** Hides `otherId` beside `pieceId` (and the other way round) for good. False if either isn't the writer's. */
   dismiss(userId: string, pieceId: string, otherId: string): Promise<boolean>;
   /** Undoes a dismissal. False if either isn't the writer's. */
@@ -53,6 +55,14 @@ export function pgRelatedRepo(db: pg.Pool): RelatedRepo {
   };
 
   return {
+    async latest(userId) {
+      const { rows } = await db.query<{ id: string }>(
+        "select id from pieces where user_id = $1 and include_in_memory and btrim(text) <> '' order by updated_at desc, id desc limit 1",
+        [userId]
+      );
+      return rows[0]?.id ?? null;
+    },
+
     async candidates(userId, pieceId) {
       const { rows: mine } = await db.query<Row>(`select ${COLUMNS} from pieces where id = $1 and user_id = $2`, [pieceId, userId]);
       if (!mine[0]) return null;
@@ -116,6 +126,13 @@ export function memoryRelatedRepo(pieces: PiecesRepo, vectors: Map<string, numbe
     a !== b && !!(await pieces.get(userId, a)) && !!(await pieces.get(userId, b));
 
   return {
+    async latest(userId) {
+      const all = await pieces.library(userId);
+      const newest = all
+        .filter((p) => p.includeInMemory && p.text.trim() !== "")
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+      return newest?.id ?? null;
+    },
     async candidates(userId, pieceId) {
       const mine = await pieces.get(userId, pieceId);
       if (!mine) return null;

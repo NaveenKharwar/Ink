@@ -162,6 +162,8 @@
   /* The headings Ink writes (screen titles, the wordmark, dialog titles), as opposed to the
      writer's own words, which are always --font-serif. Today the same face; one place to change. */
   --font-display: var(--font-serif);
+  /* The old line in the Noticed remark: a quiet italic that is not the writing face. */
+  --font-remark: "Source Serif 4 Variable", "Noto Serif Devanagari", Georgia, serif;
   /* Handwriting: a Hindi pen name (the stroke-drawn signature font has Latin letters only) and the
      note on the thread to "Ink sees this too". */
   --font-hand: "Kalam", cursive;

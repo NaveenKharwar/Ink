@@ -1,5 +1,6 @@
 import type {
   LibraryResponse,
+  NoticedResponse,
   Piece,
   RelatedResponse,
   PictureListResponse,
@@ -62,6 +63,8 @@ export const pieces = {
   restore: async (id: string, otherId: string) => {
     await send(`/api/pieces/${encodeURIComponent(id)}/related/${encodeURIComponent(otherId)}/dismissed`, { method: "DELETE" });
   },
+  // The one quiet remark under the All writing title; `noticed` is null when nothing is close.
+  noticed: (signal?: AbortSignal) => request<NoticedResponse>("/api/noticed", { signal }),
   // "words" answers quickly; "close" (close in meaning) waits for the embedder and can be slow.
   search: (q: string, signal?: AbortSignal, part?: "words" | "close") =>
     request<SearchResponse>(`/api/search?${new URLSearchParams(part ? { q, part } : { q })}`, { signal })

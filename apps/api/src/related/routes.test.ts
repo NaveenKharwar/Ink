@@ -5,6 +5,7 @@ import type { VerifyToken } from "../auth.js";
 import { memoryPicturesRepo } from "../pictures/repo.js";
 import { memoryPictureStore } from "../pictures/store.js";
 import type { PiecesRepo } from "../pieces/repo.js";
+import { noticeCrosses, noticeOne, noticeRepeats, noticeReturn } from "./noticed.js";
 import { rankRelated, type Candidate } from "./rank.js";
 import type { RelatedRepo } from "./repo.js";
 
@@ -91,6 +92,9 @@ function stubRepo() {
   const dismissed: string[] = [];
   const mine = new Set([`${ASHA}|${A}`, `${ASHA}|${B}`]);
   const repo: RelatedRepo = {
+    async latest(userId) {
+      return mine.has(`${userId}|${A}`) ? A : null;
+    },
     async candidates(userId, pieceId) {
       asked.push(`${userId}|${pieceId}`);
       if (!mine.has(`${userId}|${pieceId}`)) return null;
@@ -187,4 +191,82 @@ test("Forgotten and Loose lines need a clearly close match; with nothing close e
 
   const none = rankRelated(current, [near("q1", "An old page about taxes and forms", "2025-01-01T00:00:00Z", 0.4), near("q2", "parking ticket", "2026-09-01T00:00:00Z", 0.3)], NOW);
   assert.deepEqual(none, { related: [], forgotten: [], loose: [], looked: true });
+});
+
+test("an old piece comes back only when the latest piece is clearly close, in Hindi or English, with a vector", () => {
+  const current = { ...piece(A, "The rain kept the window company", "2026-09-29T00:00:00Z"), similarity: null };
+  const old = (id: string, similarity: number | null, language: Candidate["language"] = "en") => ({
+    ...piece(id, `An old page ${id} about monsoon windows, long enough not to be a loose line at all, going on well past the short limit`, "2025-02-01T00:00:00Z"),
+    language, similarity
+  });
+  assert.deepEqual(noticeReturn(current, [old("o1", 0.6)], NOW)?.note.id, "o1");
+  assert.equal(noticeReturn(current, [old("o1", 0.6)], NOW)?.kind, "returns");
+  // The closest comes first; below the floor nothing shows.
+  assert.equal(noticeReturn(current, [old("o1", 0.56), old("o2", 0.7)], NOW)?.note.id, "o2");
+  assert.equal(noticeReturn(current, [old("o1", 0.5)], NOW), null);
+  // A shared word is not enough without a vector, and Hinglish is left out on either side.
+  assert.equal(noticeReturn(current, [old("o1", null)], NOW), null);
+  assert.equal(noticeReturn(current, [old("o1", 0.7, "hi-Latn")], NOW), null);
+  assert.equal(noticeReturn({ ...current, language: "hi-Latn" }, [old("o1", 0.7)], NOW), null);
+  // Nothing recent, nothing to come back to.
+  assert.equal(noticeReturn({ ...current, updatedAt: "2026-06-01T00:00:00Z" }, [old("o1", 0.7)], NOW), null);
+  // Pieces that are not old enough are the panel's business, not a remark.
+  assert.equal(noticeReturn(current, [{ ...old("o1", 0.7), updatedAt: "2026-09-01T00:00:00Z" }], NOW), null);
+});
+
+test("the noticed route needs a token and looks only at the signed-in writer's pieces", async () => {
+  const { app, as, asked } = await setup();
+  assert.equal((await app.inject({ method: "GET", url: "/api/noticed" })).statusCode, 401);
+  const mine = await app.inject({ method: "GET", url: "/api/noticed", headers: as(ASHA) });
+  assert.equal(mine.statusCode, 200);
+  assert.deepEqual(mine.json(), { noticed: null });
+  assert.deepEqual(asked, [`${ASHA}|${A}`]);
+  // A writer with no pieces gets nothing, and nothing of anyone else's.
+  const theirs = await app.inject({ method: "GET", url: "/api/noticed", headers: as(RAVI) });
+  assert.deepEqual(theirs.json(), { noticed: null });
+  assert.deepEqual(asked, [`${ASHA}|${A}`]);
+});
+
+test("the same thing written three times: the latest piece and two close ones, the earliest speaks, and it wins over a return", () => {
+  const current = piece(A, "The rain kept the window company", "2026-09-29T00:00:00Z");
+  const near = (id: string, date: string, similarity: number | null, language: Candidate["language"] = "en") => ({
+    ...piece(id, `Page ${id} about the rain and the window, long enough not to be a loose line at all, going on well past the short limit of a line`, date),
+    language, similarity
+  });
+  const out = noticeRepeats(current, [near("p1", "2025-02-01T00:00:00Z", 0.6), near("p2", "2026-03-01T00:00:00Z", 0.58), near("p3", "2024-05-01T00:00:00Z", 0.4)], NOW);
+  assert.equal(out?.kind, "repeats");
+  assert.equal(out?.note.id, "p1");
+  assert.deepEqual(out && out.kind === "repeats" ? out.dates : [], ["2025-02-01T00:00:00Z", "2026-03-01T00:00:00Z", "2026-09-29T00:00:00Z"]);
+  assert.equal(noticeOne(current, [near("p1", "2025-02-01T00:00:00Z", 0.6), near("p2", "2026-03-01T00:00:00Z", 0.58)], NOW)?.kind, "repeats");
+  // Two is not three; weak, vectorless and Hinglish pieces do not count; with one old close piece it is a return.
+  assert.equal(noticeRepeats(current, [near("p1", "2025-02-01T00:00:00Z", 0.6)], NOW), null);
+  assert.equal(noticeRepeats(current, [near("p1", "2025-02-01T00:00:00Z", 0.6), near("p2", "2026-03-01T00:00:00Z", 0.5)], NOW), null);
+  assert.equal(noticeRepeats(current, [near("p1", "2025-02-01T00:00:00Z", 0.6), near("p2", "2026-03-01T00:00:00Z", null)], NOW), null);
+  assert.equal(noticeRepeats(current, [near("p1", "2025-02-01T00:00:00Z", 0.6), near("p2", "2026-03-01T00:00:00Z", 0.7, "hi-Latn")], NOW), null);
+  assert.equal(noticeOne(current, [near("p1", "2025-02-01T00:00:00Z", 0.6)], NOW)?.kind, "returns");
+  assert.equal(noticeOne(current, [near("p1", "2025-02-01T00:00:00Z", 0.4)], NOW), null);
+});
+
+test("the same idea in the other language: Hindi for English or English for Hindi, clearly close, with a vector", () => {
+  const hi = (id: string, date: string, similarity: number | null, language: Candidate["language"] = "hi") => ({
+    ...piece(id, `बारिश में टीन की छत ${id} बोलती रही, और रात भर सुनता रहा कि कितनी बातें हैं जो अब तक अनकही रह गई हैं, कितने ख़त हैं जो भेजे नहीं गए, कितने नाम`, date),
+    language, similarity
+  });
+  const current = piece(A, "The rain kept the window company", "2026-09-29T00:00:00Z");
+  const out = noticeCrosses(current, [hi("h1", "2025-02-01T00:00:00Z", 0.56), hi("h2", "2025-03-01T00:00:00Z", 0.64)], NOW);
+  assert.equal(out?.kind, "crosses");
+  assert.equal(out?.note.id, "h2");
+  assert.deepEqual(out && out.kind === "crosses" ? out.other : null, { language: "en", createdAt: "2026-09-29T00:00:00Z" });
+  // The other way round too.
+  const english = { ...piece(B, "The rain kept the window company, and the kettle went cold, and the night went on for so long that nobody could say when it began or ended", "2025-02-01T00:00:00Z"), similarity: 0.6 };
+  const hindiNow = { ...piece(A, "बारिश में टीन की छत बोलती रही", "2026-09-29T00:00:00Z"), language: "hi" as const };
+  assert.equal(noticeCrosses(hindiNow, [english], NOW)?.note.id, B);
+  // Same language, weak, no vector, Hinglish or mixed on either side: nothing.
+  assert.equal(noticeCrosses(current, [hi("h1", "2025-02-01T00:00:00Z", 0.5)], NOW), null);
+  assert.equal(noticeCrosses(current, [hi("h1", "2025-02-01T00:00:00Z", null)], NOW), null);
+  assert.equal(noticeCrosses(current, [hi("h1", "2025-02-01T00:00:00Z", 0.7, "hi-Latn")], NOW), null);
+  assert.equal(noticeCrosses({ ...current, language: "mixed" }, [hi("h1", "2025-02-01T00:00:00Z", 0.7)], NOW), null);
+  assert.equal(noticeCrosses(current, [{ ...english, similarity: 0.7 }], NOW), null);
+  // Three of the same thing still wins; with one close piece in the other language it is a crossing.
+  assert.equal(noticeOne(current, [hi("h1", "2025-02-01T00:00:00Z", 0.7)], NOW)?.kind, "crosses");
 });
