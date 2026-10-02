@@ -5,7 +5,7 @@ import type { VerifyToken } from "../auth.js";
 import { memoryPicturesRepo } from "../pictures/repo.js";
 import { memoryPictureStore } from "../pictures/store.js";
 import type { PiecesRepo } from "../pieces/repo.js";
-import { noticeOne, noticeRepeats, noticeReturn } from "./noticed.js";
+import { noticeCrosses, noticeOne, noticeRepeats, noticeReturn } from "./noticed.js";
 import { rankRelated, type Candidate } from "./rank.js";
 import type { RelatedRepo } from "./repo.js";
 
@@ -245,4 +245,28 @@ test("the same thing written three times: the latest piece and two close ones, t
   assert.equal(noticeRepeats(current, [near("p1", "2025-02-01T00:00:00Z", 0.6), near("p2", "2026-03-01T00:00:00Z", 0.7, "hi-Latn")], NOW), null);
   assert.equal(noticeOne(current, [near("p1", "2025-02-01T00:00:00Z", 0.6)], NOW)?.kind, "returns");
   assert.equal(noticeOne(current, [near("p1", "2025-02-01T00:00:00Z", 0.4)], NOW), null);
+});
+
+test("the same idea in the other language: Hindi for English or English for Hindi, clearly close, with a vector", () => {
+  const hi = (id: string, date: string, similarity: number | null, language: Candidate["language"] = "hi") => ({
+    ...piece(id, `बारिश में टीन की छत ${id} बोलती रही, और रात भर सुनता रहा कि कितनी बातें हैं जो अब तक अनकही रह गई हैं, कितने ख़त हैं जो भेजे नहीं गए, कितने नाम`, date),
+    language, similarity
+  });
+  const current = piece(A, "The rain kept the window company", "2026-09-29T00:00:00Z");
+  const out = noticeCrosses(current, [hi("h1", "2025-02-01T00:00:00Z", 0.56), hi("h2", "2025-03-01T00:00:00Z", 0.64)], NOW);
+  assert.equal(out?.kind, "crosses");
+  assert.equal(out?.note.id, "h2");
+  assert.deepEqual(out && out.kind === "crosses" ? out.other : null, { language: "en", createdAt: "2026-09-29T00:00:00Z" });
+  // The other way round too.
+  const english = { ...piece(B, "The rain kept the window company, and the kettle went cold, and the night went on for so long that nobody could say when it began or ended", "2025-02-01T00:00:00Z"), similarity: 0.6 };
+  const hindiNow = { ...piece(A, "बारिश में टीन की छत बोलती रही", "2026-09-29T00:00:00Z"), language: "hi" as const };
+  assert.equal(noticeCrosses(hindiNow, [english], NOW)?.note.id, B);
+  // Same language, weak, no vector, Hinglish or mixed on either side: nothing.
+  assert.equal(noticeCrosses(current, [hi("h1", "2025-02-01T00:00:00Z", 0.5)], NOW), null);
+  assert.equal(noticeCrosses(current, [hi("h1", "2025-02-01T00:00:00Z", null)], NOW), null);
+  assert.equal(noticeCrosses(current, [hi("h1", "2025-02-01T00:00:00Z", 0.7, "hi-Latn")], NOW), null);
+  assert.equal(noticeCrosses({ ...current, language: "mixed" }, [hi("h1", "2025-02-01T00:00:00Z", 0.7)], NOW), null);
+  assert.equal(noticeCrosses(current, [{ ...english, similarity: 0.7 }], NOW), null);
+  // Three of the same thing still wins; with one close piece in the other language it is a crossing.
+  assert.equal(noticeOne(current, [hi("h1", "2025-02-01T00:00:00Z", 0.7)], NOW)?.kind, "crosses");
 });

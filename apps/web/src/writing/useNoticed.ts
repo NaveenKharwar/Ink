@@ -2,7 +2,7 @@ import type { Noticed } from "@ink/schemas";
 import { useEffect, useState } from "react";
 import { pieces } from "../lib/api";
 
-// Dev only, to look at a remark without the right pieces: /all?noticed=demo or ?noticed=repeats.
+// Dev only, to look at a remark without the right pieces: /all?noticed=demo, ?noticed=repeats or ?noticed=crosses.
 // Read once at startup, before the address is tidied to /all and loses its query.
 const demo = import.meta.env.DEV ? new URLSearchParams(window.location.search).get("noticed") : null;
 const demoNote = { id: "demo", title: null, language: "en" as const, style: "poem" as const, createdAt: "2025-08-10T00:00:00Z", updatedAt: "2025-08-10T00:00:00Z" };
@@ -24,6 +24,14 @@ export function useNoticed(): Noticed | null {
         kind: "repeats",
         note: { ...demoNote, lines: ["I keep waiting at the station for no one"] },
         dates: ["2024-12-10T00:00:00Z", "2025-08-10T00:00:00Z", "2026-03-10T00:00:00Z"]
+      });
+      return;
+    }
+    if (demo === "crosses") {
+      setNoticed({
+        kind: "crosses",
+        note: { ...demoNote, language: "hi", lines: ["बारिश में टीन की छत बोलती रही"] },
+        other: { language: "en", createdAt: "2026-03-10T00:00:00Z" }
       });
       return;
     }

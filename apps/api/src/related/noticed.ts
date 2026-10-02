@@ -8,10 +8,10 @@ const DAY = 24 * 60 * 60 * 1000;
 
 /**
  * What the writer is shown under All writing, one remark: the same thing written three times
- * wins over an old piece coming back. Null when nothing is close.
+ * wins, then the same idea in the other language, then an old piece coming back. Null when nothing is close.
  */
 export function noticeOne(current: Candidate, others: Candidate[], now: Date): Noticed | null {
-  return noticeRepeats(current, others, now) ?? noticeReturn(current, others, now);
+  return noticeRepeats(current, others, now) ?? noticeCrosses(current, others, now) ?? noticeReturn(current, others, now);
 }
 
 /**
@@ -34,6 +34,23 @@ export function noticeRepeats(current: Candidate, others: Candidate[], now: Date
   const [first, second] = [...close].sort((a, b) => a.createdAt.localeCompare(b.createdAt)) as [typeof close[0], typeof close[0]];
   const dates = [first.createdAt, second.createdAt, current.createdAt].sort();
   return { kind: "repeats", note: first, dates };
+}
+
+/**
+ * The same idea in Hindi and in English: the latest piece is in one, and a piece clearly close to
+ * it (the same floor, a real vector) is in the other. The closest such piece speaks.
+ */
+export function noticeCrosses(current: Candidate, others: Candidate[], now: Date): Noticed | null {
+  if (Date.parse(current.updatedAt) < now.getTime() - RECENT_DAYS * DAY) return null;
+  if (current.language !== "hi" && current.language !== "en") return null;
+  const wanted = current.language === "hi" ? "en" : "hi";
+  const usable = others.filter((piece) => piece.language === wanted);
+  const similarity = new Map(usable.map((piece) => [piece.id, piece.similarity ?? null]));
+  const ranked = rankRelated(current, usable, now);
+  const note = [...ranked.related, ...ranked.forgotten, ...ranked.loose]
+    .filter((n) => (similarity.get(n.id) ?? 0) >= MIN_SIDE_SIMILARITY)
+    .sort((a, b) => (similarity.get(b.id) ?? 0) - (similarity.get(a.id) ?? 0))[0];
+  return note ? { kind: "crosses", note, other: { language: current.language, createdAt: current.createdAt } } : null;
 }
 
 /**
