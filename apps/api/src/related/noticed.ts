@@ -63,7 +63,7 @@ export function noticeReturn(current: Candidate, others: Candidate[], now: Date)
   if (current.language === "hi-Latn") return null;
   const usable = others.filter((piece) => piece.language !== "hi-Latn");
   const hasVector = new Set(usable.filter((piece) => piece.similarity != null).map((piece) => piece.id));
-  // The closest of the forgotten ones: old, not opened for a long while, and over the shared floor.
+  // The closest of the forgotten ones: old, not edited for a long while, and over the shared floor.
   const note = rankRelated(current, usable, now).forgotten.find((n) => hasVector.has(n.id));
   return note ? { kind: "returns", note } : null;
 }
