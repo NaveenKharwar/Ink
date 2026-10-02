@@ -61,8 +61,14 @@ export function Page({ pieceId, userId, opened, wide, season, showMenuButton, pa
   const style: PieceStyle = chosen ?? "poem";
   const [firstLine, setFirstLine] = useState("");
 
-  // Typing on the blank page without picking a style makes the piece a poem. (An older piece
-  // with words but no style just reads as one; opening it writes nothing.)
+  // Typing on the blank page without picking a style writes in the style the blank page is
+  // showing, a poem until another window is chosen (phone). (An older piece with words but no
+  // style just reads as a poem; opening it writes nothing.)
+  const [leaning, setLeaning] = useState<PieceStyle>("poem");
+  const leaningRef = useRef(leaning);
+  useEffect(() => {
+    leaningRef.current = leaning;
+  }, [leaning]);
   const chosenRef = useRef(chosen);
   useEffect(() => {
     chosenRef.current = chosen;
@@ -74,7 +80,7 @@ export function Page({ pieceId, userId, opened, wide, season, showMenuButton, pa
     setWords(countWords(text));
     setFirstLine(openingLine(text));
     setEmpty(!hasWords);
-    if (typed && hasWords && wasEmpty.current && !chosenRef.current) setStyle("poem");
+    if (typed && hasWords && wasEmpty.current && !chosenRef.current) setStyle(leaningRef.current);
     wasEmpty.current = !hasWords;
   };
 
@@ -157,7 +163,7 @@ export function Page({ pieceId, userId, opened, wide, season, showMenuButton, pa
         onMenu={onMenu}
       />
       {!wide && toolbar}
-      <FadeScroll scrollbar="visible" className={`ink-editor style-${style} ${showCards ? "is-blank" : ""} grow ${wide ? "pb-[110px]" : "pb-12"}`}>
+      <FadeScroll scrollbar="visible" className={`ink-editor style-${style} ${showCards ? "is-blank" : ""} grow ${wide ? "pb-[110px]" : showCards ? "pb-3" : "pb-12"}`}>
         {/* The cover sits across the whole paper, above the writing, and scrolls away with it. */}
         <Cover cover={cover} onCover={setCover} wide={wide} />
         <div className={`px-[var(--page-gutter)] ${cover ? "pt-3 wide:pt-3" : "pt-3 wide:pt-4"}`}>
@@ -165,7 +171,7 @@ export function Page({ pieceId, userId, opened, wide, season, showMenuButton, pa
             <EditorContent editor={editor} />
             <LinkCard editor={editor} />
             <FinishedPrompt spot={finishing.spot} failed={finishing.failed} onToggle={finishing.toggle} />
-            <StyleCards shown={showCards} wide={wide} onPick={changeStyle} />
+            <StyleCards shown={showCards} wide={wide} onPick={changeStyle} selected={leaning} onSelect={setLeaning} />
           </div>
         </div>
       </FadeScroll>
