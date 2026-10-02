@@ -195,7 +195,7 @@ export function BesidePaper({ tabs, active, seasonSet, phone = false, narrow = f
         <button
           type="button"
           onClick={() => onOpenPiece(current.id)}
-          className={`cursor-pointer border-0 border-b-[1.5px] border-dotted border-accent bg-transparent p-0 text-[13px] text-accent ${focus}`}
+          className={`relative cursor-pointer border-0 border-b-[1.5px] border-dotted border-accent bg-transparent p-0 text-[13px] text-accent ${phone ? "before:absolute before:-inset-x-3 before:-inset-y-3.5 before:content-['']" : ""} ${focus}`}
         >
           Open piece
         </button>

@@ -73,6 +73,8 @@ export function TopBar({
             <span className="text-ink-muted">/</span>
           </>
         )}
+        {/* The page's heading for screen readers; sighted writers have the name beside it, renamed in place. */}
+        <h1 className="sr-only">{title ?? (firstLine || "Untitled")}</h1>
         <PieceName title={title} firstLine={firstLine} onRename={onRename} />
       </div>
       <div className="flex shrink-0 items-center gap-2 text-[13px] text-ink-muted">
