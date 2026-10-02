@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { desktopLayout, EDGE, menuWouldTakeReadingRoom, PANEL_ASIDE_BELOW, PAGE_IDEAL, PAGE_MIN, READER_GAP, READER_IDEAL, READER_MIN, sheetRoom, sheetWidth } from "./beside";
+import { desktopLayout, EDGE, menuWouldTakeReadingRoom, PAGE_COMFORT, PANEL_ASIDE_BELOW, PAGE_IDEAL, READER_COMFORT, PAGE_MIN, READER_GAP, READER_IDEAL, READER_MIN, sheetRoom, sheetWidth } from "./beside";
 
 const base = { panelOpen: true, reading: true, readerAway: false };
 
@@ -135,4 +135,21 @@ test("on a narrow window only the sheet that was asked for comes back, never bot
   assert.equal(byMenu.menuVisible, true);
   assert.equal(byMenu.panelVisible, false);
   assert.equal(byMenu.panelSteppedAside, true);
+});
+
+test("the menu only stays beside the papers when they keep a comfortable size", () => {
+  // Menu, panel and a note open together at 1500: the papers would be at their very smallest, so the menu steps aside.
+  const at1500 = desktopLayout({ ...base, viewport: 1500, menuPreferred: true });
+  assert.equal(at1500.menuVisible, false);
+  assert.equal(at1500.menuSteppedAside, true);
+  assert.ok(at1500.reading!.page >= PAGE_COMFORT && at1500.reading!.reader >= READER_COMFORT);
+  // Wherever the menu does stay, the papers are comfortable.
+  for (let viewport = 1280; viewport <= 2600; viewport += 9) {
+    const out = desktopLayout({ ...base, viewport, menuPreferred: true });
+    if (out.menuVisible) assert.ok(out.reading!.page >= PAGE_COMFORT && out.reading!.reader >= READER_COMFORT, `${out.reading!.page}/${out.reading!.reader} at ${viewport}`);
+  }
+  // And it does stay on a big screen.
+  assert.equal(desktopLayout({ ...base, viewport: 1920, menuPreferred: true }).menuVisible, true);
+  assert.equal(menuWouldTakeReadingRoom(1500, true), true);
+  assert.equal(menuWouldTakeReadingRoom(1920, true), false);
 });

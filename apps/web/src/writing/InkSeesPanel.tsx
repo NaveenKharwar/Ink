@@ -31,7 +31,8 @@ type Props = {
 const focus = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
 // The dotted-underline link ("Show 2 more", "Undo").
-const linkClass = `cursor-pointer border-0 border-b-[1.5px] border-dotted border-accent bg-transparent p-0 text-[14px] text-accent ${focus}`;
+const linkClass = (phone: boolean) =>
+  `relative cursor-pointer border-0 border-b-[1.5px] border-dotted border-accent bg-transparent p-0 text-[14px] text-accent ${phone ? "before:absolute before:-inset-x-3 before:-inset-y-[14px] before:content-['']" : ""} ${focus}`;
 
 // "Ink sees this too": older writing beside the piece, as plain notes under heading bars. Related
 // (soft blue: it leads to other writing), Forgotten (old pieces not opened for a long while) and
@@ -96,7 +97,7 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
       ) : (
         <p className="m-0 mb-5 py-2.5 text-[13px] leading-5 text-ink-muted">
           Won’t show this here again.{" "}
-          <button type="button" onClick={() => dismissals.restore(n)} className={linkClass}>
+          <button type="button" onClick={() => dismissals.restore(n)} className={linkClass(phone)}>
             Undo
           </button>
         </p>
@@ -155,7 +156,7 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
         {found.failed && (
           <p className="m-0 px-4 py-5 leading-[1.5] text-ink-muted">
             Couldn’t look just now.{" "}
-            <button type="button" onClick={found.retry} className={linkClass}>
+            <button type="button" onClick={found.retry} className={linkClass(phone)}>
               Try again
             </button>
           </p>
@@ -176,7 +177,7 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
                 <div className="px-6 pt-7 pb-8">
                   {shown.map(note)}
                   {more > 0 && (
-                    <button type="button" onClick={() => setShowAll(true)} className={`${linkClass} mt-1`}>
+                    <button type="button" onClick={() => setShowAll(true)} className={`${linkClass(phone)} mt-1`}>
                       Show {more} more
                     </button>
                   )}
