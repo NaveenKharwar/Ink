@@ -44,6 +44,8 @@ export type DesktopLayoutInput = {
   reading: boolean;
   /** The writer opened the menu while it had stepped aside: the reading paper is put away for now. */
   readerAway: boolean;
+  /** Which sheet put the reading paper away; on a narrow window only that one is shown. */
+  awayBy?: "menu" | "panel" | null;
 };
 
 export type DesktopLayout = {
@@ -78,7 +80,7 @@ function share(viewport: number, menuShown: boolean, panelOpen: boolean) {
   };
 }
 
-export function desktopLayout({ viewport, menuPreferred, panelOpen, reading, readerAway }: DesktopLayoutInput): DesktopLayout {
+export function desktopLayout({ viewport, menuPreferred, panelOpen, reading, readerAway, awayBy = null }: DesktopLayoutInput): DesktopLayout {
   if (!reading) return { menuVisible: menuPreferred, menuSteppedAside: false, panelVisible: panelOpen, panelSteppedAside: false, reading: null };
 
   // A narrow window has no room for a sheet beside the reading paper: both sheets step aside while
@@ -86,7 +88,11 @@ export function desktopLayout({ viewport, menuPreferred, panelOpen, reading, rea
   // reading paper waits (tabs kept); closing the sheet brings the paper back.
   if (viewport < PANEL_ASIDE_BELOW) {
     if (readerAway && (menuPreferred || panelOpen)) {
-      return { menuVisible: menuPreferred, menuSteppedAside: false, panelVisible: panelOpen, panelSteppedAside: false, reading: null };
+      // Only the sheet that was asked for: the menu and the panel never both appear at once.
+      const menuFirst = awayBy === "menu" || (awayBy === null && menuPreferred);
+      const menuVisible = menuFirst ? menuPreferred : false;
+      const panelVisible = menuFirst ? false : panelOpen;
+      return { menuVisible, menuSteppedAside: menuPreferred && !menuVisible, panelVisible, panelSteppedAside: panelOpen && !panelVisible, reading: null };
     }
     const alone = share(viewport, false, false);
     return {

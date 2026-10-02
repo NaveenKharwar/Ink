@@ -123,3 +123,16 @@ test("asking for the panel on a narrow window gives it the room: the reading pap
   assert.equal(out.panelVisible, true);
   assert.equal(out.reading, null);
 });
+
+test("on a narrow window only the sheet that was asked for comes back, never both", () => {
+  const both = { ...base, viewport: 1200, menuPreferred: true, panelOpen: true, readerAway: true };
+  const byPanel = desktopLayout({ ...both, awayBy: "panel" });
+  assert.equal(byPanel.panelVisible, true);
+  assert.equal(byPanel.menuVisible, false);
+  assert.equal(byPanel.menuSteppedAside, true);
+  assert.equal(byPanel.reading, null);
+  const byMenu = desktopLayout({ ...both, awayBy: "menu" });
+  assert.equal(byMenu.menuVisible, true);
+  assert.equal(byMenu.panelVisible, false);
+  assert.equal(byMenu.panelSteppedAside, true);
+});
