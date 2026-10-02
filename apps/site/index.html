@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ink — a private home for your writing</title>
+    <meta name="description" content="A private place for everything you write, in Hindi, English or both. Write something new, and meet something you forgot." />
+    <meta name="theme-color" content="#fbf8f1" />
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+  <body>
+    <header class="nav">
+      <a class="wordmark" href="#top" aria-label="Ink">Ink</a>
+      <nav class="nav-links" aria-label="Main">
+        <a class="nav-link" href="#features">Features</a>
+        <a class="nav-link" href="{{APP_URL}}/privacy">Privacy</a>
+        <a class="btn btn-ink" href="{{APP_URL}}">Start writing</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div class="hero-copy">
+          <h1>Write something new. Meet something you <span class="rust">forgot.</span></h1>
+          <p class="lede">A private place for everything you write. In Hindi, English or both.</p>
+          <div class="actions">
+            <a class="btn btn-ink btn-big" href="{{APP_URL}}">Start writing →</a>
+            <span class="btn btn-line btn-big" aria-disabled="true">iPhone app · coming soon</span>
+          </div>
+          <p class="note hero-note" aria-hidden="true">Same words.<br />A clearer you.</p>
+        </div>
+        <div class="fan">
+          <div class="phone fan-left"><img data-screen src="screens/hindi-list.webp" alt="A list of writing in Hindi and Hinglish" /></div>
+          <div class="phone fan-right"><img data-screen src="screens/seasons.webp" alt="Writing kept by season" /></div>
+          <div class="phone fan-mid"><img data-screen src="screens/blank-page.webp" alt="The blank page, ready to write" /></div>
+        </div>
+      </section>
+
+      <section class="features" id="features">
+        <div class="features-head">
+          <div>
+            <p class="eyebrow">FEATURES</p>
+            <h2>A home for everything you write.</h2>
+          </div>
+          <p class="features-lede">Write in Hindi, English or both. Ink keeps it private and quietly shows you what you had forgotten.</p>
+        </div>
+
+        <div class="bento">
+          <article class="card card-sun card-tall">
+            <span class="icon icon-sun" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7z" /><path d="M14 3v4h4M10 12h5M10 16h5" /></svg></span>
+            <h3>Old lines answer new ones.</h3>
+            <p>Ink shows the older pieces that sit close to what you are writing now.</p>
+            <div class="media"><div class="phone crop"><img data-screen src="screens/poem-related.webp" alt="Related notes beside a poem" /></div></div>
+            <p class="note card-note" aria-hidden="true">Your<br />past<br />here</p>
+          </article>
+
+          <article class="card card-peach card-wide">
+            <span class="icon icon-peach" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7z" /><path d="M14 3v4h4M10 12h5M10 16h5" /></svg></span>
+            <h3>Hindi, English, Hinglish.</h3>
+            <p>Your words stay in your own script, never translated.</p>
+            <div class="media media-wide">
+              <figure class="polaroid tilt-r"><img src="paintings/monsoon.webp" alt="Monsoon painting" /></figure>
+              <div class="phone crop"><img data-screen src="screens/hindi-list.webp" alt="A list of writing in Hindi and Hinglish" /></div>
+              <figure class="polaroid tilt-l"><img src="paintings/autumn.webp" alt="Autumn painting" /></figure>
+            </div>
+            <p class="note card-note" aria-hidden="true">Your language.<br />Your way.</p>
+          </article>
+
+          <article class="card card-leaf">
+            <span class="icon icon-leaf" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 19c0-8 5-13 14-14 0 9-5 14-14 14z" /><path d="M5 19l7-7" /></svg></span>
+            <h3>Seasons, not dates.</h3>
+            <p>Kept the way you remember it.</p>
+            <ul class="seasons">
+              <li class="s1"><img src="paintings/monsoon.webp" alt="Monsoon painting" /><span>Monsoon</span></li>
+              <li class="s2"><img src="paintings/winter.webp" alt="Winter painting" /><span>Winter</span></li>
+              <li class="s3"><img src="paintings/summer.webp" alt="Summer painting" /><span>Summer</span></li>
+              <li class="s4"><img src="paintings/autumn.webp" alt="Autumn painting" /><span>Autumn</span></li>
+            </ul>
+            <p class="note card-note" aria-hidden="true">Same feelings,<br />different times.</p>
+          </article>
+
+          <article class="card card-sky">
+            <span class="icon icon-sky" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 20l1-4L16 5l3 3L8 19z" /><path d="M14 7l3 3" /></svg></span>
+            <h3>A blank page, a quiet start.</h3>
+            <p>Pick Poem, Story or Notes, and write.</p>
+            <div class="media"><div class="phone crop"><img data-screen src="screens/blank-page.webp" alt="The blank page" /></div></div>
+            <p class="note card-note" aria-hidden="true">Whatever it is,<br />it belongs here.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="statement">
+        <p>Ink won’t write for you, score your poems, or count your streaks. <span>Only you can read what you write.</span></p>
+      </section>
+
+      <section class="closing">
+        <div class="closing-shade">
+          <h2>Begin where you left off.</h2>
+          <p>Same thoughts. New days.</p>
+          <div class="actions center">
+            <a class="btn btn-haldi btn-big" href="{{APP_URL}}">Start writing →</a>
+            <span class="btn btn-light btn-big" aria-disabled="true">iPhone app · coming soon</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div>
+        <p class="wordmark">Ink</p>
+        <p class="footer-line">A private home for your writing.</p>
+      </div>
+      <nav class="footer-links" aria-label="Footer">
+        <a href="{{APP_URL}}/privacy">Privacy</a>
+      </nav>
+    </footer>
+
+    <div class="sticky-bar">
+      <span>Free to start.</span>
+      <a class="btn btn-ink" href="{{APP_URL}}">Start writing</a>
+    </div>
+  </body>
+</html>

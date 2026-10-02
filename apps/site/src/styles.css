@@ -1,0 +1,199 @@
+:root {
+  --paper: oklch(98% 0.012 85);
+  --ink: oklch(24% 0.07 262);
+  --ink-2: oklch(44% 0.05 262);
+  --rule: oklch(88% 0.02 85);
+  --sky: oklch(46% 0.12 250);
+  --rust: oklch(52% 0.13 40);
+  --haldi: oklch(88% 0.16 92);
+  --on-sky: oklch(98% 0.012 85);
+  --sun-tint: oklch(94% 0.07 92);
+  --sun: oklch(88% 0.12 92);
+  --peach-tint: oklch(93% 0.045 50);
+  --peach: oklch(84% 0.08 45);
+  --leaf-tint: oklch(93% 0.05 155);
+  --leaf: oklch(84% 0.09 155);
+  --skyt-tint: oklch(92% 0.04 250);
+  --skyt: oklch(82% 0.08 250);
+  --font-display: "Funnel Display Variable", "Noto Sans Devanagari", system-ui, sans-serif;
+  --font-serif: "Newsreader Variable", "Noto Serif Devanagari", Georgia, serif;
+  --font-hand: "Kalam", "Noto Sans Devanagari", cursive;
+  --shadow: 0 12px 32px oklch(24% 0.07 262 / 0.14), 0 2px 6px oklch(24% 0.07 262 / 0.08);
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --gutter: 20px;
+}
+
+/* One breakpoint, as in the app: the wide layout from 1000px. */
+@media (min-width: 1000px) {
+  :root { --gutter: 80px; }
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; overflow-x: clip; }
+body { margin: 0; overflow-x: clip; background: var(--paper); color: var(--ink); font-family: var(--font-serif); -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+h1, h2, h3, p, ul, figure { margin: 0; padding: 0; }
+img { display: block; }
+:focus-visible { outline: 3px solid var(--sky); outline-offset: 3px; }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 12px 24px; border-radius: 999px; border: 2px solid transparent; font: 700 17px/1 var(--font-display); text-decoration: none; white-space: nowrap; transition: background-color 160ms var(--ease), color 160ms var(--ease); }
+.btn-big { min-height: 56px; padding: 16px 32px; font-size: 19px; }
+.btn-ink { background: var(--ink); color: var(--on-sky); }
+.btn-ink:hover { background: var(--sky); }
+.btn-ink:active { background: var(--ink-2); }
+.btn-line { border-color: var(--rule); color: var(--ink-2); }
+.btn-haldi { background: var(--haldi); color: var(--ink); }
+.btn-haldi:hover { background: var(--on-sky); }
+.btn-light { border-color: var(--on-sky); color: var(--on-sky); }
+.btn[aria-disabled="true"] { pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .btn { transition: none; } html { scroll-behavior: auto; } }
+
+/* Nav */
+.nav { display: flex; align-items: center; justify-content: space-between; padding: 16px var(--gutter); }
+.wordmark { font: 700 30px/1 var(--font-display); letter-spacing: -0.02em; text-decoration: none; }
+.nav-links { display: flex; align-items: center; gap: 32px; }
+.nav-link { display: none; font-size: 18px; color: var(--ink-2); text-decoration: none; }
+.nav-link:hover { color: var(--ink); }
+@media (min-width: 1000px) {
+  .nav { padding-top: 28px; padding-bottom: 28px; }
+  .wordmark { font-size: 36px; }
+  .nav-link { display: inline; }
+}
+
+/* Hero */
+.hero { display: grid; gap: 40px; padding: 16px var(--gutter) 56px; }
+h1, h2 { font-family: var(--font-display); font-weight: 800; letter-spacing: -0.035em; line-height: 1.04; overflow-wrap: anywhere; }
+h1 { font-size: 42px; margin-bottom: 16px; }
+.rust { color: var(--rust); }
+.lede { font-size: 19px; line-height: 1.5; color: var(--ink-2); max-width: 24em; margin-bottom: 24px; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+.actions.center { justify-content: center; }
+.hero-note { display: none; }
+@media (min-width: 1000px) {
+  .hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; align-items: center; padding-top: 40px; padding-bottom: 96px; }
+  h1 { font-size: 72px; margin-bottom: 24px; }
+  .lede { font-size: 22px; margin-bottom: 32px; }
+  .hero-note { display: block; margin-top: 32px; }
+}
+
+.note { font: 300 20px/1.2 var(--font-hand); color: var(--ink-2); }
+.hero-note { font-size: 24px; width: 200px; transform: rotate(-5deg); transform-origin: left center; }
+
+/* Phone screens: real screenshots only. The frame stays when the picture is missing. */
+.phone { position: relative; overflow: hidden; aspect-ratio: 9 / 19.5; border-radius: 9% / 4.2%; background: var(--skyt-tint); box-shadow: var(--shadow); }
+.phone img { width: 100%; height: 100%; object-fit: cover; object-position: top left; }
+.phone.crop { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+
+.fan { position: relative; height: 340px; width: min(350px, 100%); margin: 0 auto; }
+.fan .phone { position: absolute; }
+.fan-mid { left: 26%; top: 2%; width: 48%; z-index: 2; }
+.fan-left { left: 0; top: 19%; width: 32%; transform: rotate(-8deg); }
+.fan-right { right: 0; top: 16%; width: 32%; transform: rotate(8deg); }
+@media (min-width: 1000px) {
+  .fan { height: 680px; width: 100%; margin: 0; }
+  .fan-mid { left: 30%; top: 5%; width: 40%; }
+  .fan-left { top: 18%; width: 30%; }
+  .fan-right { top: 15%; width: 30%; }
+}
+
+/* Features */
+.features { padding: 56px var(--gutter); }
+.features-head { display: grid; gap: 16px; margin-bottom: 32px; }
+.eyebrow { font-size: 13px; letter-spacing: 0.18em; color: var(--ink-2); margin-bottom: 16px; }
+h2 { font-size: 34px; max-width: 10em; }
+.features-lede { font-size: 18px; line-height: 1.5; color: var(--ink-2); max-width: 26em; }
+@media (min-width: 1000px) {
+  .features { padding-top: 96px; padding-bottom: 96px; }
+  .features-head { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 80px; align-items: end; margin-bottom: 48px; }
+  h2 { font-size: 56px; }
+  .features-lede { font-size: 20px; }
+}
+
+.bento { display: grid; gap: 16px; }
+.card { position: relative; overflow: hidden; display: flex; flex-direction: column; min-height: 460px; padding: 28px; border-radius: 28px; }
+.card h3 { font: 700 26px/1.1 var(--font-display); letter-spacing: -0.02em; margin: 20px 0 8px; max-width: 11em; }
+.card > p:not(.note) { font-size: 17px; line-height: 1.4; color: var(--ink-2); max-width: 18em; }
+.card-sun { background: var(--sun-tint); }
+.card-peach { background: var(--peach-tint); }
+.card-leaf { background: var(--leaf-tint); }
+.card-sky { background: var(--skyt-tint); }
+.icon { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; }
+.icon svg { width: 24px; height: 24px; fill: none; stroke: var(--ink); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.icon-sun { background: var(--sun); }
+.icon-peach { background: var(--peach); }
+.icon-leaf { background: var(--leaf); }
+.icon-sky { background: var(--skyt); }
+.media { margin-top: auto; padding-top: 24px; display: flex; justify-content: center; }
+.media .phone { width: 200px; margin-bottom: -28px; }
+.card-note { position: absolute; z-index: 5; right: 20px; bottom: 24px; max-width: 130px; transform: rotate(4deg); }
+.card-sun .card-note { right: auto; left: 20px; bottom: 56px; transform: rotate(-12deg); }
+.card-leaf .card-note { right: auto; left: 20px; bottom: 28px; transform: rotate(-8deg); }
+
+.media-wide { position: relative; align-items: flex-end; gap: 0; }
+.media-wide .phone { width: 184px; z-index: 2; }
+.polaroid { background: var(--on-sky); padding: 8px 8px 20px; border-radius: 4px; box-shadow: var(--shadow); align-self: center; width: 104px; }
+.polaroid img { width: 100%; height: 76px; object-fit: cover; }
+.tilt-r { transform: rotate(-6deg); margin-right: -16px; }
+.tilt-l { transform: rotate(6deg); margin-left: -16px; }
+
+.seasons { list-style: none; margin-top: auto; padding-top: 24px; display: flex; flex-direction: column; align-items: center; }
+.seasons li { position: relative; width: 232px; height: 112px; margin-top: -60px; border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); }
+.seasons li:first-child { margin-top: 0; }
+.seasons img { width: 100%; height: 100%; object-fit: cover; }
+.seasons span { position: absolute; left: 12px; bottom: 8px; font: 700 18px/1 var(--font-display); color: var(--on-sky); text-shadow: 0 1px 8px oklch(24% 0.07 262 / 0.7); }
+.s1 { transform: rotate(-2deg); z-index: 1; }
+.s2 { transform: rotate(1.5deg); z-index: 2; }
+.s3 { transform: rotate(-1deg); z-index: 3; }
+.s4 { transform: rotate(2deg); z-index: 4; }
+
+@media (min-width: 1000px) {
+  .bento { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: 300px 384px; }
+  .card { min-height: 0; }
+  .card h3 { font-size: 28px; }
+  .card-tall { grid-row: 1 / span 2; }
+  .card-tall h3 { font-size: 32px; }
+  .card-wide { grid-column: 2 / span 2; }
+  .card-wide .media { position: absolute; right: 24px; top: 16px; bottom: 0; padding: 0; align-items: flex-start; }
+  .card-wide .phone { width: 184px; margin: 40px 0 0; }
+  .card-wide .card-note { right: auto; left: 396px; bottom: auto; top: 200px; }
+  .card-peach .tilt-r { margin: 0 -24px 0 0; align-self: flex-start; }
+  .card-peach .tilt-l { align-self: flex-end; margin-bottom: 24px; }
+  .seasons li { width: 216px; height: 104px; margin-top: -56px; }
+}
+
+/* One plain line */
+.statement { padding: 40px var(--gutter) 56px; border-top: 1px solid var(--rule); }
+.statement p { font: 700 26px/1.15 var(--font-display); letter-spacing: -0.025em; max-width: 20em; overflow-wrap: anywhere; }
+.statement span { color: var(--ink-2); }
+@media (min-width: 1000px) {
+  .statement { padding-top: 72px; padding-bottom: 96px; }
+  .statement p { font-size: 44px; }
+}
+
+/* Closing band: the sign-in painting */
+.closing { background: var(--sky) url("/paintings/sky.webp") center bottom / cover; }
+.closing-shade { display: flex; flex-direction: column; align-items: center; min-height: 520px; padding: 64px var(--gutter); text-align: center; color: var(--on-sky); background: oklch(24% 0.07 262 / 0.38); }
+.closing h2 { font-size: 42px; max-width: 9em; margin-bottom: 16px; }
+.closing p { font-size: 19px; margin-bottom: 28px; }
+.closing h2, .closing p { text-shadow: 0 2px 14px oklch(24% 0.07 262 / 0.55); }
+@media (min-width: 1000px) {
+  .closing-shade { min-height: 640px; padding-top: 120px; padding-bottom: 120px; }
+  .closing h2 { font-size: 80px; }
+  .closing p { font-size: 24px; margin-bottom: 40px; }
+}
+
+/* Footer */
+.footer { display: flex; flex-direction: column; gap: 20px; padding: 32px var(--gutter) 96px; }
+.footer .wordmark { font-size: 32px; }
+.footer-line { font-size: 16px; color: var(--ink-2); margin-top: 4px; }
+.footer-links { display: flex; gap: 24px; font-size: 17px; color: var(--ink-2); }
+@media (min-width: 1000px) {
+  .footer { flex-direction: row; align-items: center; justify-content: space-between; padding: 48px var(--gutter); }
+}
+
+/* On a phone a Start writing bar stays at the bottom */
+.sticky-bar { position: sticky; bottom: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px var(--gutter); background: var(--paper); border-top: 1px solid var(--rule); }
+.sticky-bar span { font-size: 16px; color: var(--ink-2); }
+.sticky-bar .btn { min-height: 48px; }
+@media (min-width: 1000px) { .sticky-bar { display: none; } .footer { padding-bottom: 48px; } }
