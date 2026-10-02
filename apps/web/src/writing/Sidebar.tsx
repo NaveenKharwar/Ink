@@ -1,7 +1,9 @@
 import type { PieceStatus } from "@ink/schemas";
+import { useEffect, useState } from "react";
+import { groupByYear } from "../lib/seasons";
 import { FadeScroll } from "../ui/FadeScroll";
 import { AccountMenu } from "./AccountMenu";
-import { DocumentIcon, MenuIcon, PencilIcon, PictureIcon, SearchIcon, SeasonIcon } from "./icons";
+import { ChevronIcon, DocumentIcon, MenuIcon, PencilIcon, PictureIcon, SearchIcon, SeasonIcon } from "./icons";
 
 // Which screen is open. "write" is a new page (the only time Write is marked); "piece" is a saved
 // piece, marked by its season instead. Profile has no item of its own, so nothing is marked there.
@@ -37,10 +39,36 @@ const navItem = (phone: boolean) => `box-border flex ${phone ? "h-11" : "h-9"} w
 // Rows are 44px tall on a phone (a thumb), compact on desktop.
 const subItem = (phone: boolean) => `box-border flex ${phone ? "h-11" : "h-[31px]"} w-full cursor-pointer items-center rounded-md border-0`;
 
+const YEARS_KEY = "ink-menu-years";
+
+// The earlier years the writer has opened, remembered on this device.
+function readOpenYears(): string[] {
+  try {
+    const raw = JSON.parse(localStorage.getItem(YEARS_KEY) ?? "[]");
+    return Array.isArray(raw) ? raw.filter((y): y is string => typeof y === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
 // The menu: search, Write, All writing, Pictures and the seasons, with the account at the foot.
 // Desktop: a side sheet from the left edge. Phone: the left side of the sliding track.
 export function Sidebar(props: Props) {
   const { phone = false, name, screen, seasons, activeSeason, activeFilter, counts, onClose, onSearch, onWrite, onAll, onPictures, onSeason, onFilter, onProfile, onSignOut } = props;
+  const [openYears, setOpenYears] = useState(readOpenYears);
+  useEffect(() => {
+    try {
+      localStorage.setItem(YEARS_KEY, JSON.stringify(openYears));
+    } catch {
+      // Storage blocked: the years start folded next time.
+    }
+  }, [openYears]);
+  // Arriving at a season of a folded year (from All writing, a piece, search) opens that year.
+  const activeYear = activeSeason?.split("-")[0];
+  useEffect(() => {
+    if (activeYear) setOpenYears((years) => (years.includes(activeYear) ? years : [...years, activeYear]));
+  }, [activeYear]);
+  const toggleYear = (year: string, open: boolean) => setOpenYears((years) => (open ? years.filter((y) => y !== year) : [...years.filter((y) => y !== year), year]));
 
   return (
     <nav
@@ -133,27 +161,45 @@ export function Sidebar(props: Props) {
           <>
             <div className="mx-1 my-3 h-px shrink-0 bg-line" />
             <div className="px-3 pb-1.5 text-[13px] text-ink-muted">Seasons</div>
-            {seasons.map((s) => {
-              const active = s.key === activeSeason;
+            {groupByYear(seasons).map((group) => {
+              // This year's seasons are always listed. An earlier year is one quiet row that opens in
+              // place (see the effect above: arriving at a season in a folded year opens that year).
+              const open = group.thisYear || openYears.includes(group.year);
               return (
-                <div key={s.key}>
-                  {s.divider && <div className="pt-2.5 pr-3 pb-1 pl-[36px] text-[12px] leading-4 text-ink-muted">{s.divider}</div>}
-                  <button
-                    type="button"
-                    onClick={() => onSeason(s.key)}
-                    aria-current={active ? "true" : undefined}
-                    className={`${subItem(phone)} px-3 text-left text-ink ${focusRing} ${
-                      active ? "bg-surface-hover" : "bg-transparent"
-                    }`}
-                  >
-                    {/* Each season has its small mark in its own colour; the one on screen is marked
-                        like the other active menu items. */}
-                    <span className="flex w-[24px] shrink-0">
-                      <SeasonIcon name={s.key.split("-")[1] ?? ""} />
-                    </span>
-                    <span className={`grow ${active ? "font-semibold" : ""}`}>{s.label}</span>
-                    <span className="text-[13px] text-ink-muted">{s.count}</span>
-                  </button>
+                <div key={group.year}>
+                  {!group.thisYear && (
+                    <button
+                      type="button"
+                      onClick={() => toggleYear(group.year, open)}
+                      aria-expanded={open}
+                      className={`${subItem(phone)} px-3 text-left text-ink-muted hover:text-ink ${focusRing}`}
+                    >
+                      <span className="grow">{group.year}</span>
+                      <span className="mr-2 text-[13px]">{group.items.reduce((n, s) => n + s.count, 0)}</span>
+                      <ChevronIcon up={open} />
+                    </button>
+                  )}
+                  {open &&
+                    group.items.map((s) => {
+                      const active = s.key === activeSeason;
+                      return (
+                        <button
+                          key={s.key}
+                          type="button"
+                          onClick={() => onSeason(s.key)}
+                          aria-current={active ? "true" : undefined}
+                          className={`${subItem(phone)} px-3 text-left text-ink ${focusRing} ${active ? "bg-surface-hover" : "bg-transparent"}`}
+                        >
+                          {/* Each season has its small mark in its own colour; the one on screen is marked
+                              like the other active menu items. */}
+                          <span className="flex w-[24px] shrink-0">
+                            <SeasonIcon name={s.key.split("-")[1] ?? ""} />
+                          </span>
+                          <span className={`grow ${active ? "font-semibold" : ""}`}>{s.label}</span>
+                          <span className="text-[13px] text-ink-muted">{s.count}</span>
+                        </button>
+                      );
+                    })}
                 </div>
               );
             })}
