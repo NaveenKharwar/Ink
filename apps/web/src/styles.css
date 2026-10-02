@@ -3,11 +3,13 @@
 /* Layout sizes, in one place. Desktop: the paper is centred and keeps room on each side for a
    side sheet plus a gap, so a sheet never covers or touches it. Phone: sheets slide on a track. */
 :root {
-  --sheet-width: 290px;
+  /* A side sheet is 290px up to 1448px wide, then grows with the window to 360px (sheetWidth in
+     lib/beside.ts is the same rule). The paper fills what is left between the sheets: 820px at
+     1448px, wider on a bigger screen, its text always in a 640px column. */
+  --sheet-width: clamp(290px, calc(290px + (100vw - 1448px) * 0.15), 360px);
   --sheet-gap: 24px;
   --scrollbar-w: 12px;
-  --paper-max: 820px;
-  --paper-width: min(var(--paper-max), calc(100vw - 2 * (var(--sheet-width) + var(--sheet-gap))));
+  --paper-width: calc(100vw - 2 * (var(--sheet-width) + var(--sheet-gap)));
   --phone-sheet-width: 300px;
   /* The page's side margin, the same on both sides on every screen (writing, All writing,
      Profile). The poem's stanza bar sits inside it, so it must stay wider than the bar and
