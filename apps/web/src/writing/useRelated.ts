@@ -6,6 +6,9 @@ import { onSaved } from "../lib/savedEvents";
 const EMPTY: RelatedResponse = { related: [], forgotten: [], loose: [], looked: false };
 // The panel looks again this long after the writer's last save, so it never shifts while they type.
 const AFTER_SAVE_MS = 8000;
+// Once more after the server has had time to make the piece's vector (it waits for 30 s of quiet),
+// so a new piece stops showing shared-word matches without another save.
+const AFTER_VECTOR_MS = 50000;
 
 export type Related = RelatedResponse & {
   /** False until the first answer arrives (or when there is no saved piece yet). */
@@ -62,16 +65,20 @@ export function useRelated(pieceId: string | null, exists: boolean): Related {
   }, [pieceId, exists, saved, tick]);
 
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const laterTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => {
     if (!pieceId) return;
     const stop = onSaved(pieceId, () => {
       setSaved(true);
       clearTimeout(timer.current);
+      clearTimeout(laterTimer.current);
       timer.current = setTimeout(refresh, AFTER_SAVE_MS);
+      laterTimer.current = setTimeout(refresh, AFTER_VECTOR_MS);
     });
     return () => {
       stop();
       clearTimeout(timer.current);
+      clearTimeout(laterTimer.current);
     };
   }, [pieceId, refresh]);
 

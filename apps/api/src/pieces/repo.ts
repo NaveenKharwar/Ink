@@ -203,9 +203,7 @@ export function pgPiecesRepo(db: pg.Pool): PiecesRepo {
         values.push(value);
         sets.push(`${column} = $${values.length}`);
       }
-      // Only a change to the writing's own flags counts as a touch; marking a piece finished or
-      // reopening it leaves "last edited" alone, so Forgotten does not start over.
-      if (Object.entries(patch).some(([key, value]) => key !== "status" && value !== undefined)) sets.push("updated_at = now()");
+      // None of these change the writing, so "last edited" stays put and Forgotten does not start over.
       const { rows } = await db.query<PieceRow>(
         `update pieces set ${sets.join(", ")}
          where id = $1 and user_id = $2
