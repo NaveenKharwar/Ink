@@ -32,20 +32,20 @@ test("pieces that share words are related, the closest first", () => {
   assert.equal(out.forgotten.length, 0);
 });
 
-test("old pieces are forgotten, closest first, at most two, and never also related", () => {
+test("old pieces close enough are forgotten, closest first, at most two, and never also related", () => {
   const current = piece(A, "The kettle knew my name", "2026-09-29T00:00:00Z");
-  const old = (id: string, text: string, date: string) => piece(id, text, date);
+  const old = (id: string, text: string, date: string, similarity: number) => ({ ...piece(id, text, date), similarity });
   const out = rankRelated(
     current,
     [
-      old("d1", "a long letter about nothing at all that goes on and on for the whole page and past the edge of what anyone would call a line, honestly, and then some", "2025-01-01T00:00:00Z"),
-      old("d2", "the kettle again, again", "2025-02-01T00:00:00Z"),
-      old("d3", "one more old page with no shared words whatsoever, just to fill the shelf up to the brim with paper and dust and patient old ink that nobody has opened", "2024-12-01T00:00:00Z")
+      old("d1", "a long letter about nothing at all that goes on and on for the whole page and past the edge of what anyone would call a line, honestly, and then some", "2025-01-01T00:00:00Z", 0.58),
+      old("d2", "the kettle again, again", "2025-02-01T00:00:00Z", 0.71),
+      old("d3", "one more old page with no shared words whatsoever, just to fill the shelf up to the brim with paper and dust and patient old ink that nobody has opened", "2024-12-01T00:00:00Z", 0.55),
+      old("d4", "an older page still, close but not quite close enough to be brought back from the shelf, however long it has been waiting there in the dark", "2024-11-01T00:00:00Z", 0.5)
     ],
     NOW
   );
-  assert.equal(out.forgotten.length, 2);
-  assert.equal(out.forgotten[0]!.id, "d2");
+  assert.deepEqual(out.forgotten.map((n) => n.id), ["d2", "d1"]);
   assert.ok(!out.related.some((n) => out.forgotten.some((f) => f.id === n.id)));
 });
 
@@ -54,7 +54,7 @@ test("short pieces are loose lines; a blank piece has nothing to be close to", (
   const out = rankRelated(current, [piece(B, "the kettle again, again", "2026-09-01T00:00:00Z")], NOW);
   assert.deepEqual(out.loose.map((n) => n.id), [B]);
   assert.deepEqual(rankRelated(piece(A, "  ", "2026-09-29T00:00:00Z"), [piece(B, "kettle", "2026-09-01T00:00:00Z")], NOW), {
-    related: [], forgotten: [], loose: []
+    related: [], forgotten: [], loose: [], looked: false
   });
 });
 
@@ -75,7 +75,7 @@ test("noise stays out: one-word pieces, copies of this page, repeats, and a page
   assert.deepEqual(out.related, []);
   // Two words is not a few lines yet.
   assert.deepEqual(rankRelated(piece(A, "kettle again", "2026-09-29T00:00:00Z"), [piece(B, "the kettle again, again", "2026-09-01T00:00:00Z")], NOW), {
-    related: [], forgotten: [], loose: []
+    related: [], forgotten: [], loose: [], looked: false
   });
 });
 
@@ -164,4 +164,27 @@ test("close vectors rank first, weak ones are left out, and pieces without a vec
     NOW
   );
   assert.deepEqual(out.related.map((n) => n.id), ["v1", "w1"]);
+});
+
+test("Forgotten and Loose lines need a clearly close match; with nothing close every section is empty", () => {
+  const current = piece(A, "The rain kept the window company", "2026-09-29T00:00:00Z");
+  const near = (id: string, text: string, date: string, similarity: number) => ({ ...piece(id, text, date), similarity });
+  const out = rankRelated(
+    current,
+    [
+      near("o1", "An old page about letters and stamps, long enough not to be a loose line at all, going on and on well past the short limit", "2025-01-01T00:00:00Z", 0.52),
+      near("o2", "An old page about monsoon windows, long enough not to be a loose line at all, going on and on well past the short limit", "2025-02-01T00:00:00Z", 0.6),
+      near("s1", "tin roof, all night", "2026-09-01T00:00:00Z", 0.56),
+      near("s2", "bus tickets, receipts", "2026-09-02T00:00:00Z", 0.47),
+      { ...piece("s3", "the window again", "2026-09-03T00:00:00Z"), similarity: null }
+    ],
+    NOW
+  );
+  assert.deepEqual(out.forgotten.map((n) => n.id), ["o2"]);
+  // s2 clears Related's floor but not Loose's; s3 has no vector yet and shares a word.
+  assert.deepEqual(out.loose.map((n) => n.id), ["s1", "s3"]);
+  assert.equal(out.looked, true);
+
+  const none = rankRelated(current, [near("q1", "An old page about taxes and forms", "2025-01-01T00:00:00Z", 0.4), near("q2", "parking ticket", "2026-09-01T00:00:00Z", 0.3)], NOW);
+  assert.deepEqual(none, { related: [], forgotten: [], loose: [], looked: true });
 });

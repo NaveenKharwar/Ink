@@ -54,7 +54,7 @@ The cutoff is a guess from one archive of about 60 pieces, so it will be retuned
 
 - A word or two gives the model little to work on. For queries like "table" or "sleep" everything scores about 0.45 to 0.5, real matches and noise alike, so no piece clears 0.53 and the group stays empty. Showing nothing is better than showing wrong pieces.
 - A concrete word with real matches ("rain") scores 0.53 to 0.61 for those pieces.
-- Related writing in the editor compares whole pieces with each other, which scores differently, so it has its own, lower cutoff (0.45).
+- Related writing in the editor compares whole pieces with each other, which scores differently, so it has its own, lower cutoff (0.45). Forgotten and Loose lines beside it use the same 0.53 as here, so they show only clearly close pieces and are often empty.
 
 ### Which pieces are left out
 

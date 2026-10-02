@@ -18,6 +18,11 @@ export type Candidate = {
 
 /** Below this a vector match is too weak to call related (soft suggestions only). Retune on real writing. */
 export const MIN_SIMILARITY = 0.45;
+/**
+ * Forgotten and Loose lines are extra, so they need a clearly close match: the same floor as
+ * "Close in meaning" in search. Below it the section is simply empty. Retune on real writing.
+ */
+export const MIN_SIDE_SIMILARITY = 0.53;
 export const RELATED_LIMIT = 5;
 export const FORGOTTEN_LIMIT = 2;
 export const LOOSE_LIMIT = 2;
@@ -59,7 +64,7 @@ const toNote = ({ id, title, text, language, style, createdAt, updatedAt }: Cand
 export function rankRelated(current: Candidate, others: Candidate[], now: Date): RelatedResponse {
   const mine = wordsOf(current.text);
   // A blank or one-word page has nothing to be close to: the panel says "Nothing yet".
-  if (mine.size === 0 || wordCount(current.text) < MIN_WORDS) return { related: [], forgotten: [], loose: [] };
+  if (mine.size === 0 || wordCount(current.text) < MIN_WORDS) return { related: [], forgotten: [], loose: [], looked: false };
 
   // Noise out: pieces too short to be a line, copies of the page being written, and the same words
   // written twice (the newest of those is kept).
@@ -85,10 +90,13 @@ export function rankRelated(current: Candidate, others: Candidate[], now: Date):
 
   const cutoff = now.getTime() - FORGOTTEN_AFTER_DAYS * DAY;
   const isOld = (piece: Candidate) => Date.parse(piece.updatedAt) < cutoff;
+  // Close enough for Forgotten and Loose; a piece without a vector yet needs a shared word, as in Related.
+  const closeEnough = ({ overlap, similarity }: (typeof scored)[number]) =>
+    similarity === null ? overlap > 0 : similarity >= MIN_SIDE_SIMILARITY;
 
   // Forgotten: not opened for a long while, the closest first, then the oldest.
   const forgotten = scored
-    .filter(({ piece }) => isOld(piece))
+    .filter((item) => isOld(item.piece) && closeEnough(item))
     .sort((a, b) => b.score - a.score || a.piece.updatedAt.localeCompare(b.piece.updatedAt))
     .slice(0, FORGOTTEN_LIMIT);
   const taken = new Set(forgotten.map(({ piece }) => piece.id));
@@ -98,7 +106,7 @@ export function rankRelated(current: Candidate, others: Candidate[], now: Date):
 
   // Loose lines: short ones, the closest first, then the newest.
   const loose = rest
-    .filter(isLoose)
+    .filter((item) => isLoose(item) && closeEnough(item))
     .sort((a, b) => b.score - a.score || b.piece.updatedAt.localeCompare(a.piece.updatedAt))
     .slice(0, LOOSE_LIMIT);
   const looseIds = new Set(loose.map(({ piece }) => piece.id));
@@ -111,6 +119,7 @@ export function rankRelated(current: Candidate, others: Candidate[], now: Date):
   return {
     related: related.map(({ piece }) => toNote(piece)),
     forgotten: forgotten.map(({ piece }) => toNote(piece)),
-    loose: loose.map(({ piece }) => toNote(piece))
+    loose: loose.map(({ piece }) => toNote(piece)),
+    looked: true
   };
 }

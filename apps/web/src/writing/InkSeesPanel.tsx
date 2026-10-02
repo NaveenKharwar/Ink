@@ -36,7 +36,8 @@ const linkClass = (phone: boolean) =>
 
 // "Ink sees this too": older writing beside the piece, as plain notes under heading bars. Related
 // (soft blue: it leads to other writing), Forgotten (old pieces not opened for a long while) and
-// Loose lines (short ones). The panel is the only card; nothing inside it is boxed.
+// Loose lines (short ones). The panel is the only card; nothing inside it is boxed. A section with
+// nothing close is not shown at all.
 export function InkSeesPanel({ phone = false, shown = true, chosen = null, pieceId, exists, seasonSet, reading = [], onClose, onOpenBeside }: Props) {
   const found = useRelated(pieceId, exists);
   const dismissals = useDismissals(pieceId);
@@ -163,7 +164,7 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
         )}
         {empty && (
           <p className="m-0 px-4 py-5 leading-[1.5] text-ink-muted">
-            Nothing yet. Once you have written a few lines, related writing appears here.
+            {found.looked ? "Nothing close to this yet." : "Nothing yet. Once you have written a few lines, related writing appears here."}
           </p>
         )}
         {sections.map((section, index) => {
