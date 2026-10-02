@@ -63,6 +63,13 @@ export function useDesktopLayout({ menuPreferred, setMenuPreferred, panelOpen, p
     stop: useCallback(() => dispatch({ type: "clear" }), []),
     openMenu,
     closeMenu,
-    toggleMenu
+    toggleMenu,
+    /** The panel is wanted but has stepped aside for the reading paper. */
+    panelSteppedAside: layout.panelSteppedAside,
+    panelVisible: layout.panelVisible,
+    /** Asking for the panel while it has stepped aside: it takes the room, the reading paper waits. */
+    showPanel: useCallback(() => dispatch({ type: "panelOpened" }), []),
+    /** The panel was closed: a reading paper that was waiting comes back. */
+    panelClosed: useCallback(() => dispatch({ type: "panelClosed" }), [])
   };
 }

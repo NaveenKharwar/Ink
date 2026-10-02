@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { desktopLayout, EDGE, menuWouldTakeReadingRoom, PAGE_IDEAL, PAGE_MIN, READER_GAP, READER_IDEAL, READER_MIN, sheetRoom, sheetWidth } from "./beside";
+import { desktopLayout, EDGE, menuWouldTakeReadingRoom, PANEL_ASIDE_BELOW, PAGE_IDEAL, PAGE_MIN, READER_GAP, READER_IDEAL, READER_MIN, sheetRoom, sheetWidth } from "./beside";
 
 const base = { panelOpen: true, reading: true, readerAway: false };
 
@@ -8,6 +8,8 @@ test("when nothing is being read, the writer's menu choice stands and there is n
   assert.deepEqual(desktopLayout({ viewport: 1229, menuPreferred: true, panelOpen: true, reading: false, readerAway: false }), {
     menuVisible: true,
     menuSteppedAside: false,
+    panelVisible: true,
+    panelSteppedAside: false,
     reading: null
   });
 });
@@ -50,7 +52,7 @@ test("from 1200 up the reading paper always fits, and the papers never overlap o
 });
 
 test("the papers grow with the room and fill it, so a big screen has no wide empty gap", () => {
-  const sizes = [1200, 1400, 1600, 1800, 2000, 2560].map((viewport) => {
+  const sizes = [1280, 1400, 1600, 1800, 2000, 2560].map((viewport) => {
     const r = desktopLayout({ ...base, viewport, menuPreferred: false }).reading!;
     return r.page + r.reader;
   });
@@ -95,4 +97,29 @@ test("asking for the menu while reading: it takes the room whenever both would n
   assert.equal(menuWouldTakeReadingRoom(2200, true), false);
   // With the panel closed there is more room.
   assert.equal(menuWouldTakeReadingRoom(1441, false), false);
+});
+
+test("on a narrow window the panel steps aside while reading, so the papers get its room", () => {
+  const open = (viewport: number) => desktopLayout({ ...base, viewport, menuPreferred: false });
+  const narrow = open(1200);
+  assert.equal(narrow.panelVisible, false);
+  assert.equal(narrow.panelSteppedAside, true);
+  assert.equal(narrow.reading!.right, EDGE);
+  assert.equal(narrow.reading!.left, EDGE);
+  // That room goes to the papers: more than they had with the panel beside them.
+  const withPanel = desktopLayout({ ...base, viewport: PANEL_ASIDE_BELOW, menuPreferred: false });
+  assert.equal(withPanel.panelVisible, true);
+  assert.ok(narrow.reading!.page + narrow.reading!.reader > withPanel.reading!.page + withPanel.reading!.reader - 80);
+  assert.ok(narrow.reading!.page > 600, `page ${narrow.reading!.page}`);
+  // A writer who closed the panel sees nothing step aside; a wide window keeps it.
+  assert.equal(desktopLayout({ ...base, panelOpen: false, viewport: 1200, menuPreferred: false }).panelSteppedAside, false);
+  assert.equal(open(1500).panelSteppedAside, false);
+  // Not reading: the panel is just as the writer left it.
+  assert.equal(desktopLayout({ viewport: 1200, menuPreferred: false, panelOpen: true, reading: false, readerAway: false }).panelVisible, true);
+});
+
+test("asking for the panel on a narrow window gives it the room: the reading paper waits", () => {
+  const out = desktopLayout({ ...base, viewport: 1200, menuPreferred: false, readerAway: true });
+  assert.equal(out.panelVisible, true);
+  assert.equal(out.reading, null);
 });

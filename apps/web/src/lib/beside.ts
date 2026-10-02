@@ -23,6 +23,10 @@ export const sheetWidth = (viewport: number) => Math.round(Math.min(SHEET_MAX, M
 /** A side sheet and its gap: the room a paper keeps clear on a side that has one. */
 export const sheetRoom = (viewport: number) => sheetWidth(viewport) + SHEET_GAP;
 export const READER_GAP = 24;
+/** Below this window width, while reading, the menu and "Ink sees this too" both step aside, so the page and the reading paper keep room for their words. */
+export const PANEL_ASIDE_BELOW = 1280;
+/** A paper narrower than this gets smaller side margins, so its words keep as much width as possible. */
+export const NARROW_PAPER = 620;
 /** Room kept clear at a window edge that has no sheet, so a paper never touches the window. */
 export const EDGE = 24;
 export const PAGE_MIN = 480;
@@ -46,6 +50,10 @@ export type DesktopLayout = {
   menuVisible: boolean;
   /** The menu is wanted but has stepped aside for the reading paper. */
   menuSteppedAside: boolean;
+  /** "Ink sees this too" is on screen. */
+  panelVisible: boolean;
+  /** The panel is wanted but has stepped aside for the reading paper (narrow windows only). */
+  panelSteppedAside: boolean;
   /** Set while reading: the widths of the two papers and the room kept clear on each side. */
   reading: { page: number; reader: number; left: number; right: number } | null;
 };
@@ -71,15 +79,35 @@ function share(viewport: number, menuShown: boolean, panelOpen: boolean) {
 }
 
 export function desktopLayout({ viewport, menuPreferred, panelOpen, reading, readerAway }: DesktopLayoutInput): DesktopLayout {
-  if (!reading) return { menuVisible: menuPreferred, menuSteppedAside: false, reading: null };
+  if (!reading) return { menuVisible: menuPreferred, menuSteppedAside: false, panelVisible: panelOpen, panelSteppedAside: false, reading: null };
+
+  // A narrow window has no room for a sheet beside the reading paper: both sheets step aside while
+  // reading and the papers take their room. Asking for a sheet then gives it the room and the
+  // reading paper waits (tabs kept); closing the sheet brings the paper back.
+  if (viewport < PANEL_ASIDE_BELOW) {
+    if (readerAway && (menuPreferred || panelOpen)) {
+      return { menuVisible: menuPreferred, menuSteppedAside: false, panelVisible: panelOpen, panelSteppedAside: false, reading: null };
+    }
+    const alone = share(viewport, false, false);
+    return {
+      menuVisible: false,
+      menuSteppedAside: menuPreferred,
+      panelVisible: false,
+      panelSteppedAside: panelOpen,
+      reading: { page: alone.page, reader: alone.reader, left: alone.left, right: alone.right }
+    };
+  }
+
   const withMenu = menuPreferred ? share(viewport, true, panelOpen) : null;
-  if (withMenu?.fits) return { menuVisible: true, menuSteppedAside: false, reading: withMenu };
+  if (withMenu?.fits) return { menuVisible: true, menuSteppedAside: false, panelVisible: panelOpen, panelSteppedAside: false, reading: withMenu };
   // No room for both, and the writer asked for the menu: it wins, the reading paper waits.
-  if (menuPreferred && readerAway) return { menuVisible: true, menuSteppedAside: false, reading: null };
+  if (menuPreferred && readerAway) return { menuVisible: true, menuSteppedAside: false, panelVisible: panelOpen, panelSteppedAside: false, reading: null };
   const without = share(viewport, false, panelOpen);
   return {
     menuVisible: false,
     menuSteppedAside: menuPreferred,
+    panelVisible: panelOpen,
+    panelSteppedAside: false,
     reading: { page: without.page, reader: without.reader, left: without.left, right: without.right }
   };
 }
@@ -90,5 +118,5 @@ export function desktopLayout({ viewport, menuPreferred, panelOpen, reading, rea
  * whatever its remembered state was.
  */
 export function menuWouldTakeReadingRoom(viewport: number, panelOpen: boolean): boolean {
-  return !share(viewport, true, panelOpen).fits;
+  return viewport < PANEL_ASIDE_BELOW || !share(viewport, true, panelOpen).fits;
 }

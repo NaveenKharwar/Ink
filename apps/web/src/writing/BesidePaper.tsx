@@ -19,6 +19,8 @@ type Props = {
   seasonSet: SeasonSet;
   /** Phone: one piece at a time, as its own screen; desktop: tabs beside the page. */
   phone?: boolean;
+  /** The reading paper is narrow (a small window): smaller side margins keep more width for the words. */
+  narrow?: boolean;
   onSelect: (id: string) => void;
   onClose: (id: string) => void;
   onOpenPiece: (id: string) => void;
@@ -49,7 +51,7 @@ function usePiece(id: string): Load {
 }
 
 // An older piece, read only: the same look as the page (its own writing style), nothing to edit.
-function Reader({ piece, tab, seasonSet, phone }: { piece: Piece; tab: BesideTab; seasonSet: SeasonSet; phone: boolean }) {
+function Reader({ piece, tab, seasonSet, phone, narrow }: { piece: Piece; tab: BesideTab; seasonSet: SeasonSet; phone: boolean; narrow: boolean }) {
   const extensions = useMemo(
     () =>
       writingExtensions.map((extension) =>
@@ -59,7 +61,7 @@ function Reader({ piece, tab, seasonSet, phone }: { piece: Piece; tab: BesideTab
   );
   const editor = useEditor({ extensions, content: piece.content, editable: false, editorProps: { attributes: { "aria-label": tab.title } } }, [piece.id]);
   return (
-    <FadeScroll scrollbar="visible" className={`ink-editor style-${piece.style ?? "poem"} grow pb-8 ${phone ? "px-6 pt-8" : "px-10 pt-9"}`}>
+    <FadeScroll scrollbar="visible" className={`ink-editor style-${piece.style ?? "poem"} grow pb-8 ${phone || narrow ? "px-6" : "px-10"} ${phone ? "pt-8" : "pt-9"}`}>
       {/* The same reading column as the page, so a wide screen never makes very long lines. */}
       <div className="mx-auto max-w-[640px]">
         <span className="mb-5 block truncate text-[12px] leading-4 font-medium tracking-[0.08em] text-ink-muted uppercase">
@@ -74,7 +76,7 @@ function Reader({ piece, tab, seasonSet, phone }: { piece: Piece; tab: BesideTab
 // A second paper next to the page (desktop), or the next screen after the panel (phone): an older
 // piece to read while writing. Browser-style tabs on top, one per piece, each with its own ✕;
 // closing the last one closes the paper. Never opens by itself.
-export function BesidePaper({ tabs, active, seasonSet, phone = false, onSelect, onClose, onOpenPiece }: Props) {
+export function BesidePaper({ tabs, active, seasonSet, phone = false, narrow = false, onSelect, onClose, onOpenPiece }: Props) {
   const current = tabs.find((t) => t.id === active) ?? tabs[0]!;
   const load = usePiece(current.id);
 
@@ -178,7 +180,7 @@ export function BesidePaper({ tabs, active, seasonSet, phone = false, onSelect, 
         )}
       </div>
 
-      {load.status === "ready" && <Reader key={load.piece.id} piece={load.piece} tab={current} seasonSet={seasonSet} phone={phone} />}
+      {load.status === "ready" && <Reader key={load.piece.id} piece={load.piece} tab={current} seasonSet={seasonSet} phone={phone} narrow={narrow} />}
       {load.status === "loading" && (
         <div className="flex grow items-center justify-center">
           <ScreenLoader label="Opening" />
@@ -188,7 +190,7 @@ export function BesidePaper({ tabs, active, seasonSet, phone = false, onSelect, 
         <p className="m-0 grow px-6 py-8 text-ink-muted">Couldn’t open this piece. Check your connection.</p>
       )}
 
-      <div className={`flex h-14 shrink-0 items-center justify-between border-t border-line text-[13px] text-ink-muted ${phone ? "px-6" : "px-10"}`}>
+      <div className={`flex h-14 shrink-0 items-center justify-between border-t border-line text-[13px] text-ink-muted ${phone || narrow ? "px-6" : "px-10"}`}>
         <span>Read only</span>
         <button
           type="button"

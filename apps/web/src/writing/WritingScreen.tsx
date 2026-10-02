@@ -5,7 +5,8 @@ import { sync } from "../lib/localSave";
 import { ALL_WRITING, PICTURES, PROFILE, parseRoute, pieceAddress } from "../lib/route";
 import { deviceTimeZone, groupBySeason, resolveSeasonSet, seasonText } from "../lib/seasons";
 import { supabase } from "../lib/supabase";
-import { READER_GAP } from "../lib/beside";
+import { NARROW_PAPER, READER_GAP, sheetRoom } from "../lib/beside";
+import { useViewportWidth } from "../lib/useViewportWidth";
 import { useWide } from "../lib/layout";
 import { AllWriting } from "./AllWriting";
 import { BesidePaper } from "./BesidePaper";
@@ -94,6 +95,10 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
   // being read: all of it in one place, see useDesktopLayout.
   const shell = useDesktopLayout({ menuPreferred: menuOpen, setMenuPreferred: setMenuOpen, panelOpen, pieceId: openPieceId });
   const { tabs } = shell;
+  // A narrow paper gets smaller side margins so its words keep as much width as they can.
+  const viewport = useViewportWidth();
+  const pageWidth = shell.layout.reading ? shell.layout.reading.page : viewport - 2 * sheetRoom(viewport);
+  const narrowPage = pageWidth < NARROW_PAPER;
   const menuVisible = wide ? shell.menuVisible : menuOpen;
   const swipeStart = useRef<number | null>(null);
   const library = useLibrary();
@@ -348,8 +353,15 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
         wide={wide}
         season={pieceSeason(view.target.id)}
         showMenuButton={!wide || !menuVisible}
-        panelOpen={wide ? panelOpen : pos === "panel"}
-        onPanelToggle={() => (wide ? setPanelOpen((open) => !open) : setPos(pos === "panel" ? "page" : "panel"))}
+        panelOpen={wide ? shell.panelVisible : pos === "panel"}
+        onPanelToggle={() => {
+          if (!wide) setPos(pos === "panel" ? "page" : "panel");
+          else if (shell.panelSteppedAside) shell.showPanel();
+          else {
+            if (panelOpen) shell.panelClosed();
+            setPanelOpen((open) => !open);
+          }
+        }}
         onMenu={onMenu}
       />
     );
@@ -362,7 +374,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
   const visible = useVisibleArea(!wide);
 
   if (wide) {
-    const panelShown = panelOpen && view.kind === "piece";
+    const panelShown = shell.panelVisible && view.kind === "piece";
     const reading = shell.layout.reading;
     return (
       <div className="fixed inset-0 bg-ground">
@@ -372,13 +384,14 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
         >
           <main
             className="relative box-border flex h-full shrink-0 flex-col overflow-hidden border-x border-line bg-surface"
-            style={{ width: reading ? reading.page : "var(--paper-width)" }}
+            style={{ width: reading ? reading.page : "var(--paper-width)", ...(narrowPage ? ({ "--page-gutter": "24px" } as React.CSSProperties) : null) }}
           >
             {page}
           </main>
           {reading && (
             <div className="h-full shrink-0" style={{ marginLeft: READER_GAP, width: reading.reader }}>
               <BesidePaper
+                narrow={reading.reader < 400}
                 tabs={tabs}
                 active={shell.active ?? tabs[0]!.id}
                 seasonSet={seasonSet}
@@ -409,7 +422,10 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
             exists={view.kind === "piece" && view.target.open}
             seasonSet={seasonSet}
             reading={shell.layout.reading ? shell.tabs.map((t) => t.id) : []}
-            onClose={() => setPanelOpen(false)}
+            onClose={() => {
+              shell.panelClosed();
+              setPanelOpen(false);
+            }}
             onOpenBeside={openBeside}
           />
         </div>
