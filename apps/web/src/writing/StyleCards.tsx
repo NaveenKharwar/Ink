@@ -1,6 +1,5 @@
 import type { PieceStyle } from "@ink/schemas";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { prefersReducedMotion } from "../lib/motion";
 
 /**
  * Each style's art, in layers of the same size so they line up: the still `painting`, and an
@@ -50,11 +49,22 @@ function StyleArt({ art }: { art: Art }) {
 // How long the cards take to fade once the writer starts (instant with reduced motion).
 const FADE_MS = 300;
 
+type Props = {
+  shown: boolean;
+  wide: boolean;
+  /** Writes in this style now (a tapped card, or the tapped stage). */
+  onPick: (style: PieceStyle) => void;
+  /** Narrow rows: the style the stage shows, and so the one typing makes. */
+  selected: PieceStyle;
+  onSelect: (style: PieceStyle) => void;
+};
+
 // Under "Start writing…" on a blank page: the three ways to write. Picking one sets the
-// piece's style; typing straight away makes a poem. The cards fade out after the first word.
-// Each is tall and unboxed: its frame melts into the page toward the top, and it stays quiet
-// until hovered, when it shows fully and its painting moves gently (see .style-card).
-export function StyleCards({ shown, wide, onPick }: { shown: boolean; wide: boolean; onPick: (style: PieceStyle) => void }) {
+// piece's style; typing straight away writes in the selected one (a poem until another is
+// chosen). The cards fade out after the first word. Each is tall and unboxed: its frame melts
+// into the page toward the top, and it stays quiet until hovered, when it shows fully and its
+// painting moves gently (see .style-card).
+export function StyleCards({ shown, wide, onPick, selected, onSelect }: Props) {
   // Stay in the page while fading out, then leave it.
   const [present, setPresent] = useState(shown);
   useEffect(() => {
@@ -63,7 +73,8 @@ export function StyleCards({ shown, wide, onPick }: { shown: boolean; wide: bool
     return () => clearTimeout(t);
   }, [shown]);
   // Three cards in a row need room; where there isn't enough (a phone up to about 500px wide)
-  // they become a stack to swipe. Decided by measuring the space, not by screen size.
+  // they become one painting on a stage with three small windows. Decided by measuring the
+  // space, not by screen size.
   const box = useRef<HTMLDivElement>(null);
   const [narrow, setNarrow] = useState(!wide);
   useLayoutEffect(() => {
@@ -81,7 +92,7 @@ export function StyleCards({ shown, wide, onPick }: { shown: boolean; wide: bool
   return (
     <div ref={box} role="group" aria-label="How do you want to write?" inert={!shown} className={`${wide ? "mt-12" : "mt-8"} ${fade}`}>
       {narrow ? (
-        <StyleDeck onPick={onPick} />
+        <StyleStage selected={selected} onSelect={onSelect} onPick={onPick} />
       ) : (
         <div className={`grid grid-cols-3 ${wide ? "gap-5" : "gap-3"}`}>
           {STYLES.map((s) => (
@@ -96,7 +107,7 @@ export function StyleCards({ shown, wide, onPick }: { shown: boolean; wide: bool
 }
 
 // The narrowest the three cards may sit side by side: about a 500px screen less the page's
-// margins. Anything narrower gets the swipeable stack.
+// margins. Anything narrower gets the stage and windows.
 const ROW_MIN_PX = 460;
 
 const cardClass =
@@ -114,113 +125,57 @@ function StyleCardFace({ style }: { style: (typeof STYLES)[number] }) {
   );
 }
 
-// How far a card must be dragged to count as a swipe, and how long it takes to fly away.
-const SWIPE_PX = 70;
-const FLY_MS = 260;
-
-// Phone: the three styles as a stack of cards, like the dating apps. The top card is full size
-// with its painting moving; the other two peek out behind it. Swipe it either way and it flies
-// off to the back of the stack; tap it to write in that style. Arrow keys do the same.
-function StyleDeck({ onPick }: { onPick: (style: PieceStyle) => void }) {
-  const [top, setTop] = useState(0);
-  const [dx, setDx] = useState(0);
-  const [flying, setFlying] = useState<0 | 1 | -1>(0);
-  const start = useRef<{ x: number; y: number } | null>(null);
-  const [dragging, setDragging] = useState(false);
-  const moved = useRef(false);
-
-  const next = (direction: 1 | -1) => {
-    if (flying) return;
-    setFlying(direction);
-    setTimeout(() => {
-      setTop((t) => (t + 1) % STYLES.length);
-      setFlying(0);
-      setDx(0);
-    }, prefersReducedMotion() ? 0 : FLY_MS);
-  };
-
-  // The page underneath slides between menu, page and panel on a swipe too; the deck keeps its
-  // own swipes to itself.
-  const onPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    start.current = { x: e.clientX, y: e.clientY };
-    moved.current = false;
-    setDragging(true);
-    e.currentTarget.setPointerCapture(e.pointerId);
-  };
-  const onPointerMove = (e: React.PointerEvent) => {
-    if (!start.current || flying) return;
-    const x = e.clientX - start.current.x;
-    if (Math.abs(x) > 6) moved.current = true;
-    setDx(x);
-  };
-  const onPointerUp = (e: React.PointerEvent) => {
-    e.stopPropagation();
-    if (!start.current) return;
-    start.current = null;
-    setDragging(false);
-    if (Math.abs(dx) > SWIPE_PX) next(dx > 0 ? 1 : -1);
-    else setDx(0);
-  };
-
-  const order = STYLES.map((_, i) => STYLES[(top + i) % STYLES.length]!);
+// Narrow rows: today's card is the stage, one painting whole with its own motion playing; the
+// three styles sit under it as small arched windows, each a whole painting, always in view.
+// Tapping a window crossfades the stage to that style; tapping the stage writes in it.
+function StyleStage({ selected, onSelect, onPick }: Pick<Props, "selected" | "onSelect" | "onPick">) {
   return (
     <div>
       <div className="relative h-[320px]">
-        {[...order].reverse().map((s) => {
-          const depth = order.indexOf(s);
-          const isTop = depth === 0;
-          const x = isTop ? (flying ? flying * 420 : dx) : 0;
-          // Like the dating apps: the next card waits right under the top one, a little smaller,
-          // and grows to full size as the top card is dragged away, so there's never a gap.
-          const pull = flying ? 1 : Math.min(1, Math.abs(dx) / SWIPE_PX);
-          const size = depth === 0 ? 1 : depth === 1 ? 0.94 + 0.06 * pull : 0.94;
+        {STYLES.map((s) => {
+          const on = s.value === selected;
           return (
             <button
               key={s.value}
               type="button"
-              tabIndex={isTop ? 0 : -1}
-              aria-hidden={!isTop || undefined}
-              aria-label={isTop ? `${s.label}: ${s.hint}. Swipe for another style.` : undefined}
-              onClick={() => {
-                if (isTop && !moved.current) onPick(s.value);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
-                  e.preventDefault();
-                  next(e.key === "ArrowRight" ? 1 : -1);
-                }
-              }}
-              onPointerDown={isTop ? onPointerDown : undefined}
-              onPointerMove={isTop ? onPointerMove : undefined}
-              onPointerUp={isTop ? onPointerUp : undefined}
-              onPointerCancel={isTop ? onPointerUp : undefined}
-              style={{
-                translate: `${x}px 0px`,
-                rotate: `${isTop ? x * 0.05 : 0}deg`,
-                scale: `${size}`,
-                opacity: isTop && flying ? 0 : 1,
-                zIndex: STYLES.length - depth,
-                // Following the finger: no easing. The card that just flew off jumps straight to the
-                // back of the stack (hidden behind the others) instead of sliding back across.
-                transition:
-                  dragging || depth === STYLES.length - 1
-                    ? "none"
-                    : `translate ${FLY_MS}ms ease, rotate ${FLY_MS}ms ease, scale ${FLY_MS}ms ease, opacity ${FLY_MS}ms ease`
-              }}
-              // A solid page-coloured base: the painting fades out at the top, and the card underneath
-              // must not show through there.
-              className={`${cardClass} absolute inset-x-0 top-0 h-[320px] origin-center touch-pan-y bg-surface ${isTop ? "is-live" : ""}`}
+              tabIndex={on ? 0 : -1}
+              aria-hidden={!on || undefined}
+              aria-label={`Write a ${s.label.toLowerCase()}: ${s.hint}`}
+              onClick={() => onPick(s.value)}
+              className={`${cardClass} absolute inset-0 transition-opacity duration-[420ms] motion-reduce:transition-none ${
+                on ? "is-live opacity-100" : "pointer-events-none opacity-0"
+              }`}
             >
               <StyleCardFace style={s} />
             </button>
           );
         })}
       </div>
-      <div aria-hidden="true" className="mt-3 flex justify-center gap-1.5">
-        {STYLES.map((s, i) => (
-          <span key={s.value} className={`h-1.5 w-1.5 rounded-full ${i === top ? "bg-ink" : "bg-line-strong"}`} />
-        ))}
+      <div className="mt-4 grid grid-cols-3">
+        {STYLES.map((s) => {
+          const on = s.value === selected;
+          return (
+            <button
+              key={s.value}
+              type="button"
+              aria-pressed={on}
+              onClick={() => onSelect(s.value)}
+              className={`flex min-h-11 cursor-pointer flex-col items-center gap-2 border-0 bg-transparent px-0 pt-1 pb-0 font-display text-[15px] transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+                on ? "text-ink" : "text-ink-muted"
+              }`}
+            >
+              <span
+                aria-hidden="true"
+                className={`block h-[90px] w-[72px] overflow-hidden rounded-t-[36px] rounded-b-lg outline-accent transition-[opacity,outline-width] duration-200 motion-reduce:transition-none ${
+                  on ? "opacity-100 outline-2 outline-offset-[3px]" : "opacity-[.72] outline-0"
+                }`}
+              >
+                <img src={s.art.painting} alt="" className="block h-full w-full object-cover" />
+              </span>
+              {s.label}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
