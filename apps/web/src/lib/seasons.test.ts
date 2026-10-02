@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { groupBySeason, resolveSeasonSet, seasonPainting, seasonPlace, seasonSetFor, seasonText } from "./seasons.ts";
+import { groupBySeason, groupByYear, resolveSeasonSet, seasonPainting, seasonPlace, seasonSetFor, seasonText } from "./seasons.ts";
 
 const d = (iso: string) => new Date(iso);
 const place = (iso: string, tz: string) => {
@@ -81,4 +81,13 @@ test("a set the writer chose wins over the time zone", () => {
 test("each season has its painting, by the name in the group key", () => {
   assert.equal(seasonPainting("2025-Monsoon"), "/seasons/monsoon.webp");
   assert.equal(seasonPainting("2026-Winter"), "/seasons/winter.webp");
+});
+
+test("the menu's seasons group by year; this year is the run without a divider", () => {
+  const s = (key: string, divider: string | null = null) => ({ key, divider });
+  const groups = groupByYear([s("2026-Monsoon"), s("2026-Winter"), s("2025-Autumn", "— 2025 —"), s("2025-Summer"), s("2024-Winter", "— 2024 —")]);
+  assert.deepEqual(groups.map((g) => [g.year, g.thisYear, g.items.length]), [["2026", true, 2], ["2025", false, 2], ["2024", false, 1]]);
+  // No writing yet this year: every group is an earlier year.
+  assert.deepEqual(groupByYear([s("2025-Autumn", "— 2025 —")]).map((g) => g.thisYear), [false]);
+  assert.deepEqual(groupByYear([]), []);
 });

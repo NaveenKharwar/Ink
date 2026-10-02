@@ -137,3 +137,24 @@ export function groupBySeason<T extends { createdAt: string }>(
   }
   return groups;
 }
+
+export type YearGroup<T> = { year: string; thisYear: boolean; items: T[] };
+
+/**
+ * The menu's seasons grouped by year. `groupBySeason` puts a divider before the first season of
+ * each earlier year and none on this year's, so a divider starts a new year and the run before the
+ * first divider is this year (when there is writing from this year at all).
+ */
+export function groupByYear<T extends { key: string; divider: string | null }>(seasons: T[]): YearGroup<T>[] {
+  const years: YearGroup<T>[] = [];
+  for (const season of seasons) {
+    const year = season.key.split("-")[0] ?? "";
+    const last = years[years.length - 1];
+    if (last && last.year === year) {
+      last.items.push(season);
+      continue;
+    }
+    years.push({ year, thisYear: season.divider === null, items: [season] });
+  }
+  return years;
+}
