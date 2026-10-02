@@ -48,6 +48,10 @@ export const pieces = {
   // Writing goes through sync: it merges with what other devices wrote.
   sync: (id: string, input: SyncPieceInput) =>
     request<SyncPieceOutput>(`/api/pieces/${encodeURIComponent(id)}/sync`, { method: "POST", body: JSON.stringify(input) }),
+  // Only the writer's own answer to "Done with this?" sets this; it does not count as editing the piece.
+  setStatus: async (id: string, status: "draft" | "finished") => {
+    await send(`/api/pieces/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify({ status }) });
+  },
   library: () => request<LibraryResponse>("/api/library"),
   get: (id: string) => request<Piece>(`/api/pieces/${encodeURIComponent(id)}`),
   // What "Ink sees this too" shows beside a piece. "Not related" hides a piece beside this one for good.

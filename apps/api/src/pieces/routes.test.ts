@@ -48,7 +48,7 @@ function memoryRepo(): PiecesRepo {
       if (!row || row.userId !== userId) return null;
       const merged = mergeYdoc(row.ydoc, request.update, request.stateVector);
       if (request.update) {
-        Object.assign(row, { ydoc: merged.state, content: merged.content, text: merged.text, ...merged.meta });
+        Object.assign(row, { ydoc: merged.state, content: merged.content, text: merged.text, status: "draft", ...merged.meta });
         row.updatedAt = tick();
       }
       return { piece: summary(strip(row)), update: merged.diff, stateVector: merged.stateVector };
@@ -92,7 +92,7 @@ function memoryRepo(): PiecesRepo {
     async update(userId, id, patch) {
       const row = rows.get(id);
       if (!row || row.userId !== userId) return null;
-      const next = { ...row, ...patch, title: patch.title === "" ? null : patch.title === undefined ? row.title : patch.title, updatedAt: tick() };
+      const next = { ...row, ...patch, title: patch.title === "" ? null : patch.title === undefined ? row.title : patch.title, updatedAt: Object.keys(patch).every((key) => key === "status") ? row.updatedAt : tick() };
       rows.set(id, next as Row);
       return strip(next as Row);
     }
@@ -311,6 +311,32 @@ test("title and language are part of the document; patch changes only the flags"
   }
   const created = await ctx.app.inject({ method: "POST", url: "/api/pieces", headers: ctx.as(ASHA), payload: {} });
   assert.equal(created.statusCode, 404);
+});
+
+test("marking a piece finished keeps its last-edited time; writing in it again reopens it", async () => {
+  const ctx = await setup();
+  const id = randomUUID();
+  const d = device();
+  d.write(["The last train left without us"]);
+  const { known } = await syncFrom(ctx, ASHA, id, d, null);
+  const before = (await ctx.app.inject({ method: "GET", url: `/api/pieces/${id}`, headers: ctx.as(ASHA) })).json();
+  assert.equal(before.status, "draft");
+
+  const patched = await ctx.app.inject({ method: "PATCH", url: `/api/pieces/${id}`, headers: ctx.as(ASHA), payload: { status: "finished" } });
+  assert.equal(patched.json().status, "finished");
+  assert.equal(patched.json().updatedAt, before.updatedAt);
+
+  const reopened = await ctx.app.inject({ method: "PATCH", url: `/api/pieces/${id}`, headers: ctx.as(ASHA), payload: { status: "draft" } });
+  assert.equal(reopened.json().updatedAt, before.updatedAt);
+  await ctx.app.inject({ method: "PATCH", url: `/api/pieces/${id}`, headers: ctx.as(ASHA), payload: { status: "finished" } });
+
+  // Reading it again (a sync with nothing to send) leaves it finished.
+  const read = await ctx.app.inject({ method: "POST", url: `/api/pieces/${id}/sync`, headers: ctx.as(ASHA), payload: { stateVector: toBase64(Y.encodeStateVector(d.ydoc)) } });
+  assert.equal(read.json().piece.status, "finished");
+
+  d.write(["I kept the ticket anyway"]);
+  const wrote = await syncFrom(ctx, ASHA, id, d, known);
+  assert.equal(wrote.body.piece.status, "draft");
 });
 
 test("two devices renaming the same piece: each setting merges on its own", async () => {

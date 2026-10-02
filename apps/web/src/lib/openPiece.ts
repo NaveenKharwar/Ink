@@ -8,6 +8,8 @@ export type OpenedPiece = {
   state: Uint8Array;
   // What the server was known to have, so the next send only carries what is newer.
   serverVector: Uint8Array | null;
+  // The writer already said it is finished (see FinishedPrompt); false while the server is not known.
+  finished: boolean;
 };
 
 export type OpenResult = { status: "ok"; piece: OpenedPiece } | { status: "missing" } | { status: "error" };
@@ -52,6 +54,10 @@ export async function openPiece(
 
   return {
     status: "ok",
-    piece: { state, serverVector: server ? fromBase64(server.stateVector) : (local?.serverVector ?? null) }
+    piece: {
+      state,
+      serverVector: server ? fromBase64(server.stateVector) : (local?.serverVector ?? null),
+      finished: server?.piece?.status === "finished"
+    }
   };
 }

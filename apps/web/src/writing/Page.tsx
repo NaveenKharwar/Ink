@@ -20,6 +20,8 @@ import { usePictureAdder } from "./usePictureAdder";
 import { usePieceMeta } from "./usePieceMeta";
 import { usePieceSave } from "./usePieceSave";
 import { FadeScroll } from "../ui/FadeScroll";
+import { FinishedPrompt } from "./FinishedPrompt";
+import { useFinishedPrompt } from "./useFinishedPrompt";
 
 type Props = {
   pieceId: string;
@@ -53,6 +55,7 @@ export function Page({ pieceId, userId, opened, wide, season, showMenuButton, pa
   const save = usePieceSave(pieceId, userId, ydoc, { initial: opened ?? undefined, onStart });
   const [words, setWords] = useState(0);
   const [empty, setEmpty] = useState(true);
+  const finishing = useFinishedPrompt(pieceId, ydoc, { finished: opened?.finished ?? false, words, save: save.state });
   const { title, language, style: chosen, cover, setTitle, setLanguage, setStyle, setCover } = usePieceMeta(ydoc);
   // A piece nobody has given a style reads as a poem.
   const style: PieceStyle = chosen ?? "poem";
@@ -161,6 +164,7 @@ export function Page({ pieceId, userId, opened, wide, season, showMenuButton, pa
           <div className="mx-auto max-w-[640px]">
             <EditorContent editor={editor} />
             <LinkCard editor={editor} />
+            <FinishedPrompt spot={finishing.spot} failed={finishing.failed} onToggle={finishing.toggle} />
             <StyleCards shown={showCards} wide={wide} onPick={changeStyle} />
           </div>
         </div>

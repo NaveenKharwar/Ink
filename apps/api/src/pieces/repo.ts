@@ -113,6 +113,8 @@ export function pgPiecesRepo(db: pg.Pool): PiecesRepo {
           set("style", merged.meta.style);
           set("search_text", searchText(merged.meta.title, merged.text, isLoose(merged.meta.language)));
           set("picture_ids", merged.pictureIds, "::uuid[]");
+          // Writing in a finished piece reopens it: the writer has no control for that.
+          sets.push("status = 'draft'");
         }
         if (sets.length) sets.push("updated_at = now()");
 
@@ -201,8 +203,11 @@ export function pgPiecesRepo(db: pg.Pool): PiecesRepo {
         values.push(value);
         sets.push(`${column} = $${values.length}`);
       }
+      // Only a change to the writing's own flags counts as a touch; marking a piece finished or
+      // reopening it leaves "last edited" alone, so Forgotten does not start over.
+      if (Object.entries(patch).some(([key, value]) => key !== "status" && value !== undefined)) sets.push("updated_at = now()");
       const { rows } = await db.query<PieceRow>(
-        `update pieces set ${[...sets, "updated_at = now()"].join(", ")}
+        `update pieces set ${sets.join(", ")}
          where id = $1 and user_id = $2
          returning ${COLUMNS}`,
         values
