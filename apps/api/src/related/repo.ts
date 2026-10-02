@@ -75,21 +75,30 @@ export function pgRelatedRepo(db: pg.Pool): RelatedRepo {
       const current = toCandidate(mine[0]);
       if (!mine[0].include_in_memory) return { current, others: [] };
       // Similarity is null when either piece has no vector yet; those fall back to shared words.
+      // Candidates are the most recently edited pieces AND the closest ones by vector, so a very old
+      // piece (what Forgotten is for) is still looked at in a large archive. Without a vector the
+      // closest set is empty and only recent pieces are looked at, as before.
       const cols = "p.id, p.title, left(p.text, 5000) as text, p.language, p.style, p.include_in_memory, p.created_at, p.updated_at";
       const { rows } = await db.query<Row>(
-        `select ${cols},
-                1 - (e.embedding operator(extensions.<=>) c.embedding) as similarity,
-                f.shown_at, f.shown_for
-         from pieces p
-         left join forgotten_shown f on f.piece_id = p.id and f.user_id = $1
-         left join piece_embeddings e on e.piece_id = p.id and e.user_id = $1
-         left join piece_embeddings c on c.piece_id = $2 and c.user_id = $1
-         where p.user_id = $1 and p.id <> $2 and p.include_in_memory and btrim(p.text) <> ''
-           and not exists (
-             select 1 from related_dismissals d where d.user_id = $1 and d.piece_id = $2 and d.other_id = p.id
-           )
-         order by p.updated_at desc, p.id desc
-         limit $3`,
+        `with base as (
+           select ${cols},
+                  1 - (e.embedding operator(extensions.<=>) c.embedding) as similarity,
+                  f.shown_at, f.shown_for
+           from pieces p
+           left join forgotten_shown f on f.piece_id = p.id and f.user_id = $1
+           left join piece_embeddings e on e.piece_id = p.id and e.user_id = $1
+           left join piece_embeddings c on c.piece_id = $2 and c.user_id = $1
+           where p.user_id = $1 and p.id <> $2 and p.include_in_memory and btrim(p.text) <> ''
+             and not exists (
+               select 1 from related_dismissals d where d.user_id = $1 and d.piece_id = $2 and d.other_id = p.id
+             )
+         ),
+         recent as (select * from base order by updated_at desc, id desc limit $3),
+         closest as (select * from base where similarity is not null order by similarity desc, id limit $3)
+         select * from recent
+         union
+         select * from closest
+         order by updated_at desc, id desc`,
         [userId, pieceId, CANDIDATE_LIMIT]
       );
       return { current, others: rows.map(toCandidate) };
