@@ -192,7 +192,7 @@ export function Toolbar({ editor, style, wide, words, language, onLanguage, save
       node: (
         <span className="flex items-center gap-2 whitespace-nowrap text-ink-muted">
           {save === "refused" ? <NoteIcon /> : <CheckCircleIcon saving={save === "saving"} />}
-          {wide ? <span>{SAVE_SHORT[save]}</span> : <span className="sr-only">{SAVE_SHORT[save]}</span>}
+          {wide || save === "refused" ? <span>{SAVE_SHORT[save]}</span> : <span className="sr-only">{SAVE_SHORT[save]}</span>}
         </span>
       )
     });
