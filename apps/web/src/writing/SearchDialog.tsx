@@ -23,6 +23,8 @@ type Props = {
 };
 
 const WAIT_MS = 200;
+// Meaning waits for a longer pause: every request wakes the embedder, and it is the slow half.
+const MEANING_WAIT_MS = 500;
 // Words matches shown before "Show more", so "Close in meaning" is always on screen without scrolling.
 const WORDS_SHOWN = 4;
 
@@ -63,8 +65,8 @@ export function SearchDialog({ wide, recent, seasonSet, onOpen, onClose }: Props
     }
     setFailed(false);
     const abort = new AbortController();
+    const toResult = (r: SearchResult): Result => ({ id: r.id, first: r.firstLine, match: r.match, season: season(r.createdAt), style: styleName(r.style) });
     const timer = setTimeout(() => {
-      const toResult = (r: SearchResult): Result => ({ id: r.id, first: r.firstLine, match: r.match, season: season(r.createdAt), style: styleName(r.style) });
       pieces.search(query, abort.signal, "words").then(
         (res) => {
           setFound(res.items.map(toResult));
@@ -75,7 +77,9 @@ export function SearchDialog({ wide, recent, seasonSet, onOpen, onClose }: Props
         },
         () => !abort.signal.aborted && setFailed(true)
       );
-      // Meaning is the slow half. If it fails the writer simply keeps the words.
+    }, WAIT_MS);
+    // If meaning fails the writer simply keeps the words.
+    const meaningTimer = setTimeout(() => {
       pieces.search(query, abort.signal, "close").then(
         (res) => {
           setCloseFound(res.close.map(toResult));
@@ -83,9 +87,10 @@ export function SearchDialog({ wide, recent, seasonSet, onOpen, onClose }: Props
         },
         () => !abort.signal.aborted && setCloseFor(query)
       );
-    }, WAIT_MS);
+    }, MEANING_WAIT_MS);
     return () => {
       clearTimeout(timer);
+      clearTimeout(meaningTimer);
       abort.abort();
     };
   }, [query]);

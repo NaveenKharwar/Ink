@@ -11,12 +11,12 @@ export function httpEmbeddingProvider(baseUrl: string, model = "BAAI/bge-m3", ti
   const url = new URL("/embed", baseUrl);
   return {
     model,
-    async embed(texts) {
+    async embed(texts, signal) {
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ texts }),
-        signal: AbortSignal.timeout(timeoutMs)
+        signal: signal ? AbortSignal.any([AbortSignal.timeout(timeoutMs), signal]) : AbortSignal.timeout(timeoutMs)
       });
       if (!res.ok) throw new Error(`Embedder answered ${res.status}.`);
       const { vectors } = responseSchema.parse(await res.json());
