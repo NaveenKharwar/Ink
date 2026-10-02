@@ -1,0 +1,19 @@
+meta {
+  name: Privacy: another writer undoes my dismissal
+  type: http
+  seq: 7
+}
+
+delete {
+  url: {{baseUrl}}/api/pieces/{{pieceId}}/related/{{otherPieceId}}/dismissed
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  As the second writer: expect 404, and nothing changes for you. Run "Not related" as yourself first, so there is a dismissal to undo; afterwards, as yourself, the dismissed piece must still be gone from "What Ink sees beside a piece".
+}

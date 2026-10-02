@@ -15,9 +15,10 @@ TEST_EMAIL=
 TEST_PASSWORD=
 SECOND_EMAIL=
 SECOND_PASSWORD=
+EXPIRED_TOKEN=
 ```
 
-`TEST_*` is your everyday test user. `SECOND_*` is a different, confirmed user. You only need them when you want to check that one writer can't see another writer's things.
+`TEST_*` is your everyday test user. `SECOND_*` is a different, confirmed user. You only need them when you want to check that one writer can't see another writer's things. `EXPIRED_TOKEN` is an old token (copy one from an earlier sign-in and wait an hour), for the expired-token check.
 
 Start the API from the repo root, in your own terminal:
 

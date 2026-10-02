@@ -2,6 +2,7 @@ vars:pre-request {
   baseUrl: http://localhost:3001
   pieceId: 3f0c7a52-8b1e-4d2a-9c3e-5a6b7c8d9e01
   otherPieceId: 5e2b9c14-7d3a-4f68-a1b0-c4d8e6f20a17
+  secondPieceId: b0ed4901-0bb4-4592-93f4-7c6de1ce4890
   pictureId: 7a1d2e3f-4b5c-4d6e-8f70-81a2b3c4d5e6
 }
 
@@ -15,6 +16,7 @@ docs {
   All the requests use the piece in pieceId (set above); change it to start clean.
   For the privacy check: run "1 Sign in / Get a token (second user)" and then run "Get the piece" or a sync with the same pieceId: expect 404.
   Pictures the same: as the second user, "Get the picture" with the same pictureId must answer 404.
+  Related the same: as the second user, run the "Privacy:" requests in "5 Related" (secondPieceId is the second user's own piece).
 
   Each request's Docs tab says what to expect.
 }

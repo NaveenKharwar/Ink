@@ -1,0 +1,27 @@
+meta {
+  name: Privacy: another writer writes a similar piece
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/api/pieces/{{secondPieceId}}/sync
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "update": "AgG6tOjoAwCE6QcyB2tpdGNoZW4L6QcABwEHZGVmYXVsdAMJcGFyYWdyYXBoBwDpBwAGBADpBwEVVGhlIGtldHRsZSBjbGlja3Mgb2Zmh+kHAQMJaGFyZEJyZWFrh+kHFwYEAOkHGBVhbmQgZm9yIGEgc2Vjb25kIHRoZSCB6QctBYfpBxgDCWhhcmRCcmVha4fpBzMGBADpBzQNcmVtZW1iZXJzIHlvdSgBBG1ldGEIbGFuZ3VhZ2UBdwJlbgHpBwEuBQ==",
+    "stateVector": "AA=="
+  }
+}
+
+docs {
+  As the second writer: creates a piece of theirs, under the id in {{secondPieceId}}, that is close to yours but not a copy ("kitchen" where yours says "house"), so a leak would rank your pieces first. An exact copy would not do: the panel drops copies, which would hide a leak.
+  Expect 200 and `piece.text` ending in "remembers you". Then run the next request.
+}

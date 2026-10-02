@@ -1,0 +1,20 @@
+meta {
+  name: Privacy: another writer's panel never shows mine
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/api/pieces/{{secondPieceId}}/related
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  As the second writer, after "another writer writes a similar piece". Expect 200. No note in related, forgotten or loose may have the id {{pieceId}} or {{otherPieceId}}: those are the first writer's, and their words are almost the same. If the second writer has no other pieces, all three lists are empty, and any note at all is a leak.
+  Then run "1 Sign in / Get a token" to go back to your own account.
+}

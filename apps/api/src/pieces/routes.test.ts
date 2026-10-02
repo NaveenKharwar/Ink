@@ -157,6 +157,19 @@ test("every pieces route needs a valid token", async () => {
   assert.equal(health.statusCode, 200);
 });
 
+test("the log never keeps what the writer searched for", async () => {
+  const lines: string[] = [];
+  const repo = memoryRepo();
+  const app = await buildApp({
+    repo, related: memoryRelatedRepo(repo), pictures: { store: memoryPictureStore(), repo: memoryPicturesRepo() }, verify,
+    logger: { write: (line) => void lines.push(line) }
+  });
+  const res = await app.inject({ method: "GET", url: "/api/search?q=missing%20you", headers: { authorization: `Bearer token-${ASHA}` } });
+  assert.equal(res.statusCode, 200);
+  const log = lines.join("");
+  assert.match(log, /"url":"\/api\/search"/);
+  assert.doesNotMatch(log, /missing/);
+});
 
 type App = Awaited<ReturnType<typeof setup>>;
 

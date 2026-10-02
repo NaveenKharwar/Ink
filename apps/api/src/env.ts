@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  // Unset means production: certificate checks and no API docs. `pnpm dev` sets development.
+  NODE_ENV: z.enum(["development", "test", "production"]).default("production"),
   PORT: z.coerce.number().int().positive().default(3001),
   DATABASE_URL: z.string().url(),
   // Path to the database's CA certificate (PEM). Required in production.
