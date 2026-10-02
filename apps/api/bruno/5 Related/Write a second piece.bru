@@ -1,0 +1,28 @@
+meta {
+  name: Write a second piece
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/pieces/{{otherPieceId}}/sync
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "update": "AQrpBwAHAQdkZWZhdWx0AwlwYXJhZ3JhcGgHAOkHAAYEAOkHARVUaGUga2V0dGxlIGNsaWNrcyBvZmaH6QcBAwloYXJkQnJlYWuH6QcXBgQA6QcYGmFuZCBmb3IgYSBzZWNvbmQgdGhlIGhvdXNlh+kHGAMJaGFyZEJyZWFrh+kHMwYEAOkHNA1yZW1lbWJlcnMgeW91KAEEbWV0YQhsYW5ndWFnZQF3AmVuAA==",
+    "stateVector": "AA=="
+  }
+}
+
+docs {
+  Creates a second piece of yours, under the id in {{otherPieceId}}, with the same words as the first one, so the two are related.
+  Run it as the first user, after "Write a piece (first sync)". The requests below that need a second piece of yours (Not related, Undo not related and the privacy check on dismissing) use this id.
+  To start clean, change otherPieceId in collection.bru.
+}
