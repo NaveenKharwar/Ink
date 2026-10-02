@@ -274,18 +274,21 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
     return item ? seasonText(new Date(item.createdAt), new Date(), timeZone, seasonSet) : "Now";
   };
 
-  // The menu's dot marks the season on screen: the one All writing is narrowed to, or the open
-  // piece's season (a piece not in the list yet is new, so it belongs to Now).
+  // One mark at a time. A saved piece is marked by the season it lives in (All writing, narrowed to
+  // a season, marks that season). A new page that is not saved yet marks Write instead, and so
+  // does nothing else; until the library has loaded a piece is not known to be new, so nothing is marked.
+  const pieceSaved = openPieceId !== null && library.items ? library.items.some((i) => i.id === openPieceId) : null;
   const menuSeason =
     view.kind === "all"
       ? view.season
-      : openPieceId
-        ? (groups?.find((g) => g.items.some((i) => i.id === openPieceId)) ?? groups?.find((g) => g.label === "Now"))?.key ?? null
+      : pieceSaved
+        ? (groups?.find((g) => g.items.some((i) => i.id === openPieceId))?.key ?? null)
         : null;
+  const menuScreen = view.kind === "piece" ? (pieceSaved === false ? ("write" as const) : ("piece" as const)) : view.kind;
 
   const sidebarProps = {
     name: account.penName ?? account.email,
-    screen: view.kind === "piece" ? ("write" as const) : view.kind,
+    screen: menuScreen,
     seasons,
     activeSeason: menuSeason,
     activeFilter,

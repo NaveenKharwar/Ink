@@ -3,8 +3,9 @@ import { FadeScroll } from "../ui/FadeScroll";
 import { AccountMenu } from "./AccountMenu";
 import { DocumentIcon, MenuIcon, PencilIcon, PictureIcon, SearchIcon, SeasonIcon } from "./icons";
 
-// Which screen is open; Profile has no item of its own in the menu, so nothing is marked there.
-export type Screen = "write" | "all" | "pictures" | "profile";
+// Which screen is open. "write" is a new page (the only time Write is marked); "piece" is a saved
+// piece, marked by its season instead. Profile has no item of its own, so nothing is marked there.
+export type Screen = "write" | "piece" | "all" | "pictures" | "profile";
 
 export type SeasonLink = { key: string; label: string; divider: string | null; count: number };
 
@@ -32,7 +33,9 @@ type Props = {
 };
 
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
-const navItem = `box-border flex h-9 w-full cursor-pointer items-center gap-3 rounded-md border-0 px-3 text-left text-ink ${focusRing}`;
+const navItem = (phone: boolean) => `box-border flex ${phone ? "h-11" : "h-9"} w-full cursor-pointer items-center gap-3 rounded-md border-0 px-3 text-left text-ink ${focusRing}`;
+// Rows are 44px tall on a phone (a thumb), compact on desktop.
+const subItem = (phone: boolean) => `box-border flex ${phone ? "h-11" : "h-[31px]"} w-full cursor-pointer items-center rounded-md border-0`;
 
 // The menu: search, Write, All writing, Pictures and the seasons, with the account at the foot.
 // Desktop: a side sheet from the left edge. Phone: the left side of the sliding track.
@@ -53,20 +56,20 @@ export function Sidebar(props: Props) {
             type="button"
             onClick={onClose}
             aria-label="Close menu"
-            className={`flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-ink ${focusRing}`}
+            className={`relative flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-ink ${phone ? "before:absolute before:-inset-1.5 before:content-['']" : ""} ${focusRing}`}
           >
             <MenuIcon />
           </button>
           <div>
             <div className="font-display text-[25px] leading-[25px] font-medium">Ink</div>
-            <div className="mt-1 text-[10px] leading-3 text-ink-muted">Write. Remember. Rediscover.</div>
+            <div className="mt-1 text-[12px] leading-4 text-ink-muted">Write. Remember. Rediscover.</div>
           </div>
         </div>
 
         <button
           type="button"
           onClick={onSearch}
-          className={`box-border flex h-[38px] w-full shrink-0 cursor-pointer items-center gap-3 rounded-md border-0 bg-ground pr-2.5 pl-3 text-left text-ink ${focusRing}`}
+          className={`box-border flex ${phone ? "h-11" : "h-[38px]"} w-full shrink-0 cursor-pointer items-center gap-3 rounded-md border-0 bg-ground pr-2.5 pl-3 text-left text-ink ${focusRing}`}
         >
           <SearchIcon />
           <span className="grow">Search</span>
@@ -78,7 +81,7 @@ export function Sidebar(props: Props) {
             type="button"
             onClick={onWrite}
             aria-current={screen === "write" ? "page" : undefined}
-            className={`${navItem} ${screen === "write" ? "bg-surface-hover font-semibold" : "bg-transparent"}`}
+            className={`${navItem(phone)} ${screen === "write" ? "bg-surface-hover font-semibold" : "bg-transparent"}`}
           >
             <PencilIcon />
             Write
@@ -93,7 +96,7 @@ export function Sidebar(props: Props) {
           type="button"
           onClick={onAll}
           aria-current={screen === "all" && !activeSeason && !activeFilter ? "page" : undefined}
-          className={`${navItem} ${screen === "all" && !activeSeason && !activeFilter ? "bg-surface-hover font-semibold" : "bg-transparent"}`}
+          className={`${navItem(phone)} ${screen === "all" && !activeSeason && !activeFilter ? "bg-surface-hover font-semibold" : "bg-transparent"}`}
         >
           <DocumentIcon />
           All writing
@@ -107,7 +110,7 @@ export function Sidebar(props: Props) {
               type="button"
               onClick={() => onFilter(status)}
               aria-current={active ? "page" : undefined}
-              className={`box-border flex h-[31px] w-full cursor-pointer items-center rounded-md border-0 pr-3 pl-[41px] text-left text-ink ${focusRing} ${
+              className={`${subItem(phone)} pr-3 pl-[41px] text-left text-ink ${focusRing} ${
                 active ? "bg-surface-hover" : "bg-transparent"
               }`}
             >
@@ -120,7 +123,7 @@ export function Sidebar(props: Props) {
           type="button"
           onClick={onPictures}
           aria-current={screen === "pictures" ? "page" : undefined}
-          className={`${navItem} ${screen === "pictures" ? "bg-surface-hover font-semibold" : "bg-transparent"}`}
+          className={`${navItem(phone)} ${screen === "pictures" ? "bg-surface-hover font-semibold" : "bg-transparent"}`}
         >
           <PictureIcon size={17} />
           Pictures
@@ -139,7 +142,7 @@ export function Sidebar(props: Props) {
                     type="button"
                     onClick={() => onSeason(s.key)}
                     aria-current={active ? "true" : undefined}
-                    className={`box-border flex h-[31px] w-full cursor-pointer items-center rounded-md border-0 px-3 text-left text-ink ${focusRing} ${
+                    className={`${subItem(phone)} px-3 text-left text-ink ${focusRing} ${
                       active ? "bg-surface-hover" : "bg-transparent"
                     }`}
                   >
@@ -159,7 +162,7 @@ export function Sidebar(props: Props) {
       </FadeScroll>
 
       <div className="shrink-0 pt-3">
-        <AccountMenu name={name} onProfile={onProfile} onSignOut={onSignOut} />
+        <AccountMenu phone={phone} name={name} onProfile={onProfile} onSignOut={onSignOut} />
       </div>
     </nav>
   );
