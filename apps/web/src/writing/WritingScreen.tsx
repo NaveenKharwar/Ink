@@ -475,6 +475,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
           <InkSeesPanel
             key={openPieceId ?? "none"}
             phone
+            shown={pos === "panel"}
             pieceId={openPieceId}
             exists={view.kind === "piece" && view.target.open}
             seasonSet={seasonSet}

@@ -1,5 +1,5 @@
 import type { RelatedNote } from "@ink/schemas";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { noteLabel, seasonColorVar } from "../lib/related";
 import { deviceTimeZone, type SeasonSet } from "../lib/seasons";
 import { ChevronIcon, CloseIcon } from "./icons";
@@ -18,6 +18,8 @@ type Props = {
   exists: boolean;
   seasonSet: SeasonSet;
   onClose: () => void;
+  /** Phone: the panel is the screen on show (it slides in and out of view without unmounting). */
+  shown?: boolean;
   /** The pieces open in the reading paper right now (desktop, while it is on screen). */
   reading?: string[];
   /** Reads an older piece beside the page (desktop) or as the next screen (phone). */
@@ -32,13 +34,21 @@ const linkClass = `cursor-pointer border-0 border-b-[1.5px] border-dotted border
 // "Ink sees this too": older writing beside the piece, as plain notes under heading bars. Related
 // (soft blue: it leads to other writing), Forgotten (old pieces not opened for a long while) and
 // Loose lines (short ones). The panel is the only card; nothing inside it is boxed.
-export function InkSeesPanel({ phone = false, pieceId, exists, seasonSet, reading = [], onClose, onOpenBeside }: Props) {
+export function InkSeesPanel({ phone = false, shown = true, pieceId, exists, seasonSet, reading = [], onClose, onOpenBeside }: Props) {
   const found = useRelated(pieceId, exists);
   const dismissals = useDismissals(pieceId);
   const [selected, setSelected] = useState<string | null>(null);
   const [folded, setFolded] = useState<Record<string, boolean>>({});
   const [showAll, setShowAll] = useState(false);
   const timeZone = deviceTimeZone();
+  const panel = useRef<HTMLElement>(null);
+
+  // Coming back to the panel (the phone's reader closes), bring the note that was read into the
+  // middle of the screen: it stays chosen, so the writer sees which one it was.
+  useEffect(() => {
+    if (!phone || !shown) return;
+    panel.current?.querySelector('[aria-pressed="true"]')?.scrollIntoView({ block: "center", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  }, [phone, shown]);
 
   const seen = (note: RelatedNote) => dismissals.state[note.id] !== "gone";
   const alive = (note: RelatedNote) => !dismissals.state[note.id];
@@ -61,8 +71,10 @@ export function InkSeesPanel({ phone = false, pieceId, exists, seasonSet, readin
           reading={reading.includes(n.id)}
           onSelect={() => setSelected(n.id)}
           onOpenBeside={() => {
-            // The words move to the reading paper: nothing here stays chosen or faded.
-            setSelected(null);
+            // Desktop: the words move to the reading paper beside the page, so nothing here stays
+            // chosen or faded. Phone: the reader is a screen of its own, and coming back the note
+            // stays chosen (its dash, the others muted): that is how the writer sees what they just read.
+            if (!phone) setSelected(null);
             onOpenBeside(n);
           }}
           onDismiss={() => {
@@ -109,6 +121,7 @@ export function InkSeesPanel({ phone = false, pieceId, exists, seasonSet, readin
 
   return (
     <aside
+      ref={panel}
       aria-label="Ink sees this too"
       data-tether="panel"
       className={`box-border flex h-full shrink-0 flex-col overflow-hidden bg-surface ${
