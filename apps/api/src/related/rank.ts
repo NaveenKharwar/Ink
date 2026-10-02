@@ -23,6 +23,8 @@ export const FORGOTTEN_LIMIT = 2;
 export const LOOSE_LIMIT = 2;
 export const FORGOTTEN_AFTER_DAYS = 180;
 export const LOOSE_MAX_CHARS = 160;
+/** Fewer words than this is not a line yet: it is not shown as a note, and a piece this short has no notes. */
+export const MIN_WORDS = 3;
 
 const DAY = 24 * 60 * 60 * 1000;
 const COMMON = new Set(["that", "this", "with", "from", "have", "were", "they", "them", "then", "than", "what", "when", "will", "your", "into", "just", "like", "there", "their", "about", "which", "would", "could"]);
@@ -37,6 +39,15 @@ function wordsOf(text: string): Set<string> {
   return out;
 }
 
+function wordCount(text: string): number {
+  return (text.match(/[\p{L}\p{M}]+/gu) ?? []).length;
+}
+
+/** The words only, in lower case: "Rain" and "rain." are the same line. */
+function sameness(text: string): string {
+  return (text.toLowerCase().match(/[\p{L}\p{M}\p{N}]+/gu) ?? []).join(" ");
+}
+
 const toNote = ({ id, title, text, language, style, createdAt, updatedAt }: Candidate): RelatedNote => ({
   id, title, lines: openingLines(text), language, style, createdAt, updatedAt
 });
@@ -47,9 +58,24 @@ const toNote = ({ id, title, text, language, style, createdAt, updatedAt }: Cand
  */
 export function rankRelated(current: Candidate, others: Candidate[], now: Date): RelatedResponse {
   const mine = wordsOf(current.text);
-  if (mine.size === 0) return { related: [], forgotten: [], loose: [] };
+  // A blank or one-word page has nothing to be close to: the panel says "Nothing yet".
+  if (mine.size === 0 || wordCount(current.text) < MIN_WORDS) return { related: [], forgotten: [], loose: [] };
 
-  const scored = others.map((piece) => {
+  // Noise out: pieces too short to be a line, copies of the page being written, and the same words
+  // written twice (the newest of those is kept).
+  const mineSame = sameness(current.text);
+  const seen = new Set<string>();
+  const candidates = [...others]
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    .filter((piece) => {
+      if (wordCount(piece.text) < MIN_WORDS) return false;
+      const same = sameness(piece.text);
+      if (same === mineSame || seen.has(same)) return false;
+      seen.add(same);
+      return true;
+    });
+
+  const scored = candidates.map((piece) => {
     let overlap = 0;
     for (const word of wordsOf(piece.text)) if (mine.has(word)) overlap += 1;
     const similarity = piece.similarity ?? null;

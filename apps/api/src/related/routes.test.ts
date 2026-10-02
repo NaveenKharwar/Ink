@@ -58,6 +58,27 @@ test("short pieces are loose lines; a blank piece has nothing to be close to", (
   });
 });
 
+test("noise stays out: one-word pieces, copies of this page, repeats, and a page too short to compare", () => {
+  const current = piece(A, "The kettle knew my name", "2026-09-29T00:00:00Z");
+  const out = rankRelated(
+    current,
+    [
+      piece("n1", "sdadsad", "2026-09-01T00:00:00Z"),
+      piece("n2", "kettle", "2026-09-02T00:00:00Z"),
+      piece("c1", "the kettle knew my name.", "2026-09-03T00:00:00Z"),
+      piece("r1", "A kettle clicks off again", "2026-09-04T00:00:00Z"),
+      piece("r2", "a kettle clicks off, again!", "2026-09-05T00:00:00Z")
+    ],
+    NOW
+  );
+  assert.deepEqual(out.loose.map((n) => n.id), ["r2"]);
+  assert.deepEqual(out.related, []);
+  // Two words is not a few lines yet.
+  assert.deepEqual(rankRelated(piece(A, "kettle again", "2026-09-29T00:00:00Z"), [piece(B, "the kettle again, again", "2026-09-01T00:00:00Z")], NOW), {
+    related: [], forgotten: [], loose: []
+  });
+});
+
 test("Devanagari words count too", () => {
   const current = piece(A, "बारिश में टीन की छत बोलती रही", "2026-09-29T00:00:00Z");
   const other = piece(B, "छत पर बारिश की आवाज़ रात भर सुनता रहा, और सोचता रहा कि कितनी बातें हैं जो अब तक अनकही रह गई हैं, कितने ख़त हैं जो भेजे नहीं गए, कितने नाम हैं जिन्हें आवाज़ नहीं मिली", "2026-09-01T00:00:00Z");
