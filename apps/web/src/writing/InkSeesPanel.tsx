@@ -35,7 +35,7 @@ const linkClass = (phone: boolean) =>
   `relative cursor-pointer border-0 border-b-[1.5px] border-dotted border-accent bg-transparent p-0 text-[14px] text-accent ${phone ? "before:absolute before:-inset-x-3 before:-inset-y-[14px] before:content-['']" : ""} ${focus}`;
 
 // "Ink sees this too": older writing beside the piece, as plain notes under heading bars. Related
-// (soft blue: it leads to other writing), Forgotten (old pieces not opened for a long while) and
+// (soft blue: it leads to other writing), Forgotten (old pieces not edited for a long while) and
 // Loose lines (short ones). The panel is the only card; nothing inside it is boxed. A section with
 // nothing close is not shown at all.
 export function InkSeesPanel({ phone = false, shown = true, chosen = null, pieceId, exists, seasonSet, reading = [], onClose, onOpenBeside }: Props) {
