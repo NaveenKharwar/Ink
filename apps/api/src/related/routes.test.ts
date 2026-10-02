@@ -50,6 +50,27 @@ test("old pieces close enough are forgotten, closest first, at most two, and nev
   assert.ok(!out.related.some((n) => out.forgotten.some((f) => f.id === n.id)));
 });
 
+test("Forgotten shows never-shown pieces first and rests a shown piece, except beside the piece it was shown for", () => {
+  const current = piece(A, "The kettle knew my name", "2026-09-29T00:00:00Z");
+  const old = (id: string, date: string, similarity: number, shownAt: string | null = null, shownFor: string | null = null) => ({
+    ...piece(id, `old page ${id} that goes on well past the edge of any line, long enough to be no loose thing at all, only a page`, date),
+    similarity, shownAt, shownFor
+  });
+  const recent = "2026-09-20T00:00:00Z";
+  const long = "2026-07-01T00:00:00Z";
+  const others = [
+    old("d1", "2025-01-01T00:00:00Z", 0.9, long),
+    old("d2", "2025-02-01T00:00:00Z", 0.6),
+    old("d3", "2025-03-01T00:00:00Z", 0.7, recent, B),
+    old("d4", "2025-04-01T00:00:00Z", 0.55)
+  ];
+  // d3 rests (shown 10 days ago for another piece); d1 was shown long ago, so it ranks after the unseen ones.
+  assert.deepEqual(rankRelated(current, others, NOW).forgotten.map((n) => n.id), ["d2", "d4"]);
+  // Beside the piece it was shown for, d3 stays, so the notes do not change while the writer keeps working.
+  assert.deepEqual(rankRelated(current, others.map((o) => (o.id === "d3" ? { ...o, shownFor: A } : o)), NOW).forgotten.map((n) => n.id), ["d2", "d4"]);
+  assert.deepEqual(rankRelated(current, others.filter((o) => o.id !== "d2" && o.id !== "d4"), NOW).forgotten.map((n) => n.id), ["d1"]);
+});
+
 test("short pieces are loose lines; a blank piece has nothing to be close to", () => {
   const current = piece(A, "The kettle knew my name", "2026-09-29T00:00:00Z");
   const out = rankRelated(current, [piece(B, "the kettle again, again", "2026-09-01T00:00:00Z")], NOW);
@@ -100,6 +121,7 @@ function stubRepo() {
       if (!mine.has(`${userId}|${pieceId}`)) return null;
       return { current: piece(A, "The kettle knew my name", "2026-09-29T00:00:00Z"), others: [piece(B, "the kettle again, again", "2026-09-01T00:00:00Z")] };
     },
+    async markShown() {},
     async dismiss(userId, pieceId, otherId) {
       if (!mine.has(`${userId}|${pieceId}`) || !mine.has(`${userId}|${otherId}`)) return false;
       dismissed.push(`${pieceId}>${otherId}`);

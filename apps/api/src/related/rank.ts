@@ -14,6 +14,9 @@ export type Candidate = {
   updatedAt: string;
   /** Cosine similarity to the current piece. Absent when either has no vector yet. */
   similarity?: number | null;
+  /** When Forgotten last returned this piece, and the piece the writer was looking at then. */
+  shownAt?: string | null;
+  shownFor?: string | null;
 };
 
 /** Below this a vector match is too weak to call related (soft suggestions only). Retune on real writing. */
@@ -27,6 +30,8 @@ export const RELATED_LIMIT = 5;
 export const FORGOTTEN_LIMIT = 2;
 export const LOOSE_LIMIT = 2;
 export const FORGOTTEN_AFTER_DAYS = 180;
+/** A piece Forgotten has shown rests this long before it can come back (beside another piece). */
+export const FORGOTTEN_REST_DAYS = 30;
 export const LOOSE_MAX_CHARS = 160;
 /** Fewer words than this is not a line yet: it is not shown as a note, and a piece this short has no notes. */
 export const MIN_WORDS = 3;
@@ -94,10 +99,15 @@ export function rankRelated(current: Candidate, others: Candidate[], now: Date):
   const closeEnough = ({ overlap, similarity }: (typeof scored)[number]) =>
     similarity === null ? overlap > 0 : similarity >= MIN_SIDE_SIMILARITY;
 
-  // Forgotten: not opened for a long while, the closest first, then the oldest.
+  // A shown piece rests, except beside the piece it was shown for, so the notes stay put while the writer keeps working.
+  const restCutoff = now.getTime() - FORGOTTEN_REST_DAYS * DAY;
+  const isResting = ({ shownAt, shownFor }: Candidate) => !!shownAt && Date.parse(shownAt) > restCutoff && shownFor !== current.id;
+  const neverShown = ({ piece }: (typeof scored)[number]) => (piece.shownAt ? 1 : 0);
+
+  // Forgotten: not edited for a long while and not resting; never shown first, then the closest, then the oldest.
   const forgotten = scored
-    .filter((item) => isOld(item.piece) && closeEnough(item))
-    .sort((a, b) => b.score - a.score || a.piece.updatedAt.localeCompare(b.piece.updatedAt))
+    .filter((item) => isOld(item.piece) && closeEnough(item) && !isResting(item.piece))
+    .sort((a, b) => neverShown(a) - neverShown(b) || b.score - a.score || a.piece.updatedAt.localeCompare(b.piece.updatedAt))
     .slice(0, FORGOTTEN_LIMIT);
   const taken = new Set(forgotten.map(({ piece }) => piece.id));
 

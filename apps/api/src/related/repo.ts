@@ -11,6 +11,8 @@ export interface RelatedRepo {
   candidates(userId: string, pieceId: string): Promise<{ current: Candidate; others: Candidate[] } | null>;
   /** The id of the writer's most recently edited piece that has words and counts for memory, if any. */
   latest(userId: string): Promise<string | null>;
+  /** Records that Forgotten returned these pieces beside `pieceId`. Only the writer's own pieces are recorded. */
+  markShown(userId: string, pieceId: string, shownIds: string[]): Promise<void>;
   /** Hides `otherId` beside `pieceId` (and the other way round) for good. False if either isn't the writer's. */
   dismiss(userId: string, pieceId: string, otherId: string): Promise<boolean>;
   /** Undoes a dismissal. False if either isn't the writer's. */
@@ -29,6 +31,8 @@ type Row = {
   created_at: Date;
   updated_at: Date;
   similarity?: number | null;
+  shown_at?: Date | null;
+  shown_for?: string | null;
 };
 
 const COLUMNS = "id, title, left(text, 5000) as text, language, style, include_in_memory, created_at, updated_at";
@@ -41,7 +45,9 @@ const toCandidate = (row: Row): Candidate => ({
   style: row.style,
   createdAt: row.created_at.toISOString(),
   updatedAt: row.updated_at.toISOString(),
-  similarity: row.similarity ?? null
+  similarity: row.similarity ?? null,
+  shownAt: row.shown_at?.toISOString() ?? null,
+  shownFor: row.shown_for ?? null
 });
 
 export function pgRelatedRepo(db: pg.Pool): RelatedRepo {
@@ -72,8 +78,10 @@ export function pgRelatedRepo(db: pg.Pool): RelatedRepo {
       const cols = "p.id, p.title, left(p.text, 5000) as text, p.language, p.style, p.include_in_memory, p.created_at, p.updated_at";
       const { rows } = await db.query<Row>(
         `select ${cols},
-                1 - (e.embedding operator(extensions.<=>) c.embedding) as similarity
+                1 - (e.embedding operator(extensions.<=>) c.embedding) as similarity,
+                f.shown_at, f.shown_for
          from pieces p
+         left join forgotten_shown f on f.piece_id = p.id and f.user_id = $1
          left join piece_embeddings e on e.piece_id = p.id and e.user_id = $1
          left join piece_embeddings c on c.piece_id = $2 and c.user_id = $1
          where p.user_id = $1 and p.id <> $2 and p.include_in_memory and btrim(p.text) <> ''
@@ -85,6 +93,17 @@ export function pgRelatedRepo(db: pg.Pool): RelatedRepo {
         [userId, pieceId, CANDIDATE_LIMIT]
       );
       return { current, others: rows.map(toCandidate) };
+    },
+
+    async markShown(userId, pieceId, shownIds) {
+      if (shownIds.length === 0) return;
+      await db.query(
+        `insert into forgotten_shown (user_id, piece_id, shown_for)
+         select $1, p.id, $2 from pieces p
+         where p.user_id = $1 and p.id = any($3::uuid[]) and exists (select 1 from pieces where id = $2 and user_id = $1)
+         on conflict (user_id, piece_id) do update set shown_for = excluded.shown_for, shown_at = now()`,
+        [userId, pieceId, shownIds]
+      );
     },
 
     async dismiss(userId, pieceId, otherId) {
@@ -118,6 +137,7 @@ export function memoryRelatedRepo(pieces: PiecesRepo, vectors: Map<string, numbe
     return dot / (Math.sqrt(na) * Math.sqrt(nb));
   };
   const hidden = new Set<string>();
+  const shown = new Map<string, { at: string; for: string }>();
   const key = (userId: string, a: string, b: string) => `${userId}|${a}|${b}`;
   const toCandidate = (p: { id: string; title: string | null; text: string; language: Candidate["language"]; style: Candidate["style"]; createdAt: string; updatedAt: string }): Candidate => ({
     id: p.id, title: p.title, text: p.text, language: p.language, style: p.style, createdAt: p.createdAt, updatedAt: p.updatedAt
@@ -142,9 +162,13 @@ export function memoryRelatedRepo(pieces: PiecesRepo, vectors: Map<string, numbe
         .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
         .map((p) => {
           const a = vectors.get(pieceId), b = vectors.get(p.id);
-          return { ...toCandidate(p), similarity: a && b ? cosine(a, b) : null };
+          const seen = shown.get(`${userId}|${p.id}`);
+          return { ...toCandidate(p), similarity: a && b ? cosine(a, b) : null, shownAt: seen?.at ?? null, shownFor: seen?.for ?? null };
         });
       return { current: toCandidate(mine), others: mine.includeInMemory ? others : [] };
+    },
+    async markShown(userId, pieceId, shownIds) {
+      for (const id of shownIds) shown.set(`${userId}|${id}`, { at: new Date().toISOString(), for: pieceId });
     },
     async dismiss(userId, pieceId, otherId) {
       if (!(await bothAreTheirs(userId, pieceId, otherId))) return false;
