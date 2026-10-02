@@ -81,3 +81,18 @@ export function desktopLayout({ viewport, menuPreferred, panelOpen, reading, rea
 export function menuWouldTakeReadingRoom(viewport: number, panelOpen: boolean): boolean {
   return !share(viewport, true, panelOpen).fits;
 }
+
+/**
+ * How far each side sheet sits from its window edge, so that on a big screen the menu, the paper(s)
+ * and the panel read as one group, centred, with the sheets 24px from the paper instead of far away
+ * at the window edges. `group` is the width of what stands in the middle (the page, or the page and
+ * the reading paper); `left` and `right` are the room kept clear for it (see `desktopLayout`). Where
+ * the window is too small to spare any room the insets are 0 and the sheets sit at the edges.
+ */
+export function sheetInsets({ viewport, group, left, right }: { viewport: number; group: number; left: number; right: number }): { menu: number; panel: number } {
+  const groupLeft = left + (viewport - left - right - group) / 2;
+  return {
+    menu: Math.max(0, Math.round(groupLeft - SHEET)),
+    panel: Math.max(0, Math.round(viewport - groupLeft - group - SHEET))
+  };
+}

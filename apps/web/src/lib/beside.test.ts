@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { desktopLayout, EDGE, menuWouldTakeReadingRoom, PAGE_IDEAL, PAGE_MIN, READER_GAP, READER_IDEAL, READER_MIN } from "./beside";
+import { desktopLayout, EDGE, menuWouldTakeReadingRoom, PAGE_IDEAL, PAGE_MIN, READER_GAP, READER_IDEAL, READER_MIN, SHEET, sheetInsets } from "./beside";
 
 const base = { panelOpen: true, reading: true, readerAway: false };
 
@@ -84,4 +84,16 @@ test("asking for the menu while reading: it takes the room whenever both would n
   assert.equal(menuWouldTakeReadingRoom(2200, true), false);
   // With the panel closed there is more room.
   assert.equal(menuWouldTakeReadingRoom(1441, false), false);
+});
+
+test("on a big screen the sheets sit 24px from the paper(s); on a small one they sit at the window edges", () => {
+  // One paper: 2560 wide, the page 820 centred. The group is menu + gap + page + gap + panel.
+  assert.deepEqual(sheetInsets({ viewport: 2560, group: 820, left: SHEET, right: SHEET }), { menu: 556, panel: 556 });
+  // Just wide enough for the sheets and the full page: no spare room, so no inset.
+  assert.deepEqual(sheetInsets({ viewport: 2 * SHEET + PAGE_IDEAL, group: PAGE_IDEAL, left: SHEET, right: SHEET }), { menu: 0, panel: 0 });
+  // Smaller windows have a smaller page and never go negative.
+  assert.deepEqual(sheetInsets({ viewport: 1200, group: 1200 - 2 * SHEET, left: SHEET, right: SHEET }), { menu: 0, panel: 0 });
+  // Reading: the page and the reading paper stand together; the sheets hug the pair.
+  const group = PAGE_IDEAL + READER_GAP + READER_IDEAL;
+  assert.deepEqual(sheetInsets({ viewport: 2560, group, left: SHEET, right: SHEET }), { menu: Math.round((2560 - 2 * SHEET - group) / 2), panel: Math.round((2560 - 2 * SHEET - group) / 2) });
 });

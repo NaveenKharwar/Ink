@@ -5,7 +5,8 @@ import { sync } from "../lib/localSave";
 import { ALL_WRITING, PICTURES, PROFILE, parseRoute, pieceAddress } from "../lib/route";
 import { deviceTimeZone, groupBySeason, resolveSeasonSet, seasonText } from "../lib/seasons";
 import { supabase } from "../lib/supabase";
-import { READER_GAP } from "../lib/beside";
+import { PAGE_IDEAL, READER_GAP, SHEET, sheetInsets } from "../lib/beside";
+import { useViewportWidth } from "../lib/useViewportWidth";
 import { useWide } from "../lib/layout";
 import { AllWriting } from "./AllWriting";
 import { BesidePaper } from "./BesidePaper";
@@ -94,6 +95,15 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
   // being read: all of it in one place, see useDesktopLayout.
   const shell = useDesktopLayout({ menuPreferred: menuOpen, setMenuPreferred: setMenuOpen, panelOpen, pieceId: openPieceId });
   const { tabs } = shell;
+  // Big screens: the side sheets stay with the paper(s) instead of pinning to the window edges.
+  const viewport = useViewportWidth();
+  const reading = shell.layout.reading;
+  const insets = sheetInsets({
+    viewport,
+    group: reading ? reading.page + READER_GAP + reading.reader : Math.min(PAGE_IDEAL, viewport - 2 * SHEET),
+    left: reading?.left ?? SHEET,
+    right: reading?.right ?? SHEET
+  });
   const menuVisible = wide ? shell.menuVisible : menuOpen;
   const swipeStart = useRef<number | null>(null);
   const library = useLibrary();
@@ -363,7 +373,6 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
 
   if (wide) {
     const panelShown = panelOpen && view.kind === "piece";
-    const reading = shell.layout.reading;
     return (
       <div className="fixed inset-0 bg-ground">
         <div
@@ -391,7 +400,8 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
         </div>
         <div
           inert={!menuVisible}
-          className={`fixed top-3 bottom-3 left-0 z-30 flex rounded-r-panel shadow-[8px_0_24px_rgba(0,0,0,0.08)] ${SLIDE} ${
+          style={{ left: insets.menu }}
+          className={`fixed top-3 bottom-3 z-30 flex rounded-r-panel shadow-[8px_0_24px_rgba(0,0,0,0.08)] ${SLIDE} ${
             menuVisible ? "translate-x-0 opacity-100" : "pointer-events-none -translate-x-[calc(var(--sheet-width)+12px)] opacity-0"
           }`}
         >
@@ -399,7 +409,8 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
         </div>
         <div
           inert={!panelShown}
-          className={`fixed top-3 right-0 bottom-3 z-30 flex rounded-l-panel shadow-[-8px_0_24px_rgba(0,0,0,0.08)] ${SLIDE} ${
+          style={{ right: insets.panel }}
+          className={`fixed top-3 bottom-3 z-30 flex rounded-l-panel shadow-[-8px_0_24px_rgba(0,0,0,0.08)] ${SLIDE} ${
             panelShown ? "translate-x-0 opacity-100" : "pointer-events-none translate-x-[calc(var(--sheet-width)+12px)] opacity-0"
           }`}
         >
