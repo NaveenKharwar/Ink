@@ -7,7 +7,7 @@ export function PrivacyPage() {
       </p>
 
       <h1>Privacy</h1>
-      <p>Draft · last updated 29 September 2026</p>
+      <p>Draft · last updated 2 October 2026</p>
 
       <p>
         Ink is a private place for your writing. This page says, in plain words, what Ink keeps, why, and who else is
@@ -41,6 +41,11 @@ export function PrivacyPage() {
           leaves your device, Ink makes it smaller and keeps only the image itself, so the place, camera and time a
           photo was taken are never sent. A picture you take off a piece stays in your Pictures until you delete it
           there; deleting it removes it for good.
+        </li>
+        <li>
+          <strong>What Ink works out from your writing:</strong> a copy of each piece&rsquo;s words for search, and a list of
+          numbers that stands for its meaning, so Ink can find pieces that are close. Both are kept next to the piece and
+          deleted with it.
         </li>
         <li>
           <strong>Pieces you dismiss:</strong> when you choose &ldquo;Not related&rdquo; on a note in Ink sees this
@@ -103,9 +108,12 @@ export function PrivacyPage() {
 
       <h2>Features that look at your writing</h2>
       <p>
-        Ink is built to notice when an older piece is close to a new one. Those features are not switched on yet. Before
-        they are, this page will say exactly how they work: what is analysed, where, and whether any of it leaves Ink's
-        own servers. [To be decided.]
+        Two features look at your writing: Ink sees this too, the notes beside a piece, and search by meaning. For them,
+        an open model (BGE-M3) turns the title and words of each piece into a list of numbers that stands for its meaning.
+        The model runs on a computer Ink runs itself: your writing is never sent to an outside AI company, and it is never
+        used to train a model. The numbers are kept with your writing and are only ever compared with your own pieces.
+        When you search, the words you type are turned into numbers the same way, and are not kept. Ink never writes,
+        rewrites or judges anything for you.
       </p>
 
       <h2>Keeping and deleting</h2>

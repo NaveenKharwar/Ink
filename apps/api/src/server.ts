@@ -31,7 +31,7 @@ const app = await buildApp({
   embeddings,
   meaning,
   logger: true,
-  docs: env.NODE_ENV !== "production"
+  docs: env.NODE_ENV === "development"
 });
 for (const message of warnings) app.log.warn(message);
 

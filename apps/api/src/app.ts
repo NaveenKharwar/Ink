@@ -3,6 +3,7 @@ import { noEmbeddingQueue, type EmbeddingQueue } from "./embeddings/queue.js";
 import { requireUser, type VerifyToken } from "./auth.js";
 import { registerDocs } from "./docs.js";
 import { registerErrorHandling } from "./errors.js";
+import { loggerOptions, type LogStream } from "./logging.js";
 import type { PiecesRepo } from "./pieces/repo.js";
 import { registerPieceRoutes } from "./pieces/routes.js";
 import { registerPictureRoutes } from "./pictures/routes.js";
@@ -21,12 +22,13 @@ export type AppDeps = {
   embeddings?: EmbeddingQueue;
   /** Search by meaning. Without it, search answers with words only. */
   meaning?: Meaning;
-  logger?: boolean;
+  /** True logs to standard output; a stream collects the lines instead (for tests). */
+  logger?: boolean | LogStream;
   docs?: boolean;
 };
 
 export async function buildApp({ repo, related, pictures, verify, embeddings = noEmbeddingQueue, meaning, logger = false, docs = false }: AppDeps) {
-  const app = Fastify({ logger });
+  const app = Fastify({ logger: loggerOptions(logger) });
   app.decorateRequest("userId", "");
   registerErrorHandling(app);
 
