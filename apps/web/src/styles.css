@@ -240,9 +240,15 @@ body {
   }
 }
 .ink-editor .ProseMirror > * + * { margin-top: var(--lh); }
-/* The blank page with the style cards: the empty editor takes two lines, leaving room for the
-   cards' fade to rise into the page under "Start writing…". */
-.ink-editor.is-blank .ProseMirror { min-height: calc(var(--lh) * 2); }
+/* The blank page with the style cards: on a phone the empty editor takes one line, so the stage
+   and its windows fit one screen without scrolling; wide it takes two, leaving room for the cards'
+   fade to rise into the page under "Start writing…". */
+.ink-editor.is-blank .ProseMirror {
+  min-height: var(--lh);
+  @variant wide {
+    min-height: calc(var(--lh) * 2);
+  }
+}
 .ink-editor .ProseMirror p { position: relative; }
 /* The stanza bar, once a stanza has text (poems only). */
 .ink-editor.style-poem .ProseMirror p.has-text::before {

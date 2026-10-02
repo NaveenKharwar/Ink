@@ -90,7 +90,7 @@ export function StyleCards({ shown, wide, onPick, selected, onSelect }: Props) {
 
   const fade = `transition-opacity duration-300 motion-reduce:transition-none ${shown ? "opacity-100" : "opacity-0"}`;
   return (
-    <div ref={box} role="group" aria-label="How do you want to write?" inert={!shown} className={`${wide ? "mt-12" : "mt-8"} ${fade}`}>
+    <div ref={box} role="group" aria-label="How do you want to write?" inert={!shown} className={`${narrow ? "mt-2" : wide ? "mt-12" : "mt-8"} ${fade}`}>
       {narrow ? (
         <StyleStage selected={selected} onSelect={onSelect} onPick={onPick} />
       ) : (
@@ -131,7 +131,8 @@ function StyleCardFace({ style }: { style: (typeof STYLES)[number] }) {
 function StyleStage({ selected, onSelect, onPick }: Pick<Props, "selected" | "onSelect" | "onPick">) {
   return (
     <div>
-      <div className="relative h-[320px]">
+      {/* The stage gives way to the screen's height (never under 200px), so the windows below it stay in view without scrolling. */}
+      <div className="relative h-[clamp(200px,calc(100svh-430px),320px)]">
         {STYLES.map((s) => {
           const on = s.value === selected;
           return (
@@ -151,7 +152,7 @@ function StyleStage({ selected, onSelect, onPick }: Pick<Props, "selected" | "on
           );
         })}
       </div>
-      <div className="mt-4 grid grid-cols-3">
+      <div className="mt-3 grid grid-cols-3">
         {STYLES.map((s) => {
           const on = s.value === selected;
           return (
