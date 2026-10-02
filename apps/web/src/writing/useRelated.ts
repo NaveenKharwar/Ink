@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { pieces } from "../lib/api";
 import { onSaved } from "../lib/savedEvents";
 
-const EMPTY: RelatedResponse = { related: [], forgotten: [], loose: [] };
+const EMPTY: RelatedResponse = { related: [], forgotten: [], loose: [], looked: false };
 // The panel looks again this long after the writer's last save, so it never shifts while they type.
 const AFTER_SAVE_MS = 8000;
 

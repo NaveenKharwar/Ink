@@ -7,5 +7,6 @@ export type RelatedNote = Pick<Piece, "id" | "title" | "language" | "style" | "c
 };
 
 // What "Ink sees this too" shows next to a piece: close in meaning, old and not opened for
-// a long while, and short loose lines.
-export type RelatedResponse = { related: RelatedNote[]; forgotten: RelatedNote[]; loose: RelatedNote[] };
+// a long while, and short loose lines. `looked` is false while the page is too short to compare,
+// so the panel can tell a new page from a piece with nothing close to it.
+export type RelatedResponse = { related: RelatedNote[]; forgotten: RelatedNote[]; loose: RelatedNote[]; looked: boolean };
