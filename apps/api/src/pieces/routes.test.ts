@@ -552,6 +552,15 @@ test("search adds pieces close in meaning after the words, never repeats one, an
   assert.deepEqual(close[0].firstLine, { text: "kettle cold tonight again", marks: [] });
   assert.equal(close[0].match, null);
 
+  // The dialog can ask for each half alone: the quick words, then the slow meaning.
+  const wordsOnly = await ctx.app.inject({ method: "GET", url: "/api/search?q=kettle%20cold%20tea&part=words", headers: ctx.as(ASHA) });
+  assert.deepEqual(wordsOnly.json().items.map((i: { id: string }) => i.id), [hit]);
+  assert.deepEqual(wordsOnly.json().close, []);
+  const closeOnly = await ctx.app.inject({ method: "GET", url: "/api/search?q=kettle%20cold%20tea&part=close", headers: ctx.as(ASHA) });
+  assert.deepEqual(closeOnly.json().items, []);
+  assert.deepEqual(closeOnly.json().close.map((i: { id: string }) => i.id), [near]);
+  assert.equal((await ctx.app.inject({ method: "GET", url: "/api/search?q=kettle&part=nonsense", headers: ctx.as(ASHA) })).statusCode, 400);
+
   // The embedder being down must not break word search.
   const broken: EmbeddingProvider = { model: "down", embed: async () => { throw new Error("down"); } };
   const down = await setup(memoryRepo(), broken);

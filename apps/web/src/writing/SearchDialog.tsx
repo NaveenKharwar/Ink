@@ -1,7 +1,7 @@
-import type { LibraryItem, MarkedLine, PieceStyle } from "@ink/schemas";
+import type { LibraryItem, MarkedLine, PieceStyle, SearchResult } from "@ink/schemas";
 import { useEffect, useId, useRef, useState } from "react";
 import { pieces } from "../lib/api";
-import { ScreenLoader } from "../ui/Loader";
+import { Loader, ScreenLoader } from "../ui/Loader";
 import { deviceTimeZone, seasonText, type SeasonSet } from "../lib/seasons";
 import { CloseIcon, SearchIcon } from "./icons";
 import { FadeScroll } from "../ui/FadeScroll";
@@ -31,9 +31,13 @@ const focus = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visi
 export function SearchDialog({ wide, recent, seasonSet, onOpen, onClose }: Props) {
   const season = (createdAt: string) => seasonText(new Date(createdAt), new Date(), deviceTimeZone(), seasonSet);
   const [q, setQ] = useState("");
-  const [found, setFound] = useState<{ words: Result[]; close: Result[] } | null>(null);
-  // Which words the results are for, so a newer search shows the loader, not the old results.
+  const [found, setFound] = useState<Result[] | null>(null);
+  const [closeFound, setCloseFound] = useState<Result[]>([]);
+  // Which words the results are for, so a newer search shows the loader, not the old results. The
+  // words come back quickly and close in meaning later (it waits for the embedder), so each has
+  // its own mark: the words show as soon as they are in, and a small loader waits for the rest.
   const [foundFor, setFoundFor] = useState("");
+  const [closeFor, setCloseFor] = useState("");
   const [failed, setFailed] = useState(false);
   const [active, setActive] = useState(0);
   const [showAll, setShowAll] = useState(false);
@@ -59,16 +63,24 @@ export function SearchDialog({ wide, recent, seasonSet, onOpen, onClose }: Props
     setFailed(false);
     const abort = new AbortController();
     const timer = setTimeout(() => {
-      pieces.search(query, abort.signal).then(
+      const toResult = (r: SearchResult): Result => ({ id: r.id, first: r.firstLine, match: r.match, season: season(r.createdAt), style: styleName(r.style) });
+      pieces.search(query, abort.signal, "words").then(
         (res) => {
-          const toResult = (r: (typeof res.items)[number]) => ({ id: r.id, first: r.firstLine, match: r.match, season: season(r.createdAt), style: styleName(r.style) });
-          setFound({ words: res.items.map(toResult), close: res.close.map(toResult) });
+          setFound(res.items.map(toResult));
           setFoundFor(query);
           setShowAll(false);
           setFailed(false);
           setActive(0);
         },
         () => !abort.signal.aborted && setFailed(true)
+      );
+      // Meaning is the slow half. If it fails the writer simply keeps the words.
+      pieces.search(query, abort.signal, "close").then(
+        (res) => {
+          setCloseFound(res.close.map(toResult));
+          setCloseFor(query);
+        },
+        () => !abort.signal.aborted && setCloseFor(query)
       );
     }, WAIT_MS);
     return () => {
@@ -81,7 +93,7 @@ export function SearchDialog({ wide, recent, seasonSet, onOpen, onClose }: Props
   const allWords: Result[] = query
     ? searching
       ? []
-      : (found?.words ?? [])
+      : (found ?? [])
     : recent.map((item) => ({
         id: item.id,
         first: { text: item.lines[0] ?? item.title ?? "Untitled", marks: [] },
@@ -92,7 +104,9 @@ export function SearchDialog({ wide, recent, seasonSet, onOpen, onClose }: Props
   // Only a search is capped; the recent pieces shown before typing are never.
   const words = query && !showAll ? allWords.slice(0, WORDS_SHOWN) : allWords;
   const hiddenWords = allWords.length - words.length;
-  const close: Result[] = query && !searching ? (found?.close ?? []) : [];
+  // Close in meaning shows once it has arrived; until then a small loader waits under the words.
+  const closing = Boolean(query) && !searching && !failed && closeFor !== query;
+  const close: Result[] = query && !searching && closeFor === query ? closeFound : [];
   // One list for the arrow keys, across both groups.
   const results = [...words, ...close];
 
@@ -223,7 +237,8 @@ export function SearchDialog({ wide, recent, seasonSet, onOpen, onClose }: Props
             {close.map((r, i) => row(r, words.length + i))}
           </ul>
           {searching && <ScreenLoader label="Searching" className="py-10" />}
-          {query && !searching && found && !results.length && !failed && <p className="m-0 pt-2 text-ink-muted">Nothing with those words yet.</p>}
+          {closing && <Loader size={16} label="Looking for close writing" delayMs={300} className="my-4" />}
+          {query && !searching && !closing && found && !results.length && !failed && <p className="m-0 pt-2 text-ink-muted">Nothing with those words yet.</p>}
           {failed && <p className="m-0 pt-2 text-ink-muted">Search isn't working right now. Check your connection.</p>}
         </FadeScroll>
       </div>

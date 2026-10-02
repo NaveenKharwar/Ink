@@ -133,7 +133,9 @@ export type LibraryItem = Pick<Piece, "id" | "title" | "status" | "language" | "
 };
 export type LibraryResponse = { items: LibraryItem[] };
 
-export const searchQuery = z.object({ q: z.string().trim().min(1).max(200) });
+// `part` lets the dialog ask for the quick answer (the words) and the slow one (close in meaning) as
+// two requests; without it one request answers both.
+export const searchQuery = z.object({ q: z.string().trim().min(1).max(200), part: z.enum(["words", "close"]).optional() });
 export type SearchQuery = z.infer<typeof searchQuery>;
 
 /** A line of the writer's own words, with the found words marked as [start, end) offsets. */

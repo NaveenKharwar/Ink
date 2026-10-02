@@ -42,6 +42,7 @@ Code: `apps/api/src/search/meaning.ts`, `apps/api/src/pieces/routes.ts`, `apps/a
 - Each piece is turned into a vector (1,024 numbers) by BGE-M3, an open model that runs on our own machine. The writing never leaves it. Vectors are made in the background after a save, never while the writer types.
 - When a search runs, the typed words are turned into a vector the same way and compared with the writer's pieces using cosine similarity. A pause of 200 ms in the search box starts a search.
 - The model's server handles one request at a time, so a search can wait behind background work. If it does not answer within 5 seconds, or is not set up, search shows the words group only. Nothing breaks.
+- The dialog asks for the two groups as two requests (`/api/search?part=words` and `?part=close`, which the API also answers together when `part` is left out). The words come back in a fraction of a second and are shown at once; a small loader waits under them while meaning is worked out, and "Close in meaning" appears when it is ready (about 3 seconds today on a busy local model). If meaning fails, the writer keeps the words.
 
 ### What the score means
 
