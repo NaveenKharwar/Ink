@@ -10,6 +10,12 @@ const AFTER_SAVE_MS = 8000;
 export type Related = RelatedResponse & {
   /** False until the first answer arrives (or when there is no saved piece yet). */
   ready: boolean;
+  /** Asked, and no answer yet: the panel shows the loader instead of an empty page. */
+  loading: boolean;
+  /** The last look failed and nothing is shown yet (the server could not be reached). */
+  failed: boolean;
+  /** Looks again now. */
+  retry: () => void;
 };
 
 /**
@@ -20,6 +26,7 @@ export type Related = RelatedResponse & {
 export function useRelated(pieceId: string | null, exists: boolean): Related {
   const [data, setData] = useState<RelatedResponse>(EMPTY);
   const [ready, setReady] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [tick, setTick] = useState(0);
   const [saved, setSaved] = useState(false);
   const refresh = useCallback(() => setTick((n) => n + 1), []);
@@ -27,6 +34,7 @@ export function useRelated(pieceId: string | null, exists: boolean): Related {
   useEffect(() => {
     setData(EMPTY);
     setReady(false);
+    setFailed(false);
     setSaved(false);
   }, [pieceId]);
 
@@ -37,12 +45,16 @@ export function useRelated(pieceId: string | null, exists: boolean): Related {
       (res) => {
         if (controller.signal.aborted) return;
         setData(res);
+        setFailed(false);
         setReady(true);
       },
       (err: { status?: number; name?: string }) => {
         if (controller.signal.aborted || err?.name === "AbortError") return;
         // 404: a new piece the server has not seen yet. Anything else: keep what is shown.
-        if (err?.status === 404) setData(EMPTY);
+        if (err?.status === 404) {
+          setData(EMPTY);
+          setFailed(false);
+        } else setFailed(true);
         setReady(true);
       }
     );
@@ -63,7 +75,9 @@ export function useRelated(pieceId: string | null, exists: boolean): Related {
     };
   }, [pieceId, refresh]);
 
-  return { ...data, ready };
+  const asked = !!pieceId && (exists || saved);
+  const nothingShown = data.related.length + data.forgotten.length + data.loose.length === 0;
+  return { ...data, ready, loading: asked && !ready, failed: failed && nothingShown, retry: refresh };
 }
 
 export type Dismissal = "undo" | "gone";

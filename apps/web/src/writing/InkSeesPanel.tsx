@@ -6,6 +6,7 @@ import { ChevronIcon, CloseIcon } from "./icons";
 import { RelatedNoteView } from "./RelatedNoteView";
 import { useDismissals, useRelated } from "./useRelated";
 import { FadeScroll } from "../ui/FadeScroll";
+import { ScreenLoader } from "../ui/Loader";
 
 const RELATED_SHOWN = 3;
 
@@ -96,7 +97,7 @@ export function InkSeesPanel({ phone = false, pieceId, exists, seasonSet, onClos
     );
   };
 
-  const empty = found.ready && sections.length === 0;
+  const empty = found.ready && !found.failed && sections.length === 0;
 
   return (
     <aside
@@ -118,6 +119,15 @@ export function InkSeesPanel({ phone = false, pieceId, exists, seasonSet, onClos
         </button>
       </div>
       <FadeScroll className="grow">
+        {found.loading && <ScreenLoader label="Looking through your writing" className="py-10" />}
+        {found.failed && (
+          <p className="m-0 px-4 py-5 leading-[1.5] text-ink-muted">
+            Couldn’t look just now.{" "}
+            <button type="button" onClick={found.retry} className={linkClass}>
+              Try again
+            </button>
+          </p>
+        )}
         {empty && (
           <p className="m-0 px-4 py-5 leading-[1.5] text-ink-muted">
             Nothing yet. Once you have written a few lines, related writing appears here.
