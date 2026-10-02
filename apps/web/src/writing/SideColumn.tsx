@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
 
-// Desktop only: a quiet column on the ground to the right of the paper, from one sheet gap beside
-// it to one gap from the window edge (sizes from styles.css). Not a sheet: no border or shadow.
+// Desktop only: a quiet column on the ground to the right of the paper, in the same slot as the
+// "Ink sees this too" sheet (one gap beside the paper to the window edge, as wide as a sheet, see
+// styles.css), with the sheets' 12px breathing room at the edge. Not a sheet: no border or shadow.
 export function SideColumn({ children }: { children: ReactNode }) {
   return (
-    <div className="fixed top-0 right-[var(--sheet-gap)] bottom-0 left-[calc(50vw+var(--paper-width)/2+var(--sheet-gap))] z-10 box-border flex flex-col overflow-hidden pt-3 pb-6">
+    <div className="fixed top-0 right-0 bottom-0 left-[calc(50vw+var(--paper-width)/2+var(--sheet-gap))] z-10 box-border flex flex-col overflow-hidden pt-3 pr-3 pb-6">
       {children}
     </div>
   );
