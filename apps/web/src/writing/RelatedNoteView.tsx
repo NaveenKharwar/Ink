@@ -19,26 +19,29 @@ const focus = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visi
 
 // One older piece, only its own words: a small label (season, title), the words, and, once it is
 // chosen, its two actions. No box, no reason. The chosen note gets a short dash in its season's
-// colour (the same dash as on the page) and the others fade back.
+// colour (the same dash as on the page) and the others step back by taking the muted ink colour
+// (never by opacity: faded text fell under 4.5:1).
 export function RelatedNoteView({ note, label, color, phone, selected, dimmed, onSelect, onOpenBeside, onDismiss }: Props) {
   const action = `absolute top-1.5 z-10 flex cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-ink-muted hover:text-ink ${focus} ${
     phone ? "h-11 w-11" : "h-7 w-7"
   }`;
   return (
     <div
-      className={`relative -mx-3 mb-5 rounded-md py-2.5 pr-3 pb-3 transition-[opacity,padding] duration-[250ms] motion-reduce:transition-none ${
+      className={`group relative -mx-3 mb-5 rounded-md py-2.5 pr-3 pb-3 transition-[padding] duration-[250ms] motion-reduce:transition-none ${
         selected ? "pl-[26px]" : "pl-3"
-      } ${dimmed ? "opacity-55 hover:opacity-90" : ""}`}
+      }`}
     >
       {selected && <span aria-hidden="true" className="absolute top-[18px] left-1.5 h-0.5 w-3 rounded-[1px]" style={{ background: color }} />}
-      <span className={`mb-2 block truncate text-[11px] leading-4 font-medium tracking-[0.08em] text-ink-muted uppercase ${selected ? (phone ? "pr-24" : "pr-16") : ""}`}>
+      <span className={`mb-2 block truncate text-[12px] leading-4 font-medium tracking-[0.08em] text-ink-muted uppercase ${selected ? (phone ? "pr-24" : "pr-16") : ""}`}>
         {label}
       </span>
       <button
         type="button"
         onClick={onSelect}
         aria-pressed={selected}
-        className={`line-clamp-4 w-full cursor-pointer border-0 bg-transparent p-0 text-left font-serif text-[16px] leading-[25px] whitespace-pre-line text-ink after:absolute after:inset-0 after:content-[''] ${focus}`}
+        className={`line-clamp-4 w-full cursor-pointer border-0 bg-transparent p-0 text-left font-serif text-[16px] leading-[25px] whitespace-pre-line transition-colors duration-[250ms] motion-reduce:transition-none ${
+          dimmed ? "text-ink-muted group-hover:text-ink" : "text-ink"
+        } after:absolute after:inset-0 after:content-[''] ${focus}`}
       >
         {note.lines.join("\n")}
       </button>

@@ -4,11 +4,11 @@
 export function AdSlot() {
   return (
     <aside aria-label="Advertisement">
-      <div className="text-[11px] leading-[14px] text-ink-muted">Advertisement</div>
+      <div className="text-[12px] leading-4 text-ink-muted">Advertisement</div>
       <div className="my-2 box-border flex aspect-[6/5] w-full items-center justify-center rounded-md border border-dashed border-ad-line text-[12px] text-ink-muted">
         Ad · 300 × 250
       </div>
-      <div className="text-[11px] leading-[14px] text-ink-muted">Why this ad? · contextual, no tracking</div>
+      <div className="text-[12px] leading-4 text-ink-muted">Why this ad? · contextual, no tracking</div>
     </aside>
   );
 }

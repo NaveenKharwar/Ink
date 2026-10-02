@@ -62,7 +62,7 @@ function Reader({ piece, tab, seasonSet, phone }: { piece: Piece; tab: BesideTab
     <FadeScroll scrollbar="visible" className={`ink-editor style-${piece.style ?? "poem"} grow pb-8 ${phone ? "px-6 pt-8" : "px-10 pt-9"}`}>
       {/* The same reading column as the page, so a wide screen never makes very long lines. */}
       <div className="mx-auto max-w-[640px]">
-        <span className="mb-5 block truncate text-[11px] leading-4 font-medium tracking-[0.08em] text-ink-muted uppercase">
+        <span className="mb-5 block truncate text-[12px] leading-4 font-medium tracking-[0.08em] text-ink-muted uppercase">
           {noteLabel({ createdAt: piece.createdAt, title: piece.title }, seasonSet)}
         </span>
         <EditorContent editor={editor} />
