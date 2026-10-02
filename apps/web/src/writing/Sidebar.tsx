@@ -185,34 +185,37 @@ export function Sidebar(props: Props) {
                         if (!open) showYear(e.currentTarget);
                       }}
                       aria-expanded={open}
-                      className={`${subItem(phone)} px-3 text-left text-ink-muted hover:text-ink ${focusRing}`}
+                      className={`${subItem(phone)} px-3 text-left active:text-ink ${focusRing} ${open ? "font-semibold text-ink" : "text-ink-muted hover:text-ink"}`}
                     >
                       <span className="grow">{group.year}</span>
-                      <span className="mr-2 text-[13px]">{group.items.reduce((n, s) => n + s.count, 0)}</span>
+                      <span className="mr-2 text-[13px] font-normal text-ink-muted">{group.items.reduce((n, s) => n + s.count, 0)}</span>
                       <ChevronIcon up={open} />
                     </button>
                   )}
-                  {open &&
-                    group.items.map((s) => {
-                      const active = s.key === activeSeason;
-                      return (
-                        <button
-                          key={s.key}
-                          type="button"
-                          onClick={() => onSeason(s.key)}
-                          aria-current={active ? "true" : undefined}
-                          className={`${subItem(phone)} px-3 text-left text-ink ${focusRing} ${active ? "bg-surface-hover" : "bg-transparent"}`}
-                        >
-                          {/* Each season has its small mark in its own colour; the one on screen is marked
-                              like the other active menu items. */}
-                          <span className="flex w-[24px] shrink-0">
-                            <SeasonIcon name={s.key.split("-")[1] ?? ""} />
-                          </span>
-                          <span className={`grow ${active ? "font-semibold" : ""}`}>{s.label}</span>
-                          <span className="text-[13px] text-ink-muted">{s.count}</span>
-                        </button>
-                      );
-                    })}
+                  {open && (
+                    <div className={group.thisYear ? undefined : "year-open"}>
+                      {group.items.map((s) => {
+                        const active = s.key === activeSeason;
+                        return (
+                          <button
+                            key={s.key}
+                            type="button"
+                            onClick={() => onSeason(s.key)}
+                            aria-current={active ? "true" : undefined}
+                            className={`${subItem(phone)} px-3 text-left text-ink ${focusRing} ${active ? "bg-surface-hover" : "bg-transparent"}`}
+                          >
+                            {/* Each season has its small mark in its own colour; the one on screen is marked
+                                like the other active menu items. */}
+                            <span className="flex w-[24px] shrink-0">
+                              <SeasonIcon name={s.key.split("-")[1] ?? ""} />
+                            </span>
+                            <span className={`grow ${active ? "font-semibold" : ""}`}>{s.label}</span>
+                            <span className="text-[13px] text-ink-muted">{s.count}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               );
             })}
