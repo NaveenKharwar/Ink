@@ -1,1 +1,7 @@
-sentence-transformers>=3
+# Exact versions, the set the embedder runs with today. Upgrade on purpose, never by accident.
+sentence-transformers==6.1.0
+torch==2.14.0
+transformers==5.17.0
+tokenizers==0.23.2
+huggingface-hub==1.33.0
+safetensors==0.8.0
