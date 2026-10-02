@@ -1,5 +1,5 @@
 import type { PieceStatus } from "@ink/schemas";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { groupByYear } from "../lib/seasons";
 import { FadeScroll } from "../ui/FadeScroll";
 import { AccountMenu } from "./AccountMenu";
@@ -68,6 +68,16 @@ export function Sidebar(props: Props) {
   useEffect(() => {
     if (activeYear) setOpenYears((years) => (years.includes(activeYear) ? years : [...years, activeYear]));
   }, [activeYear]);
+  // Opening a year adds rows below the one tapped, often past the bottom of the list; bring the
+  // year to the top so the writer sees what opened (it just stops where the list ends).
+  const list = useRef<HTMLDivElement>(null);
+  const showYear = (row: HTMLElement) =>
+    requestAnimationFrame(() => {
+      const box = list.current;
+      if (!box) return;
+      const top = box.scrollTop + row.getBoundingClientRect().top - box.getBoundingClientRect().top - 8;
+      box.scrollTo({ top, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    });
   const toggleYear = (year: string, open: boolean) => setOpenYears((years) => (open ? years.filter((y) => y !== year) : [...years.filter((y) => y !== year), year]));
 
   return (
@@ -118,7 +128,7 @@ export function Sidebar(props: Props) {
       </div>
 
       <div className="mx-1 mt-3 h-px shrink-0 bg-line" />
-      <FadeScroll className="-mx-3 min-h-0 grow px-3 pt-3 pb-2">
+      <FadeScroll ref={list} className="-mx-3 min-h-0 grow px-3 pt-3 pb-2">
         <div className="px-3 pb-1.5 text-[13px] text-ink-muted">Library</div>
         <button
           type="button"
@@ -170,7 +180,10 @@ export function Sidebar(props: Props) {
                   {!group.thisYear && (
                     <button
                       type="button"
-                      onClick={() => toggleYear(group.year, open)}
+                      onClick={(e) => {
+                        toggleYear(group.year, open);
+                        if (!open) showYear(e.currentTarget);
+                      }}
                       aria-expanded={open}
                       className={`${subItem(phone)} px-3 text-left text-ink-muted hover:text-ink ${focusRing}`}
                     >
