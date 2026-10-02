@@ -18,7 +18,7 @@ Code: `apps/api/src/pieces/fold.ts`, `apps/api/src/pieces/repo.ts`, `apps/api/sr
 - Every piece has a search copy (its title and text) that is rewritten on every save, so search never reads the editor document.
 - A piece matches when it contains **every** typed word. Part of a word counts, so "new" matches "renew" and "knew". At most 12 words and 200 characters are read from the query.
 - Matching runs in PostgreSQL with PGroonga. Typed text is escaped, so nothing the writer types is read as query syntax.
-- At most 20 results (`SEARCH_LIMIT`), best match first. The dialog shows the first 4 (`WORDS_SHOWN`) and a "Show N more" link for the rest, so the meaning group below always stays on screen. Each result's meta line gives its season and style, for example "Winter 2025 · Poem" (a piece without a style is a Poem). The result shows the piece's first line and, when the words are on a later line, that line too, with the found words marked.
+- At most 20 results (`SEARCH_LIMIT`), best match first. The dialog shows the first 4 (`WORDS_SHOWN`) and a "Show N more" link for the rest, so the meaning group below always stays on screen. Each result's meta line gives its season, and its style only when it is not a Poem, for example "Winter 2025" for a poem and "Winter 2025 · Story" for a story (a piece without a style is a Poem). The result shows the piece's first line and, when the words are on a later line, that line too, with the found words marked.
 
 ### Spelling: exact for English, loose for the rest
 
