@@ -17,11 +17,11 @@ const pool = createPool(env, (message) => warnings.push(message));
 
 // Meaning vectors are made in the background. Without an embedder nothing is queued and Related uses shared words.
 const embeddings = env.EMBEDDER_URL
-  ? await startEmbeddingQueue(pool, pgEmbeddingsRepo(pool), httpEmbeddingProvider(env.EMBEDDER_URL), { warn: (m) => warnings.push(m) })
+  ? await startEmbeddingQueue(pool, pgEmbeddingsRepo(pool), httpEmbeddingProvider(env.EMBEDDER_URL, undefined, undefined, env.EMBEDDER_SECRET), { warn: (m) => warnings.push(m) })
   : noEmbeddingQueue;
 
 // Search by meaning embeds the typed words as the writer waits, so it gives up quickly and falls back to words.
-const meaning = env.EMBEDDER_URL ? { repo: pgMeaningRepo(pool), embedder: httpEmbeddingProvider(env.EMBEDDER_URL, undefined, 5_000) } : undefined;
+const meaning = env.EMBEDDER_URL ? { repo: pgMeaningRepo(pool), embedder: httpEmbeddingProvider(env.EMBEDDER_URL, undefined, 5_000, env.EMBEDDER_SECRET) } : undefined;
 
 const app = await buildApp({
   repo: pgPiecesRepo(pool),

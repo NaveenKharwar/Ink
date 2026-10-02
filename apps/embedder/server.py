@@ -3,8 +3,11 @@
 POST /embed  {"texts": ["..."]}  ->  {"model": "...", "vectors": [[...1024 numbers...]]}
 GET  /health                     ->  {"ok": true, "model": "..."}
 
-Listens on localhost only. Uses BGE-M3, run locally; the writing never leaves the machine.
+Listens on localhost unless EMBEDDER_HOST says otherwise (a private Tailscale address, never a
+public one). When EMBEDDER_SECRET is set, every request must carry it in the X-Embedder-Secret
+header; a non-local address without a secret refuses to start. Uses BGE-M3, run locally.
 """
+import hmac
 import json
 import os
 import threading
@@ -13,11 +16,18 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from sentence_transformers import SentenceTransformer
 
 MODEL = "BAAI/bge-m3"
-REVISION = "5617a9f61b"
+# The full commit, so the weights can never change under the same name. This revision ships
+# pickle weights only (pytorch_model.bin); moving to the safetensors copy is a separate change.
+REVISION = "5617a9f61b028005a4858fdac845db406aefb181"
 HOST = os.environ.get("EMBEDDER_HOST", "127.0.0.1")
 PORT = int(os.environ.get("EMBEDDER_PORT", "8001"))
 MAX_TEXTS = 32
 MAX_CHARS = 20000
+MAX_BODY = 1_000_000
+SECRET = os.environ.get("EMBEDDER_SECRET", "")
+
+if HOST not in ("127.0.0.1", "localhost", "::1") and len(SECRET) < 16:
+    raise SystemExit("EMBEDDER_SECRET (16+ characters) is required when listening on " + HOST)
 
 model = SentenceTransformer(MODEL, revision=REVISION)
 model.max_seq_length = 512
@@ -43,8 +53,12 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if self.path != "/embed":
             return self._send(404, {"error": "not found"})
+        if SECRET and not hmac.compare_digest(self.headers.get("X-Embedder-Secret", ""), SECRET):
+            return self._send(401, {"error": "unauthorized"})
         try:
             length = int(self.headers.get("Content-Length", "0"))
+            if length > MAX_BODY:
+                return self._send(413, {"error": "too large"})
             texts = json.loads(self.rfile.read(length))["texts"]
             ok = isinstance(texts, list) and 0 < len(texts) <= MAX_TEXTS and all(isinstance(t, str) for t in texts)
         except (ValueError, KeyError, TypeError):
