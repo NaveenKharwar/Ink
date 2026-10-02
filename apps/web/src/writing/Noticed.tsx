@@ -11,7 +11,7 @@ export function Noticed({ noticed, seasonSet }: { noticed: NoticedRemark; season
   if (!line) return null;
   return (
     <div className="mt-6 border-b border-line pb-5">
-      <p lang={noticed.note.language ? LANG[noticed.note.language] : undefined} className="m-0 font-serif text-[15px] leading-[21px] text-ink italic">
+      <p lang={noticed.note.language ? LANG[noticed.note.language] : undefined} className="m-0 font-[family-name:var(--font-remark)] text-[16px] leading-[23px] text-ink italic">
         {line}
       </p>
       <p className="m-0 mt-1 text-[13px] leading-[18px] text-ink-muted">{noticedSentence(noticed, seasonSet)}</p>

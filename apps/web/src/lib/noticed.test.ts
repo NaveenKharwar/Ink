@@ -17,3 +17,8 @@ test("the old line is the piece's first line, or nothing", () => {
   assert.equal(noticedLine(noticed(["  Rain on the tin roof ", "second"])), "Rain on the tin roof");
   assert.equal(noticedLine(noticed([])), null);
 });
+
+test("three of the same thing name the three seasons, oldest first", () => {
+  const repeats: Noticed = { ...noticed(["I keep waiting at the station"]), kind: "repeats", dates: ["2024-12-10T00:00:00Z", "2025-08-10T00:00:00Z", "2026-03-10T00:00:00Z"] } as Noticed;
+  assert.equal(noticedSentence(repeats, "south-asia", "Asia/Kolkata"), "You've written this three times: Winter 2025, Monsoon 2025, Spring 2026.");
+});

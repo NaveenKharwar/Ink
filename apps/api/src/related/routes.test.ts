@@ -5,7 +5,7 @@ import type { VerifyToken } from "../auth.js";
 import { memoryPicturesRepo } from "../pictures/repo.js";
 import { memoryPictureStore } from "../pictures/store.js";
 import type { PiecesRepo } from "../pieces/repo.js";
-import { noticeReturn } from "./noticed.js";
+import { noticeOne, noticeRepeats, noticeReturn } from "./noticed.js";
 import { rankRelated, type Candidate } from "./rank.js";
 import type { RelatedRepo } from "./repo.js";
 
@@ -225,4 +225,24 @@ test("the noticed route needs a token and looks only at the signed-in writer's p
   const theirs = await app.inject({ method: "GET", url: "/api/noticed", headers: as(RAVI) });
   assert.deepEqual(theirs.json(), { noticed: null });
   assert.deepEqual(asked, [`${ASHA}|${A}`]);
+});
+
+test("the same thing written three times: the latest piece and two close ones, the earliest speaks, and it wins over a return", () => {
+  const current = piece(A, "The rain kept the window company", "2026-09-29T00:00:00Z");
+  const near = (id: string, date: string, similarity: number | null, language: Candidate["language"] = "en") => ({
+    ...piece(id, `Page ${id} about the rain and the window, long enough not to be a loose line at all, going on well past the short limit of a line`, date),
+    language, similarity
+  });
+  const out = noticeRepeats(current, [near("p1", "2025-02-01T00:00:00Z", 0.6), near("p2", "2026-03-01T00:00:00Z", 0.58), near("p3", "2024-05-01T00:00:00Z", 0.4)], NOW);
+  assert.equal(out?.kind, "repeats");
+  assert.equal(out?.note.id, "p1");
+  assert.deepEqual(out && out.kind === "repeats" ? out.dates : [], ["2025-02-01T00:00:00Z", "2026-03-01T00:00:00Z", "2026-09-29T00:00:00Z"]);
+  assert.equal(noticeOne(current, [near("p1", "2025-02-01T00:00:00Z", 0.6), near("p2", "2026-03-01T00:00:00Z", 0.58)], NOW)?.kind, "repeats");
+  // Two is not three; weak, vectorless and Hinglish pieces do not count; with one old close piece it is a return.
+  assert.equal(noticeRepeats(current, [near("p1", "2025-02-01T00:00:00Z", 0.6)], NOW), null);
+  assert.equal(noticeRepeats(current, [near("p1", "2025-02-01T00:00:00Z", 0.6), near("p2", "2026-03-01T00:00:00Z", 0.5)], NOW), null);
+  assert.equal(noticeRepeats(current, [near("p1", "2025-02-01T00:00:00Z", 0.6), near("p2", "2026-03-01T00:00:00Z", null)], NOW), null);
+  assert.equal(noticeRepeats(current, [near("p1", "2025-02-01T00:00:00Z", 0.6), near("p2", "2026-03-01T00:00:00Z", 0.7, "hi-Latn")], NOW), null);
+  assert.equal(noticeOne(current, [near("p1", "2025-02-01T00:00:00Z", 0.6)], NOW)?.kind, "returns");
+  assert.equal(noticeOne(current, [near("p1", "2025-02-01T00:00:00Z", 0.4)], NOW), null);
 });
