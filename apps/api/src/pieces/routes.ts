@@ -113,9 +113,12 @@ export function registerPieceRoutes(app: FastifyInstance, repo: PiecesRepo, embe
     const words = searchWords(query.data.q);
     const rows = words.even.length ? await repo.search(request.userId, words, SEARCH_LIMIT) : [];
 
-    // Without an embedder, or when it can't be reached, the writer just gets the words.
+    // Without an embedder, or when it can't be reached, the writer just gets the words. The words
+    // are quick and meaning is not (it waits for the embedder), so the dialog can ask for each alone:
+    // `part=words` skips meaning, `part=close` leaves the words out of the answer (they are still
+    // looked up, to keep them out of the close pieces).
     let close: SearchResponse["close"] = [];
-    if (meaning && words.even.length) {
+    if (meaning && words.even.length && query.data.part !== "words") {
       try {
         const [vector] = await meaning.embedder.embed([query.data.q]);
         const found = vector ? await meaning.repo.closeTo(request.userId, vector, rows.map((r) => r.id), MIN_CLOSE_SIMILARITY, CLOSE_LIMIT) : [];
@@ -128,9 +131,12 @@ export function registerPieceRoutes(app: FastifyInstance, repo: PiecesRepo, embe
     }
 
     const response: SearchResponse = {
-      items: rows.map(({ id, text, language, style, isFragment, createdAt, updatedAt }) => ({
-        id, language, style, isFragment, createdAt, updatedAt, ...describeMatch(text, query.data.q, isLoose(language))
-      })),
+      items:
+        query.data.part === "close"
+          ? []
+          : rows.map(({ id, text, language, style, isFragment, createdAt, updatedAt }) => ({
+              id, language, style, isFragment, createdAt, updatedAt, ...describeMatch(text, query.data.q, isLoose(language))
+            })),
       close
     };
     return response;

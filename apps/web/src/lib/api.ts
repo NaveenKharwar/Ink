@@ -62,8 +62,9 @@ export const pieces = {
   restore: async (id: string, otherId: string) => {
     await send(`/api/pieces/${encodeURIComponent(id)}/related/${encodeURIComponent(otherId)}/dismissed`, { method: "DELETE" });
   },
-  search: (q: string, signal?: AbortSignal) =>
-    request<SearchResponse>(`/api/search?${new URLSearchParams({ q })}`, { signal })
+  // "words" answers quickly; "close" (close in meaning) waits for the embedder and can be slow.
+  search: (q: string, signal?: AbortSignal, part?: "words" | "close") =>
+    request<SearchResponse>(`/api/search?${new URLSearchParams(part ? { q, part } : { q })}`, { signal })
 };
 
 // The writer's own pictures (covers, pictures in Notes), as their bytes. The API only ever reads
