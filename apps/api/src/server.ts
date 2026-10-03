@@ -1,5 +1,5 @@
 import { buildApp } from "./app.js";
-import { supabaseTokenVerifier } from "./auth.js";
+import { pgSessionCheck, supabaseTokenVerifier, withLiveSession } from "./auth.js";
 import { createPool } from "./db.js";
 import { httpEmbeddingProvider } from "./embeddings/http.js";
 import { pgEmbeddingsRepo } from "./embeddings/repo.js";
@@ -27,7 +27,7 @@ const app = await buildApp({
   repo: pgPiecesRepo(pool),
   related: pgRelatedRepo(pool),
   pictures: { store: supabasePictureStore(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY), repo: pgPicturesRepo(pool) },
-  verify: supabaseTokenVerifier(env.SUPABASE_URL),
+  verify: withLiveSession(supabaseTokenVerifier(env.SUPABASE_URL), pgSessionCheck(pool)),
   embeddings,
   meaning,
   logger: true,

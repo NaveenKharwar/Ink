@@ -1,7 +1,8 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { createRemoteJWKSet, jwtVerify } from "jose";
+import type pg from "pg";
 
-export type VerifyToken = (token: string) => Promise<{ userId: string }>;
+export type VerifyToken = (token: string) => Promise<{ userId: string; sessionId?: string }>;
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -16,7 +17,34 @@ export function supabaseTokenVerifier(supabaseUrl: string): VerifyToken {
   return async (token) => {
     const { payload } = await jwtVerify(token, keys, { issuer, audience: "authenticated" });
     if (typeof payload.sub !== "string" || payload.sub === "") throw new Error("Token has no subject");
-    return { userId: payload.sub };
+    const sessionId = typeof payload.session_id === "string" ? payload.session_id : undefined;
+    return { userId: payload.sub, sessionId };
+  };
+}
+
+export type IsSessionLive = (sessionId: string, userId: string) => Promise<boolean>;
+
+/**
+ * A signed token stays valid until it expires (up to an hour), even after the writer signs out.
+ * This also asks whether the sign-in session behind it still exists, so signing out (or being
+ * signed out everywhere) ends access at once. A token without a session is refused.
+ */
+export function withLiveSession(verify: VerifyToken, isLive: IsSessionLive): VerifyToken {
+  return async (token) => {
+    const found = await verify(token);
+    if (!found.sessionId || !(await isLive(found.sessionId, found.userId))) throw new Error("Session has ended");
+    return found;
+  };
+}
+
+/** Supabase keeps sign-in sessions in auth.sessions; signing out deletes the row. */
+export function pgSessionCheck(db: pg.Pool): IsSessionLive {
+  return async (sessionId, userId) => {
+    const { rows } = await db.query(
+      "select 1 from auth.sessions where id = $1 and user_id = $2 and (not_after is null or not_after > now())",
+      [sessionId, userId]
+    );
+    return rows.length > 0;
   };
 }
 
