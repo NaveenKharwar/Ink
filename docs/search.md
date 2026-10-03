@@ -33,6 +33,17 @@ The loose copy exists because Hindi written in Latin letters has no standard spe
 
 English pieces skip the loose copy on purpose. Folding `w` into `v` would make "new" match "never".
 
+### Typos
+
+Code: `apps/api/src/pieces/typo.ts`, `apps/api/src/pieces/routes.ts`.
+
+When the exact words find nothing, search looks once more and forgives a typo, so "moonlihgt" finds "moonlight". It only runs when the first look comes back empty, so a normal search never changes.
+
+- It goes through the writer's own pieces in memory (the 1,000 most recently edited, `NEAR_POOL`), so it needs no index or database change.
+- Every typed word must still be there. A word of 4 to 7 letters may be one mistake away from a word in the piece, a word of 8 or more may be two. A mistake is a wrong, missing or extra letter, or two neighbouring letters swapped. Words under 4 letters are never guessed at.
+- Fewest mistakes first, then the most recently edited. At most 20 results, shown and marked like any other words result.
+- Pieces already shown are kept out of "Close in meaning" as before.
+
 ## 2. Close in meaning
 
 Code: `apps/api/src/search/meaning.ts`, `apps/api/src/pieces/routes.ts`, `apps/api/src/embeddings/`, `apps/embedder/`.
@@ -70,6 +81,7 @@ Each writer may search 120 times a minute and open the panel (Related or Noticed
 
 ## Known limits
 
+- Typos are forgiven only when the exact words find nothing, and only for pieces among the 1,000 most recently edited.
 - One-word and category queries are weak ("vehicle" does not reliably find a scooter piece).
 - A translation is not found by words, and by meaning only when the model is confident: "book" does not reliably find a piece about किताब.
 - Hinglish is found by words only.

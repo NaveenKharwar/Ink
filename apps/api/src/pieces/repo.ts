@@ -23,6 +23,8 @@ export interface PiecesRepo {
   library(userId: string): Promise<PieceSummary[]>;
   /** The writer's pieces holding every searched word, best first (see fold.ts). */
   search(userId: string, words: SearchWords, limit: number): Promise<PieceSummary[]>;
+  /** The writer's most recently edited pieces with their writing, for looking through when the exact search finds nothing. */
+  nearPool(userId: string, limit: number): Promise<PieceSummary[]>;
 }
 
 export const LIBRARY_LIMIT = 5000;
@@ -190,6 +192,18 @@ export function pgPiecesRepo(db: pg.Pool): PiecesRepo {
          order by extensions.pgroonga_score(tableoid, ctid) desc, updated_at desc
          limit $4`,
         [userId, words.even.join(" "), words.latin.filter(Boolean).join(" ") || words.even.join(" "), limit]
+      );
+      return rows.map(toSummary);
+    },
+
+    async nearPool(userId, limit) {
+      const { rows } = await db.query<PieceRow>(
+        `select id, title, left(text, 20000) as text, status, language, style, is_fragment, include_in_memory, created_at, updated_at
+         from pieces
+         where user_id = $1
+         order by updated_at desc, id desc
+         limit $2`,
+        [userId, limit]
       );
       return rows.map(toSummary);
     },
