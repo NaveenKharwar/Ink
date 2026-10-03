@@ -7,16 +7,16 @@ const responseSchema = z.object({
 });
 
 /** Calls the local embedder service (apps/embedder). */
-export function httpEmbeddingProvider(baseUrl: string, model = "BAAI/bge-m3", timeoutMs = 60_000): EmbeddingProvider {
+export function httpEmbeddingProvider(baseUrl: string, model = "BAAI/bge-m3", timeoutMs = 60_000, secret?: string): EmbeddingProvider {
   const url = new URL("/embed", baseUrl);
   return {
     model,
-    async embed(texts) {
+    async embed(texts, signal) {
       const res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(secret ? { "X-Embedder-Secret": secret } : {}) },
         body: JSON.stringify({ texts }),
-        signal: AbortSignal.timeout(timeoutMs)
+        signal: signal ? AbortSignal.any([AbortSignal.timeout(timeoutMs), signal]) : AbortSignal.timeout(timeoutMs)
       });
       if (!res.ok) throw new Error(`Embedder answered ${res.status}.`);
       const { vectors } = responseSchema.parse(await res.json());

@@ -20,7 +20,9 @@ export function registerErrorHandling(app: FastifyInstance) {
       return reply.code(status).send({ error: "invalid_request", message: "The request could not be processed." });
     }
 
-    request.log.error(err);
+    // Only the code and message: database errors carry fields (detail, where, parameters) that
+    // can hold a writer's words.
+    request.log.error({ err: { code: err.code, message: err.message } }, "Request failed");
     return reply.code(500).send({ error: "server_error", message: "Something went wrong on our side. Try again in a moment." });
   });
 

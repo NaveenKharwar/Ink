@@ -2,8 +2,8 @@
 export interface EmbeddingProvider {
   /** Which model made the vectors. Stored beside them, so a model change can be told apart. */
   readonly model: string;
-  /** One vector per text, in order. Throws if the provider can't be reached. */
-  embed(texts: string[]): Promise<number[][]>;
+  /** One vector per text, in order. Throws if the provider can't be reached, or once `signal` aborts. */
+  embed(texts: string[], signal?: AbortSignal): Promise<number[][]>;
 }
 
 export const EMBEDDING_DIMENSIONS = 1024;
