@@ -16,9 +16,11 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from sentence_transformers import SentenceTransformer
 
 MODEL = "BAAI/bge-m3"
-# The full commit, so the weights can never change under the same name. This revision ships
-# pickle weights only (pytorch_model.bin); moving to the safetensors copy is a separate change.
-REVISION = "5617a9f61b028005a4858fdac845db406aefb181"
+# The full commit, so the weights can never change under the same name. It is BAAI's model as
+# converted to safetensors (pull request 130 on the model page): weights that cannot run code when
+# loaded. Checked against the official commit 5617a9f61b028005a4858fdac845db406aefb181: every other
+# file is byte-identical and the vectors are the same.
+REVISION = "9a0624b896d81da7492a910ffa53731274b6cf3d"
 HOST = os.environ.get("EMBEDDER_HOST", "127.0.0.1")
 PORT = int(os.environ.get("EMBEDDER_PORT", "8001"))
 MAX_TEXTS = 32
@@ -29,7 +31,7 @@ SECRET = os.environ.get("EMBEDDER_SECRET", "")
 if HOST not in ("127.0.0.1", "localhost", "::1") and len(SECRET) < 16:
     raise SystemExit("EMBEDDER_SECRET (16+ characters) is required when listening on " + HOST)
 
-model = SentenceTransformer(MODEL, revision=REVISION)
+model = SentenceTransformer(MODEL, revision=REVISION, model_kwargs={"use_safetensors": True})
 model.max_seq_length = 512
 # The server answers requests on separate threads (the background queue and a search can arrive
 # together), but the model crashes the whole process when two encodes run at once on Apple's GPU.
