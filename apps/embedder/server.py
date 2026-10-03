@@ -3,7 +3,7 @@
 POST /embed  {"texts": ["..."]}  ->  {"model": "...", "vectors": [[...1024 numbers...]]}
 GET  /health                     ->  {"ok": true, "model": "..."}
 
-Listens on localhost unless EMBEDDER_HOST says otherwise (a private Tailscale address, never a
+Listens on localhost unless EMBEDDER_HOST says otherwise (a private Tailscale or Railway address, never a
 public one). When EMBEDDER_SECRET is set, every request must carry it in the X-Embedder-Secret
 header; a non-local address without a secret refuses to start. Uses BGE-M3, run locally.
 """
