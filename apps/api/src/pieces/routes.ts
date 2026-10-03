@@ -17,6 +17,7 @@ import { InvalidUpdateError } from "./merge.js";
 import type { EmbeddingQueue } from "../embeddings/queue.js";
 import { MIN_CLOSE_SIMILARITY, type Meaning } from "../search/meaning.js";
 import type { PiecesRepo } from "./repo.js";
+import { perWriterLimit, tooMany } from "../rate-limit.js";
 
 const idParams = z.object({ id: z.string().uuid() });
 const uuid = z.string().uuid();
@@ -48,11 +49,16 @@ function invalid(reply: FastifyReply, error: z.ZodError) {
 }
 
 const SEARCH_LIMIT = 20;
+// The dialog asks twice per pause in typing (words, then meaning), so this allows brisk typing
+// but not a script hammering the embedder.
+const SEARCHES_PER_MINUTE = 120;
 const CLOSE_LIMIT = 5;
 
 const notFound = (reply: FastifyReply) => reply.code(404).send({ error: "not_found", message: "This piece doesn't exist." });
 
 export function registerPieceRoutes(app: FastifyInstance, repo: PiecesRepo, embeddings: EmbeddingQueue, meaning?: Meaning) {
+  const searches = perWriterLimit(SEARCHES_PER_MINUTE, 60_000);
+
   // Writing goes through here: the piece is created by its first sync, and two devices'
   // edits merge (Yjs), so neither overwrites the other.
   app.post("/api/pieces/:id/sync", async (request, reply) => {
@@ -110,6 +116,7 @@ export function registerPieceRoutes(app: FastifyInstance, repo: PiecesRepo, embe
   app.get("/api/search", async (request, reply) => {
     const query = searchQuery.safeParse(request.query);
     if (!query.success) return invalid(reply, query.error);
+    if (!searches.allow(request.userId)) return tooMany(reply);
     const words = searchWords(query.data.q);
     const rows = words.even.length ? await repo.search(request.userId, words, SEARCH_LIMIT) : [];
 
@@ -120,7 +127,10 @@ export function registerPieceRoutes(app: FastifyInstance, repo: PiecesRepo, embe
     let close: SearchResponse["close"] = [];
     if (meaning && words.even.length && query.data.part !== "words") {
       try {
-        const [vector] = await meaning.embedder.embed([query.data.q]);
+        // A search the writer has moved on from (the dialog drops it) stops waiting for the embedder.
+        const gone = new AbortController();
+        request.raw.once("close", () => { if (!reply.raw.writableEnded) gone.abort(); });
+        const [vector] = await meaning.embedder.embed([query.data.q], gone.signal);
         const found = vector ? await meaning.repo.closeTo(request.userId, vector, rows.map((r) => r.id), MIN_CLOSE_SIMILARITY, CLOSE_LIMIT) : [];
         close = found.map(({ id, text, language, style, isFragment, createdAt, updatedAt }) => ({
           id, language, style, isFragment, createdAt, updatedAt, firstLine: { text: openingLines(text)[0] ?? "", marks: [] }, match: null
