@@ -1,0 +1,40 @@
+meta {
+  name: Signed-out token
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{process.env.SUPABASE_URL}}/auth/v1/logout
+  body: none
+  auth: bearer
+}
+
+headers {
+  apikey: {{process.env.SUPABASE_ANON_KEY}}
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+script:post-response {
+  // Signing out deletes the sign-in session; the token itself is still signed and unexpired.
+  const res2 = await bru.sendRequest({
+    method: "GET",
+    url: bru.getEnvVar("baseUrl") + "/api/pieces",
+    headers: { Authorization: "Bearer " + bru.getVar("token") }
+  });
+  bru.setVar("signedOutStatus", res2.status);
+}
+
+tests {
+  test("signing out answers 204", () => expect(res.status).to.equal(204));
+  test("the same token is refused right after", () => expect(bru.getVar("signedOutStatus")).to.equal(401));
+}
+
+docs {
+  Run "Get a token" first. This signs that session out with Supabase, then asks the API for pieces with the same token, which is still signed and not yet expired.
+  Expect the sign-out to answer 204 and the API to answer 401: signing out ends access at once. A 200 means a signed-out token still works.
+  Afterwards, run "Get a token" again before anything else: this token is gone for good.
+}
