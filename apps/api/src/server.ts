@@ -5,6 +5,7 @@ import { httpEmbeddingProvider } from "./embeddings/http.js";
 import { pgEmbeddingsRepo } from "./embeddings/repo.js";
 import { noEmbeddingQueue, startEmbeddingQueue } from "./embeddings/queue.js";
 import { loadEnv } from "./env.js";
+import { fileLogStream } from "./logging.js";
 import { pgPiecesRepo } from "./pieces/repo.js";
 import { pgPicturesRepo } from "./pictures/repo.js";
 import { pgRelatedRepo } from "./related/repo.js";
@@ -12,6 +13,7 @@ import { pgMeaningRepo } from "./search/meaning.js";
 import { supabasePictureStore } from "./pictures/store.js";
 
 const env = loadEnv();
+const logFile = env.LOG_FILE ?? (env.NODE_ENV === "development" ? "logs/api.log" : undefined);
 const warnings: string[] = [];
 const pool = createPool(env, (message) => warnings.push(message));
 
@@ -30,7 +32,7 @@ const app = await buildApp({
   verify: withLiveSession(supabaseTokenVerifier(env.SUPABASE_URL), pgSessionCheck(pool)),
   embeddings,
   meaning,
-  logger: true,
+  logger: logFile ? fileLogStream(logFile) : true,
   docs: env.NODE_ENV === "development"
 });
 for (const message of warnings) app.log.warn(message);

@@ -3,7 +3,7 @@ import type { FastifyInstance, FastifyReply } from "fastify";
 import { z } from "zod";
 import type { RelatedRepo } from "./repo.js";
 import { noticeOne } from "./noticed.js";
-import { rankRelated } from "./rank.js";
+import { rankWithPicks } from "./rank.js";
 import { perWriterLimit, tooMany } from "../rate-limit.js";
 
 const pairParams = z.object({ id: z.string().uuid(), otherId: z.string().uuid() });
@@ -24,7 +24,10 @@ export function registerRelatedRoutes(app: FastifyInstance, repo: RelatedRepo) {
     if (!looks.allow(request.userId)) return tooMany(reply);
     const found = await repo.candidates(request.userId, params.data.id);
     if (!found) return notFound(reply);
-    const response: RelatedResponse = { ...rankRelated(found.current, found.others, new Date()), keptOut: found.keptOut };
+    const { ranked, trace } = rankWithPicks(found.current, found.others, new Date());
+    const response: RelatedResponse = { ...ranked, keptOut: found.keptOut };
+    // For debugging why a piece was shown: piece ids and scores only, never any writing.
+    request.log.info({ related: { piece: params.data.id, keptOut: found.keptOut, ...trace } }, "Related looked");
     await repo.markShown(request.userId, params.data.id, response.forgotten.map((note) => note.id));
     return response;
   });

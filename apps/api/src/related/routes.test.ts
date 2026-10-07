@@ -179,6 +179,26 @@ test("a piece kept out of memory says so, and nothing is looked at beside it", a
   assert.equal((await app.inject({ method: "GET", url: `/api/pieces/${A}/related`, headers: as(ASHA) })).json().keptOut, false);
 });
 
+test("the log says why pieces were shown by id and score, never by text, and every answer carries a request id", async () => {
+  const lines: string[] = [];
+  const stub = stubRepo();
+  const verify: VerifyToken = async (token) => ({ userId: token.slice("token-".length) });
+  const app = await buildApp({
+    repo: {} as PiecesRepo, related: stub.repo, pictures: { store: memoryPictureStore(), repo: memoryPicturesRepo() }, verify,
+    logger: { write: (line) => void lines.push(line) }
+  });
+  const res = await app.inject({ method: "GET", url: `/api/pieces/${A}/related`, headers: { authorization: `Bearer token-${ASHA}` } });
+  assert.equal(res.statusCode, 200);
+  const id = res.headers["x-request-id"];
+  assert.match(String(id), /^[0-9a-f-]{36}$/);
+  const entry = lines.map((line) => JSON.parse(line)).find((line) => line.msg === "Related looked");
+  assert.equal(entry.reqId, id);
+  assert.deepEqual(entry.related.picks, [{ id: B, list: "loose", similarity: null, overlap: 1 }]);
+  assert.equal(entry.related.considered, 1);
+  assert.equal(entry.related.withoutVector, 1);
+  assert.doesNotMatch(lines.join(""), /kettle/);
+});
+
 test("dismissing and undoing answer 204, repeat safely, and refuse pieces that are not the writer's", async () => {
   const { app, as, dismissed } = await setup();
   const url = `/api/pieces/${A}/related/${B}/dismissed`;
@@ -305,4 +325,26 @@ test("the same idea in the other language: Hindi for English or English for Hind
   assert.equal(noticeCrosses(current, [{ ...english, similarity: 0.7 }], NOW), null);
   // Three of the same thing still wins; with one close piece in the other language it is a crossing.
   assert.equal(noticeOne(current, [hi("h1", "2025-02-01T00:00:00Z", 0.7)], NOW)?.kind, "crosses");
+});
+
+test("the log file gets the same lines as the terminal, with a readable time", async () => {
+  const { mkdtempSync, readFileSync, rmSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const { fileLogStream } = await import("../logging.js");
+  const dir = mkdtempSync(join(tmpdir(), "ink-log-"));
+  const path = join(dir, "nested", "api.log");
+  {
+    const stream = fileLogStream(path, () => {});
+    const verify: VerifyToken = async (token) => ({ userId: token.slice("token-".length) });
+    const app = await buildApp({ repo: {} as PiecesRepo, related: stubRepo().repo, pictures: { store: memoryPictureStore(), repo: memoryPicturesRepo() }, verify, logger: stream });
+    await app.inject({ method: "GET", url: `/api/pieces/${A}/related`, headers: { authorization: `Bearer token-${ASHA}` } });
+    await app.close();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  const text = readFileSync(path, "utf8");
+  rmSync(dir, { recursive: true });
+  assert.match(text, /"time":"\d{4}-\d\d-\d\dT[\d:.]+Z"/);
+  assert.match(text, /Related looked/);
+  assert.doesNotMatch(text, /kettle/);
 });

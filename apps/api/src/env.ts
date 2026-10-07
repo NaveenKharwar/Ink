@@ -16,7 +16,9 @@ const envSchema = z.object({
   // Comma-separated private network names the embedder may live under, e.g. ".railway.internal" or "embedder.flycast". Each needs two or more parts.
   EMBEDDER_PRIVATE_HOSTS: z.string().optional(),
   // Shared with the embedder (sent as X-Embedder-Secret). Required by the embedder when it is not on localhost.
-  EMBEDDER_SECRET: z.string().min(16).optional()
+  EMBEDDER_SECRET: z.string().min(16).optional(),
+  // A file the API appends its log lines to (ids, scores and errors, never writing). Development defaults to logs/api.log; elsewhere unset means terminal only.
+  LOG_FILE: z.string().min(1).optional()
 });
 
 export function privateHostEntries(list: string | undefined): string[] {
