@@ -15,23 +15,27 @@ auth:bearer {
 }
 
 script:pre-request {
-  // Meaning vectors are made in the background a moment after a save. Wait until this panel lists the second
-  // writer's own other piece, so "none of the first writer's" is said about a list that has real notes in it.
-  const deadline = Date.now() + 30000;
-  while (Date.now() < deadline) {
-    let answer = { data: "" };
+  // Meaning vectors are made in the background a moment after a save. Wait until both pieces have theirs
+  // (asked of the database directly), so the lists below are ranked by meaning and not by the shared-words
+  // fallback, and an empty list cannot pass for the wrong reason.
+  const ids = [bru.interpolate("{{secondPieceId}}"), bru.interpolate("{{secondOtherPieceId}}")];
+  const key = bru.getProcessEnv("SUPABASE_SERVICE_ROLE_KEY");
+  let ready = false;
+  const deadline = Date.now() + 40000;
+  while (!ready && Date.now() < deadline) {
     try {
-      answer = await bru.sendRequest({
+      const found = await bru.sendRequest({
         method: "GET",
-        url: bru.getEnvVar("baseUrl") + "/api/pieces/" + bru.interpolate("{{secondPieceId}}") + "/related",
-        headers: { Authorization: "Bearer " + bru.getVar("secondToken") }
+        url: bru.getProcessEnv("SUPABASE_URL") + "/rest/v1/piece_embeddings?select=piece_id&piece_id=in.(" + ids.join(",") + ")",
+        headers: { apikey: key, Authorization: "Bearer " + key }
       });
+      ready = Array.isArray(found.data) && found.data.length === ids.length;
     } catch (error) {
-      // not there yet, or briefly refused: look again
+      // not reachable yet: look again
     }
-    if (JSON.stringify(answer.data).includes(bru.interpolate("{{secondOtherPieceId}}"))) break;
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    if (!ready) await new Promise((resolve) => setTimeout(resolve, 1000));
   }
+  bru.setVar("vectorsReady", ready);
 }
 
 assert {
@@ -39,6 +43,7 @@ assert {
 }
 
 tests {
+  test("both pieces had their meaning vectors, so the lists are ranked by meaning", () => expect(bru.getVar("vectorsReady")).to.equal(true));
   test("their own other piece is listed, so the list is not just empty", () => expect(JSON.stringify(res.body)).to.include(bru.interpolate("{{secondOtherPieceId}}")));
   test("nothing of the first writer's shows up", () => {
     const body = JSON.stringify(res.body);

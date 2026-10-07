@@ -113,7 +113,7 @@ jobs:
           count=$(psql "$DB_URL" -tA -c "select count(*) from public.piece_embeddings")
           echo "embeddings: $count"
           echo "Meaning vectors made during the run: $count. The privacy checks only mean something if there were some." > embeddings.md
-          [ "$count" -ge 3 ]
+          [ "$count" -ge 4 ]
 
       - name: Write the summary
         if: always()
