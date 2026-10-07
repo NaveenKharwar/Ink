@@ -9,7 +9,7 @@ on:
 permissions:
   contents: read
 
-# A new push to a pull request stops the run it made obsolete. Runs on main always finish.
+# A push to a pull request cancels the runs it supersedes. Runs on main always finish.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
