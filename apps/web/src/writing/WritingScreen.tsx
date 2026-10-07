@@ -311,6 +311,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
     activeSeason: menuSeason,
     activeFilter,
     counts,
+    loaded: library.items !== null,
     onSearch: () => setSearchOpen(true),
     onWrite: newPiece,
     onAll: () => openAll(),

@@ -2,6 +2,7 @@ import type { PieceStatus } from "@ink/schemas";
 import { useEffect, useRef, useState } from "react";
 import { groupByYear } from "../lib/seasons";
 import { FadeScroll } from "../ui/FadeScroll";
+import { ScreenLoader } from "../ui/Loader";
 import { MenuCount, MenuDivider, MenuLabel, MenuRow } from "../ui/MenuRow";
 import { ChevronIcon, DocumentIcon, MenuIcon, PencilIcon, PictureIcon, SearchIcon, SeasonIcon } from "./icons";
 
@@ -23,6 +24,8 @@ type Props = {
   activeFilter: PieceStatus | null;
   /** How many pieces are drafts and how many are finished. */
   counts: Record<PieceStatus, number>;
+  /** The library has answered. Until then the counts and the seasons are not known, and say nothing. */
+  loaded: boolean;
   onClose: () => void;
   onSearch: () => void;
   onWrite: () => void;
@@ -49,7 +52,7 @@ function readOpenYears(): string[] {
 // The menu: search, Write, All writing, Pictures and the seasons, with the account at the foot.
 // Desktop: a side sheet from the left edge. Phone: the left side of the sliding track.
 export function Sidebar(props: Props) {
-  const { phone = false, name, screen, seasons, activeSeason, activeFilter, counts, onClose, onSearch, onWrite, onAll, onPictures, onSeason, onFilter, onProfile } = props;
+  const { phone = false, name, screen, seasons, activeSeason, activeFilter, counts, loaded, onClose, onSearch, onWrite, onAll, onPictures, onSeason, onFilter, onProfile } = props;
   const [openYears, setOpenYears] = useState(readOpenYears);
   useEffect(() => {
     try {
@@ -125,7 +128,7 @@ export function Sidebar(props: Props) {
         {(["draft", "finished"] as const).map((status) => {
           const active = screen === "all" && activeFilter === status;
           return (
-            <MenuRow key={status} indent selected={active} onClick={() => onFilter(status)} trailing={<MenuCount>{counts[status]}</MenuCount>}>
+            <MenuRow key={status} indent selected={active} onClick={() => onFilter(status)} trailing={loaded && <MenuCount>{counts[status]}</MenuCount>}>
               {status === "draft" ? "Drafts" : "Finished"}
             </MenuRow>
           );
@@ -134,7 +137,13 @@ export function Sidebar(props: Props) {
           Pictures
         </MenuRow>
 
-        {seasons.length > 0 && (
+        {!loaded && (
+          <>
+            <MenuDivider className="my-3" />
+            <ScreenLoader label="Loading your seasons" className="py-6" />
+          </>
+        )}
+        {loaded && seasons.length > 0 && (
           <>
             <MenuDivider className="my-3" />
             <MenuLabel>Seasons</MenuLabel>
