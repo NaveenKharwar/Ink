@@ -5,6 +5,7 @@ import { KEEP_OUT_FAILED, KEPT_OUT_BODY, keepOutAction } from "../lib/keepOut";
 import { noteLabel, seasonColorVar } from "../lib/related";
 import { deviceTimeZone, type SeasonSet } from "../lib/seasons";
 import { ChevronIcon, CloseIcon } from "./icons";
+import { DeletePiece } from "./DeletePiece";
 import { RelatedNoteView } from "./RelatedNoteView";
 import { useDismissals, useRelated } from "./useRelated";
 import { FadeScroll } from "../ui/FadeScroll";
@@ -28,6 +29,9 @@ type Props = {
   reading?: string[];
   /** Reads an older piece beside the page (desktop) or as the next screen (phone). */
   onOpenBeside: (note: RelatedNote) => void;
+  userId: string;
+  /** The writer deleted this piece from the foot of the panel. */
+  onDeleted: () => void;
 };
 
 const focus = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
@@ -48,7 +52,7 @@ const quietLinkClass = (phone: boolean) =>
 // nothing close is not shown at all. At the foot, one quiet grey line (always in the same place, no
 // divider) keeps the piece out of Ink's memory or puts it back; a kept-out piece has no notes, and the
 // panel says so.
-export function InkSeesPanel({ phone = false, shown = true, chosen = null, pieceId, exists, seasonSet, reading = [], onClose, onOpenBeside }: Props) {
+export function InkSeesPanel({ phone = false, shown = true, chosen = null, pieceId, exists, seasonSet, reading = [], onClose, onOpenBeside, userId, onDeleted }: Props) {
   const found = useRelated(pieceId, exists);
   const dismissals = useDismissals(pieceId);
   const [selected, setSelected] = useState<string | null>(null);
@@ -220,14 +224,17 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
           );
         })}
       </FadeScroll>
-      {pieceId && (found.known || keptOut) && (
+      {pieceId && (found.known || keptOut || exists) && (
         <div aria-live="polite" className={`shrink-0 pb-3 pt-1 ${phone ? "px-6" : "px-4"}`}>
           {keepFailed && <p className="m-0 mb-1 text-[12px] leading-5 text-ink-muted">{KEEP_OUT_FAILED}</p>}
-          <div className="flex min-h-9 items-center">
-            <button type="button" onClick={() => void changeKeepOut()} className={quietLinkClass(phone)}>
-              {keepOutAction(keptOut)}
-            </button>
-          </div>
+          {(found.known || keptOut) && (
+            <div className="flex min-h-9 items-center">
+              <button type="button" onClick={() => void changeKeepOut()} className={quietLinkClass(phone)}>
+                {keepOutAction(keptOut)}
+              </button>
+            </div>
+          )}
+          {exists && <DeletePiece pieceId={pieceId} userId={userId} phone={phone} onDeleted={onDeleted} />}
         </div>
       )}
     </aside>

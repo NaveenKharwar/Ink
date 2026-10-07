@@ -3,15 +3,18 @@ import { pieces } from "../lib/api";
 import { bufferKey } from "../lib/buffer";
 import { buffer } from "../lib/localSave";
 
-type Props = { pieceId: string; userId: string; onDeleted: () => void };
+type Props = { pieceId: string; userId: string; phone: boolean; onDeleted: () => void };
 
 const focus = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
-// 14px text, 44px tap area (see FinishedPrompt).
-const target = `-my-3 cursor-pointer border-0 bg-transparent px-0 py-3 text-[14px] leading-5 active:text-ink hover:text-ink ${focus}`;
+// The same quiet grey as "Keep it out of Ink's memory": dotted underline, 12px, bigger tap area on phone.
+const link = (phone: boolean) =>
+  `relative cursor-pointer border-0 border-b border-dotted border-ink-subtle bg-transparent p-0 text-[12px] leading-5 text-ink-muted hover:border-ink hover:text-ink ${
+    phone ? "before:absolute before:-inset-x-3 before:-inset-y-3 before:content-['']" : ""
+  } ${focus}`;
 
-// One quiet grey line under the last line of the page. Tapping it asks once, in the same place;
-// deleting is for good (no trash, no undo), and the words say so.
-export function DeletePiece({ pieceId, userId, onDeleted }: Props) {
+// The last grey line of "Ink sees this too". Tapping it asks once, in the same place; deleting is
+// for good (no trash, no undo), and the words say so.
+export function DeletePiece({ pieceId, userId, phone, onDeleted }: Props) {
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -32,23 +35,23 @@ export function DeletePiece({ pieceId, userId, onDeleted }: Props) {
   };
 
   return (
-    <div aria-live="polite" className="mt-3 min-h-5 font-sans text-[14px] leading-5 text-ink-muted">
+    <div className="flex min-h-9 flex-wrap items-center gap-x-4 text-[12px] leading-5 text-ink-muted">
       {asking ? (
-        <div className="flex items-center gap-[18px]">
+        <>
           <span>Delete for good?</span>
-          <button type="button" onClick={() => void remove()} disabled={busy} className={`${target} text-ink underline`}>
+          <button type="button" onClick={() => void remove()} disabled={busy} className={link(phone)}>
             Delete
           </button>
-          <button type="button" onClick={() => setAsking(false)} disabled={busy} className={`${target} text-ink-muted`}>
+          <button type="button" onClick={() => setAsking(false)} disabled={busy} className={link(phone)}>
             Keep
           </button>
-        </div>
+        </>
       ) : (
-        <button type="button" onClick={() => setAsking(true)} className={`${target} text-ink-muted`}>
+        <button type="button" onClick={() => setAsking(true)} className={link(phone)}>
           Delete this piece
         </button>
       )}
-      {failed && <p className="m-0 mt-3">Couldn’t delete that. Try again.</p>}
+      {failed && <span className="basis-full">Couldn’t delete that. Try again.</span>}
     </div>
   );
 }

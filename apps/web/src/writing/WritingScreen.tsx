@@ -150,6 +150,11 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
       window.setTimeout(() => shell.stop(), 380);
     }
   };
+  // The writer deleted the open piece: the list forgets it and a blank page opens.
+  const deleted = () => {
+    library.refresh();
+    newPiece();
+  };
   const readOlderPiece = (id: string) => {
     shell.stop();
     openPiece(id);
@@ -371,10 +376,6 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
           }
         }}
         onMenu={onMenu}
-        onDeleted={() => {
-          library.refresh();
-          newPiece();
-        }}
       />
     );
 
@@ -441,6 +442,8 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
               setPanelOpen(false);
             }}
             onOpenBeside={openBeside}
+            userId={userId}
+            onDeleted={deleted}
           />
         </div>
 
@@ -511,6 +514,8 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
             seasonSet={seasonSet}
             onClose={() => setPos("page")}
             onOpenBeside={openBeside}
+            userId={userId}
+            onDeleted={deleted}
           />
         </div>
         {readerShown && (
