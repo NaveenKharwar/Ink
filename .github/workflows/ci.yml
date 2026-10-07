@@ -47,7 +47,7 @@ jobs:
       - run: pnpm test
       - run: pnpm build
 
-  # The checks that used to be run by hand in Bruno: two writers against a real local Supabase
+  # The Bruno privacy and token checks: two writers against a real local Supabase
   # (database, sign-in, storage), the real API, and a stand-in embedder. Fails the PR if one writer
   # can reach another's writing, or a bad token gets in.
   api-checks:

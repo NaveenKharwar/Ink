@@ -1,6 +1,6 @@
 # Trying the API with Bruno
 
-CI runs this whole collection on every pull request, so you no longer run the privacy and token checks by hand before a PR. This guide is for trying the API yourself and for adding requests.
+CI runs this whole collection on every pull request. This guide is for trying the API yourself and for adding requests.
 
 ## What CI does
 
@@ -18,7 +18,7 @@ If a check fails, the job keeps the API log and the Bruno report as a download (
 
 It proves that a writer cannot read, change, delete, search or list another writer's pieces and pictures, that bad, expired and signed-out tokens are refused, and that the lists it compares are not empty. The panel requests wait until both pieces have their meaning vectors (asked of the database directly), so the lists are ranked by meaning and not by the shared-words fallback.
 
-Still checked by hand:
+Checked outside CI:
 
 - How good the real embedder's answers are (floors, ranking, Hinglish). CI uses a stand-in.
 - The hosted Supabase: real token lifetimes and signing keys, connection pooling, storage settings. CI uses the local stack, and the API runs in development mode there.
@@ -84,9 +84,9 @@ Press **Send** to run one request, or right-click a folder and choose **Run** to
 
 ## Trying it as someone else
 
-The second user's sign-in saves its own token as `secondToken`. The requests that act as the second writer (the "Privacy" ones) use it, and everything else uses `token`. Nothing needs switching by hand.
+The second user's sign-in saves its own token as `secondToken`. The requests that act as the second writer (the "Privacy" ones) use it, and everything else uses `token`. Nothing needs switching.
 
-Always look at the answer of the sign-in itself. If it fails, Bruno quietly keeps the old variable, and you carry on thinking you're someone else when you're not.
+Always look at the answer of the sign-in itself. If it fails, Bruno quietly keeps the earlier value, and you carry on thinking you're someone else when you're not.
 
 Also remember that things belong to whoever created them. If you create something while signed in as the second user, it's theirs, and if you later ask for it as that same user, a 200 is the right answer. So when a request succeeds and you expected it to fail, find out who owns the data before you blame the API. In the Supabase SQL editor, something like this will tell you:
 
@@ -108,6 +108,4 @@ If you want a clean start, put a fresh id (run `uuidgen` in a terminal) into the
 
 ## What to run, and when
 
-CI runs everything on each PR, against a real database, so the second-user and broken-token checks no longer depend on you remembering. Run folders by hand only to look at an answer yourself.
-
-What CI cannot tell you is how good the real embedder's answers are (floors, ranking): it uses a stand-in that only needs shared words. Check that against the real embedder on your Mac.
+CI runs everything on each PR against a real database, including the second-user and broken-token checks. On your Mac, run folders to look at an answer yourself, and to check what CI cannot: how good the real embedder's answers are (floors, ranking). CI uses a stand-in that only needs shared words.
