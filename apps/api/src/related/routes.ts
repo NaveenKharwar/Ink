@@ -24,7 +24,7 @@ export function registerRelatedRoutes(app: FastifyInstance, repo: RelatedRepo) {
     if (!looks.allow(request.userId)) return tooMany(reply);
     const found = await repo.candidates(request.userId, params.data.id);
     if (!found) return notFound(reply);
-    const response: RelatedResponse = rankRelated(found.current, found.others, new Date());
+    const response: RelatedResponse = { ...rankRelated(found.current, found.others, new Date()), keptOut: found.keptOut };
     await repo.markShown(request.userId, params.data.id, response.forgotten.map((note) => note.id));
     return response;
   });

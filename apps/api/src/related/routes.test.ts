@@ -112,6 +112,7 @@ function stubRepo() {
   const asked: string[] = [];
   const dismissed: string[] = [];
   const mine = new Set([`${ASHA}|${A}`, `${ASHA}|${B}`]);
+  const keptOut = new Set<string>();
   const repo: RelatedRepo = {
     async latest(userId) {
       return mine.has(`${userId}|${A}`) ? A : null;
@@ -119,7 +120,8 @@ function stubRepo() {
     async candidates(userId, pieceId) {
       asked.push(`${userId}|${pieceId}`);
       if (!mine.has(`${userId}|${pieceId}`)) return null;
-      return { current: piece(A, "The kettle knew my name", "2026-09-29T00:00:00Z"), others: [piece(B, "the kettle again, again", "2026-09-01T00:00:00Z")] };
+      const out = keptOut.has(`${userId}|${pieceId}`);
+      return { current: piece(A, "The kettle knew my name", "2026-09-29T00:00:00Z"), others: out ? [] : [piece(B, "the kettle again, again", "2026-09-01T00:00:00Z")], keptOut: out };
     },
     async markShown() {},
     async dismiss(userId, pieceId, otherId) {
@@ -133,7 +135,7 @@ function stubRepo() {
       return true;
     }
   };
-  return { repo, asked, dismissed };
+  return { repo, asked, dismissed, keptOut };
 }
 
 async function setup() {
@@ -159,10 +161,22 @@ test("the writer gets their notes; someone else's piece is not found", async () 
   const mine = await app.inject({ method: "GET", url: `/api/pieces/${A}/related`, headers: as(ASHA) });
   assert.equal(mine.statusCode, 200);
   assert.deepEqual(mine.json().loose.map((n: { id: string }) => n.id), [B]);
+  assert.equal(mine.json().keptOut, false);
   const theirs = await app.inject({ method: "GET", url: `/api/pieces/${A}/related`, headers: as(RAVI) });
   assert.equal(theirs.statusCode, 404);
   assert.deepEqual(asked, [`${ASHA}|${A}`, `${RAVI}|${A}`]);
   assert.equal((await app.inject({ method: "GET", url: "/api/pieces/nonsense/related", headers: as(ASHA) })).statusCode, 404);
+});
+
+test("a piece kept out of memory says so, and nothing is looked at beside it", async () => {
+  const { app, as, keptOut } = await setup();
+  keptOut.add(`${ASHA}|${A}`);
+  const out = await app.inject({ method: "GET", url: `/api/pieces/${A}/related`, headers: as(ASHA) });
+  assert.equal(out.statusCode, 200);
+  assert.equal(out.json().keptOut, true);
+  assert.deepEqual([out.json().related, out.json().forgotten, out.json().loose], [[], [], []]);
+  keptOut.clear();
+  assert.equal((await app.inject({ method: "GET", url: `/api/pieces/${A}/related`, headers: as(ASHA) })).json().keptOut, false);
 });
 
 test("dismissing and undoing answer 204, repeat safely, and refuse pieces that are not the writer's", async () => {
