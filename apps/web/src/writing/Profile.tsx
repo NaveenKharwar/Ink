@@ -278,27 +278,24 @@ function Seasons({ initial, onChange }: { initial: SeasonChoice; onChange: (choi
       </p>
       <div className="mt-3 flex flex-col gap-1">
         {SEASON_OPTIONS.map((o) => (
-          <label
-            key={o.value}
-            className={`-mx-3 flex cursor-pointer items-start gap-3 rounded-md px-3 py-2.5 ${choice === o.value ? "bg-surface-hover" : ""}`}
-          >
-            <input
-              type="radio"
-              name="seasons"
-              value={o.value}
-              checked={choice === o.value}
-              onChange={() => void pick(o.value)}
-              className={`mt-[3px] h-4 w-4 shrink-0 accent-ink ${focusRing}`}
-            />
-            <span>
-              <span className="block font-medium">{o.label}</span>
-              <span className="block text-[13px] leading-[18px] text-ink-muted">{o.sub}</span>
-            </span>
-          </label>
+          <ChoiceRow key={o.value} name="seasons" value={o.value} label={o.label} sub={o.sub} checked={choice === o.value} onChoose={() => void pick(o.value)} />
         ))}
       </div>
       <SaveStatus state={state} />
     </fieldset>
+  );
+}
+
+// One choice among several (Seasons, Look): a radio, its name and one line of what it means.
+function ChoiceRow({ name, value, label, sub, checked, onChoose }: { name: string; value: string; label: string; sub: string; checked: boolean; onChoose: () => void }) {
+  return (
+    <label className={`-mx-3 flex min-h-11 cursor-pointer items-start gap-3 rounded-md px-3 py-2.5 ${checked ? "bg-surface-hover" : ""}`}>
+      <input type="radio" name={name} value={value} checked={checked} onChange={onChoose} className={`mt-[3px] h-4 w-4 shrink-0 accent-ink ${focusRing}`} />
+      <span>
+        <span className="block font-medium">{label}</span>
+        <span className="block text-[13px] leading-[18px] text-ink-muted">{sub}</span>
+      </span>
+    </label>
   );
 }
 
@@ -316,20 +313,7 @@ function Look() {
       <legend className="p-0 text-[14px] leading-5 font-semibold">Look</legend>
       <div className="mt-3 flex flex-col gap-1">
         {LOOKS.map((o) => (
-          <label key={o.value} className={`-mx-3 flex min-h-11 cursor-pointer items-center gap-3 rounded-md px-3 py-2 ${theme === o.value ? "bg-surface-hover" : ""}`}>
-            <input
-              type="radio"
-              name="look"
-              value={o.value}
-              checked={theme === o.value}
-              onChange={() => setTheme(o.value)}
-              className={`h-4 w-4 shrink-0 accent-ink ${focusRing}`}
-            />
-            <span>
-              <span className="block font-medium">{o.label}</span>
-              <span className="block text-[13px] leading-[18px] text-ink-muted">{o.sub}</span>
-            </span>
-          </label>
+          <ChoiceRow key={o.value} name="look" value={o.value} label={o.label} sub={o.sub} checked={theme === o.value} onChoose={() => setTheme(o.value)} />
         ))}
       </div>
     </fieldset>

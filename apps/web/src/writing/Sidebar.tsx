@@ -2,6 +2,7 @@ import type { PieceStatus } from "@ink/schemas";
 import { useEffect, useRef, useState } from "react";
 import { groupByYear } from "../lib/seasons";
 import { FadeScroll } from "../ui/FadeScroll";
+import { MenuCount, MenuDivider, MenuLabel, MenuRow } from "../ui/MenuRow";
 import { ChevronIcon, DocumentIcon, MenuIcon, PencilIcon, PictureIcon, SearchIcon, SeasonIcon } from "./icons";
 
 // Which screen is open. "write" is a new page (the only time Write is marked); "piece" is a saved
@@ -33,10 +34,6 @@ type Props = {
 };
 
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
-const navItem = `box-border flex h-11 w-full cursor-pointer items-center gap-3 rounded-md border-0 px-3 text-left text-ink ${focusRing}`;
-// Rows are 44px tall at every width (a thumb).
-const subItem = `box-border flex h-11 w-full cursor-pointer items-center rounded-md border-0`;
-
 const YEARS_KEY = "ink-menu-years";
 
 // The earlier years the writer has opened, remembered on this device.
@@ -102,73 +99,45 @@ export function Sidebar(props: Props) {
           </div>
         </div>
 
-        <button
-          type="button"
+        <MenuRow
+          field
+          icon={<SearchIcon />}
           onClick={onSearch}
-          className={`box-border flex h-11 w-full shrink-0 cursor-pointer items-center gap-3 rounded-md border-0 bg-ground pr-2.5 pl-3 text-left text-ink ${focusRing}`}
+          trailing={!phone && <kbd className="rounded-sm border border-line-strong bg-surface px-1.5 font-sans text-[12px] text-ink">⌘ K</kbd>}
         >
-          <SearchIcon />
-          <span className="grow">Search</span>
-          {!phone && <kbd className="rounded-sm border border-line-strong bg-surface px-1.5 font-sans text-[12px] text-ink">⌘ K</kbd>}
-        </button>
+          Search
+        </MenuRow>
 
         <div className="mt-2">
-          <button
-            type="button"
-            onClick={onWrite}
-            aria-current={screen === "write" ? "page" : undefined}
-            className={`${navItem} ${screen === "write" ? "bg-surface-hover font-semibold" : "bg-transparent"}`}
-          >
-            <PencilIcon />
+          <MenuRow icon={<PencilIcon />} onClick={onWrite} selected={screen === "write"}>
             Write
-          </button>
+          </MenuRow>
         </div>
       </div>
 
-      <div className="mx-1 mt-3 h-px shrink-0 bg-line" />
+      <MenuDivider className="mt-3" />
       <FadeScroll ref={list} className="-mx-3 min-h-0 grow px-3 pt-3 pb-2">
-        <div className="px-3 pb-1.5 text-[13px] text-ink-muted">Library</div>
-        <button
-          type="button"
-          onClick={onAll}
-          aria-current={screen === "all" && !activeSeason && !activeFilter ? "page" : undefined}
-          className={`${navItem} ${screen === "all" && !activeSeason && !activeFilter ? "bg-surface-hover font-semibold" : "bg-transparent"}`}
-        >
-          <DocumentIcon />
+        <MenuLabel>Library</MenuLabel>
+        <MenuRow icon={<DocumentIcon />} onClick={onAll} selected={screen === "all" && !activeSeason && !activeFilter}>
           All writing
-        </button>
+        </MenuRow>
         {/* Drafts and Finished narrow All writing, like a season does. Nothing in any list is labelled. */}
         {(["draft", "finished"] as const).map((status) => {
           const active = screen === "all" && activeFilter === status;
           return (
-            <button
-              key={status}
-              type="button"
-              onClick={() => onFilter(status)}
-              aria-current={active ? "page" : undefined}
-              className={`${subItem} pr-3 pl-[41px] text-left text-ink ${focusRing} ${
-                active ? "bg-surface-hover" : "bg-transparent"
-              }`}
-            >
-              <span className={`grow ${active ? "font-semibold" : ""}`}>{status === "draft" ? "Drafts" : "Finished"}</span>
-              <span className="text-[13px] text-ink-muted">{counts[status]}</span>
-            </button>
+            <MenuRow key={status} indent selected={active} onClick={() => onFilter(status)} trailing={<MenuCount>{counts[status]}</MenuCount>}>
+              {status === "draft" ? "Drafts" : "Finished"}
+            </MenuRow>
           );
         })}
-        <button
-          type="button"
-          onClick={onPictures}
-          aria-current={screen === "pictures" ? "page" : undefined}
-          className={`${navItem} ${screen === "pictures" ? "bg-surface-hover font-semibold" : "bg-transparent"}`}
-        >
-          <PictureIcon size={17} />
+        <MenuRow icon={<PictureIcon size={17} />} onClick={onPictures} selected={screen === "pictures"}>
           Pictures
-        </button>
+        </MenuRow>
 
         {seasons.length > 0 && (
           <>
-            <div className="mx-1 my-3 h-px shrink-0 bg-line" />
-            <div className="px-3 pb-1.5 text-[13px] text-ink-muted">Seasons</div>
+            <MenuDivider className="my-3" />
+            <MenuLabel>Seasons</MenuLabel>
             {groupByYear(seasons).map((group) => {
               // This year's seasons are always listed. An earlier year is one quiet row that opens in
               // place (see the effect above: arriving at a season in a folded year opens that year).
@@ -176,40 +145,40 @@ export function Sidebar(props: Props) {
               return (
                 <div key={group.year}>
                   {!group.thisYear && (
-                    <button
-                      type="button"
+                    <MenuRow
+                      tone={open ? "ink" : "muted"}
+                      selected={false}
                       onClick={(e) => {
                         toggleYear(group.year, open);
                         if (!open) showYear(e.currentTarget);
                       }}
                       aria-expanded={open}
-                      className={`${subItem} px-3 text-left active:text-ink ${focusRing} ${open ? "font-semibold text-ink" : "text-ink-muted hover:text-ink"}`}
+                      className={open ? "font-semibold" : ""}
+                      trailing={
+                        <>
+                          <MenuCount>{group.items.reduce((n, s) => n + s.count, 0)}</MenuCount>
+                          <ChevronIcon up={open} />
+                        </>
+                      }
                     >
-                      <span className="grow">{group.year}</span>
-                      <span className="mr-2 text-[13px] font-normal text-ink-muted">{group.items.reduce((n, s) => n + s.count, 0)}</span>
-                      <ChevronIcon up={open} />
-                    </button>
+                      {group.year}
+                    </MenuRow>
                   )}
                   {open && (
                     <div className={group.thisYear ? undefined : "year-open"}>
                       {group.items.map((s) => {
                         const active = s.key === activeSeason;
                         return (
-                          <button
+                          <MenuRow
                             key={s.key}
-                            type="button"
+                            icon={<SeasonIcon name={s.key.split("-")[1] ?? ""} />}
                             onClick={() => onSeason(s.key)}
+                            selected={active}
                             aria-current={active ? "true" : undefined}
-                            className={`${subItem} px-3 text-left text-ink ${focusRing} ${active ? "bg-surface-hover" : "bg-transparent"}`}
+                            trailing={<MenuCount>{s.count}</MenuCount>}
                           >
-                            {/* Each season has its small mark in its own colour; the one on screen is marked
-                                like the other active menu items. */}
-                            <span className="flex w-[24px] shrink-0">
-                              <SeasonIcon name={s.key.split("-")[1] ?? ""} />
-                            </span>
-                            <span className={`grow ${active ? "font-semibold" : ""}`}>{s.label}</span>
-                            <span className="text-[13px] text-ink-muted">{s.count}</span>
-                          </button>
+                            {s.label}
+                          </MenuRow>
                         );
                       })}
                     </div>
@@ -223,21 +192,21 @@ export function Sidebar(props: Props) {
 
       {/* The way to the profile: the writer's name once, "Profile" under it, and a chevron that says it opens. */}
       <div className="shrink-0">
-        <div className="mx-1 h-px bg-line" />
-        <button
-          type="button"
+        <MenuDivider />
+        <MenuRow
+          tall
+          className="mt-2"
+          selected={screen === "profile"}
           onClick={onProfile}
-          aria-current={screen === "profile" ? "page" : undefined}
-          className={`mt-2 box-border flex min-h-14 w-full cursor-pointer items-center gap-3 rounded-md border-0 px-3 text-left text-ink ${screen === "profile" ? "bg-surface-hover" : "bg-transparent"} ${focusRing}`}
+          trailing={
+            <span className="shrink-0 -rotate-90 text-ink-muted">
+              <ChevronIcon size={16} />
+            </span>
+          }
         >
-          <span className="min-w-0 grow">
-            <span className="block truncate font-serif text-[17px] leading-[22px]">{name}</span>
-            <span className="block text-[12px] leading-4 text-ink-muted">Profile</span>
-          </span>
-          <span className="shrink-0 -rotate-90 text-ink-muted">
-            <ChevronIcon size={16} />
-          </span>
-        </button>
+          <span className="block truncate font-serif text-[17px] leading-[22px]">{name}</span>
+          <span className="block text-[12px] font-normal leading-4 text-ink-muted">Profile</span>
+        </MenuRow>
       </div>
     </nav>
   );

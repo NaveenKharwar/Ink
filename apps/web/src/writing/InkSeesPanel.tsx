@@ -9,6 +9,7 @@ import { DeletePiece } from "./DeletePiece";
 import { RelatedNoteView } from "./RelatedNoteView";
 import { useDismissals, useRelated } from "./useRelated";
 import { FadeScroll } from "../ui/FadeScroll";
+import { MenuDivider, MenuRow } from "../ui/MenuRow";
 import { ScreenLoader } from "../ui/Loader";
 
 const RELATED_SHOWN = 3;
@@ -39,9 +40,6 @@ const focus = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visi
 // The dotted-underline link ("Show 2 more", "Undo").
 const linkClass =
   `relative cursor-pointer border-0 border-b-[1.5px] border-dotted border-accent bg-transparent p-0 text-[14px] text-accent before:absolute before:-inset-x-3 before:-inset-y-[14px] before:content-[''] ${focus}`;
-
-// A row in the panel's foot: the full width is the tap area, 44px tall (colour is set where it is used).
-const footRow = `flex min-h-11 w-full cursor-pointer items-center rounded-md border-0 bg-transparent px-2 text-left text-[14px] leading-5 ${focus}`;
 
 // "Ink sees this too": older writing beside the piece, as plain notes under heading bars. Related
 // (soft blue: it leads to other writing), Forgotten (old pieces not edited for a long while) and
@@ -219,31 +217,31 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
         })}
       </FadeScroll>
       {pieceId && (found.known || keptOut || exists) && (
-        <div aria-live="polite" className={`shrink-0 pb-3 px-5`}>
+        <div aria-live="polite" className="shrink-0 bg-surface px-5 pb-3 pt-2">
           {/* Settings first (switches, each with one line of what it does), then any actions, and
               Delete last, set apart. A new option is another row in the right group. */}
-          <div className="mx-1 h-px bg-line" />
+          <MenuDivider />
           {(found.known || keptOut) && (
-            <button
-              type="button"
+            <MenuRow
+              tall
+              tone="muted"
               role="switch"
               aria-checked={!keptOut}
               onClick={() => void changeKeepOut()}
-              className={`${footRow} min-h-14 justify-between gap-3 py-1 text-ink-muted`}
+              trailing={
+                <span aria-hidden className={`relative h-6 w-10 shrink-0 rounded-full transition-colors duration-150 motion-reduce:transition-none ${keptOut ? "bg-line-strong" : "bg-accent"}`}>
+                  <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-surface transition-[left] duration-150 motion-reduce:transition-none ${keptOut ? "left-0.5" : "left-[18px]"}`} />
+                </span>
+              }
             >
-              <span className="flex flex-col">
-                <span className="text-ink">{MEMORY_LABEL}</span>
-                <span className="text-[12px] text-ink-muted">{keepFailed ? KEEP_OUT_FAILED : memoryHint(keptOut)}</span>
-              </span>
-              <span aria-hidden className={`relative h-6 w-10 shrink-0 rounded-full transition-colors duration-150 motion-reduce:transition-none ${keptOut ? "bg-line-strong" : "bg-accent"}`}>
-                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-surface transition-[left] duration-150 motion-reduce:transition-none ${keptOut ? "left-0.5" : "left-[18px]"}`} />
-              </span>
-            </button>
+              <span className="block text-ink">{MEMORY_LABEL}</span>
+              <span className="block text-[12px] leading-4 text-ink-muted">{keepFailed ? KEEP_OUT_FAILED : memoryHint(keptOut)}</span>
+            </MenuRow>
           )}
           {exists && (
             <>
-              <div className="mx-1 h-px bg-line" />
-              <DeletePiece pieceId={pieceId} userId={userId} row={footRow} onDeleted={onDeleted} />
+              <MenuDivider />
+              <DeletePiece pieceId={pieceId} userId={userId} onDeleted={onDeleted} />
             </>
           )}
         </div>
