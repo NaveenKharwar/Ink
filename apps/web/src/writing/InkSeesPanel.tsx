@@ -110,7 +110,6 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
           note={n}
           label={noteLabel(n, seasonSet)}
           color={seasonColorVar(n.createdAt, timeZone, seasonSet)}
-          phone={phone}
           selected={selected === n.id}
           dimmed={selected !== null && selected !== n.id}
           reading={reading.includes(n.id)}
