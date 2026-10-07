@@ -5,7 +5,7 @@ meta {
 }
 
 post {
-  url: {{process.env.SUPABASE_URL}}/auth/v1/logout
+  url: {{process.env.SUPABASE_URL}}/auth/v1/logout?scope=local
   body: none
   auth: bearer
 }
@@ -31,12 +31,19 @@ script:pre-request {
 
 script:post-response {
   // Signing out deletes the sign-in session; the token itself is still signed and unexpired.
-  const res2 = await bru.sendRequest({
-    method: "GET",
-    url: bru.getEnvVar("baseUrl") + "/api/pieces",
-    headers: { Authorization: "Bearer " + bru.getVar("throwawayToken") }
-  });
-  bru.setVar("signedOutStatus", res2.status);
+  // Only this one session is ended (scope=local); the default would sign the writer out everywhere.
+  // A refused request is thrown by sendRequest, so the status is read from the error.
+  let status;
+  try {
+    status = (await bru.sendRequest({
+      method: "GET",
+      url: bru.getEnvVar("baseUrl") + "/api/pieces",
+      headers: { Authorization: "Bearer " + bru.getVar("throwawayToken") }
+    })).status;
+  } catch (error) {
+    status = error.response?.status;
+  }
+  bru.setVar("signedOutStatus", status);
 }
 
 tests {
