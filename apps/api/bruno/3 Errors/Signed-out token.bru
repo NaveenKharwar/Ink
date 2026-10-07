@@ -41,7 +41,7 @@ script:post-response {
       headers: { Authorization: "Bearer " + bru.getVar("throwawayToken") }
     })).status;
   } catch (error) {
-    status = error.response?.status;
+    status = error.response?.status ?? error.status ?? Number(/status code (\d+)/.exec(String(error.message))?.[1]);
   }
   bru.setVar("signedOutStatus", status);
 }
