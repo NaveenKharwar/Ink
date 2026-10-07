@@ -186,9 +186,6 @@ export function BesidePaper({ tabs, active, seasonSet, phone = false, narrow = f
           <ScreenLoader label="Opening" />
         </div>
       )}
-      {load.status === "error" && (
-        <p className="m-0 grow px-6 py-8 text-ink-muted">Couldn’t open this piece. Check your connection.</p>
-      )}
 
       <div className={`flex h-14 shrink-0 items-center justify-between border-t border-line text-[13px] text-ink-muted ${phone || narrow ? "px-6" : "px-10"}`}>
         <span>Read only</span>

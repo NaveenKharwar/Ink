@@ -39,12 +39,6 @@ export function PieceView({ open, onWrite, ...page }: Props) {
             <NoteButton onClick={onWrite}>Write something new</NoteButton>
           </>
         )}
-        {load.status === "error" && (
-          <>
-            <p className="m-0">Couldn't open this piece. Check your connection.</p>
-            <NoteButton onClick={load.retry}>Try again</NoteButton>
-          </>
-        )}
       </div>
     </>
   );

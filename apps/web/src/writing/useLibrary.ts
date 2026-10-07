@@ -5,7 +5,6 @@ import { pieces } from "../lib/api";
 export type Library = {
   /** Null until the first answer arrives. */
   items: LibraryItem[] | null;
-  failed: boolean;
   refresh: () => void;
 };
 
@@ -16,7 +15,6 @@ export type Library = {
  */
 export function useLibrary(): Library {
   const [items, setItems] = useState<LibraryItem[] | null>(null);
-  const [failed, setFailed] = useState(false);
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
@@ -25,9 +23,8 @@ export function useLibrary(): Library {
       (res) => {
         if (cancelled) return;
         setItems(res.items);
-        setFailed(false);
       },
-      () => !cancelled && setFailed(true)
+      () => undefined
     );
     return () => {
       cancelled = true;
@@ -35,5 +32,5 @@ export function useLibrary(): Library {
   }, [tick]);
 
   const refresh = useCallback(() => setTick((n) => n + 1), []);
-  return { items, failed, refresh };
+  return { items, refresh };
 }

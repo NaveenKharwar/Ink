@@ -102,14 +102,7 @@ export function PicturesPage({ wide, showMenuButton, onMenu, seasonOf, onOpenPie
             </p>
           )}
 
-          {list.failed && !list.items ? (
-            <div className="mt-10 text-[14px] text-ink">
-              Ink couldn't load your pictures.{" "}
-              <button type="button" onClick={() => void list.refresh()} className={`cursor-pointer border-0 bg-transparent p-0 text-accent underline underline-offset-4 ${focusRing}`}>
-                Try again
-              </button>
-            </div>
-          ) : !list.items ? (
+          {!list.items ? (
             <ScreenLoader className="py-16" label="Loading your pictures" />
           ) : count === 0 ? (
             <p className="m-0 mt-10 max-w-[420px] text-[14px] leading-[22px] text-ink-muted">
@@ -175,7 +168,6 @@ function PictureViewer({
   const [uses, setUses] = useState<PictureUsesResponse["items"] | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [failed, setFailed] = useState(false);
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
 
   useEffect(() => {
@@ -191,13 +183,12 @@ function PictureViewer({
 
   const remove = async () => {
     setDeleting(true);
-    setFailed(false);
     try {
       await picturesApi.remove(picture.id);
       forgetPicture(picture.id);
       onDeleted();
     } catch {
-      setFailed(true);
+      // The app shows its one screen for a failure; the button is simply ready again.
       setDeleting(false);
     }
   };
@@ -262,7 +253,6 @@ function PictureViewer({
                       ? `Delete this picture? It will also be taken out of “${pieceName(uses![0]!)}”. This can't be undone.`
                       : `Delete this picture? It will also be taken out of ${usedIn} pieces. This can't be undone.`}
                 </p>
-                {failed && <p className="m-0 mb-3 text-[13px] text-ink">Ink couldn't delete it. Try again in a moment.</p>}
                 <div className="flex gap-2">
                   <Button look="main" busy={deleting} onClick={() => void remove()} className="h-10 text-[14px]">
                     Delete

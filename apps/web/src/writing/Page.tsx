@@ -170,7 +170,7 @@ export function Page({ pieceId, userId, opened, wide, season, showMenuButton, pa
           <div className="mx-auto max-w-[640px]">
             <EditorContent editor={editor} />
             <LinkCard editor={editor} />
-            <FinishedPrompt spot={finishing.spot} failed={finishing.failed} onToggle={finishing.toggle} />
+            <FinishedPrompt spot={finishing.spot} onToggle={finishing.toggle} />
             <StyleCards shown={showCards} wide={wide} onPick={changeStyle} selected={leaning} onSelect={setLeaning} />
           </div>
         </div>
