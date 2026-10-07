@@ -14,6 +14,12 @@ auth:bearer {
   token: {{secondToken}}
 }
 
+script:pre-request {
+  // Pieces are embedded in the background, a moment after they are saved (CI shortens the wait to 1 second).
+  // Give that time to finish, so there is something to leak.
+  await new Promise((resolve) => setTimeout(resolve, 8000));
+}
+
 assert {
   res.status: eq 200
 }

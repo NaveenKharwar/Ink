@@ -73,7 +73,7 @@ jobs:
       - name: Start the stand-in embedder and the API
         run: |
           nohup pnpm --filter @ink/api exec tsx ci/fake-embedder.ts > fake-embedder.log 2>&1 &
-          NODE_ENV=development EMBEDDER_URL=http://127.0.0.1:8001 nohup pnpm --filter @ink/api exec tsx src/server.ts > api.out.log 2>&1 &
+          NODE_ENV=development EMBEDDER_URL=http://127.0.0.1:8001 EMBED_QUIET_SECONDS=1 nohup pnpm --filter @ink/api exec tsx src/server.ts > api.out.log 2>&1 &
           for i in $(seq 1 60); do
             curl -sf http://localhost:3001/health > /dev/null && exit 0
             sleep 1

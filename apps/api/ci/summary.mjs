@@ -27,7 +27,7 @@ const requests = results.map((r) => {
   ];
   const scriptError = r.error ? [{ ok: false, text: "script or request error", error: r.error }] : [];
   const all = [...checks, ...scriptError];
-  const name = r.suitename ?? r.test?.filename ?? r.request?.url ?? "request";
+  const name = String(r.suitename ?? r.test?.filename ?? r.request?.url ?? "request").replace(/^.*\/bruno\//, "");
   return { name, status: r.response?.status, checks: all, ok: all.length > 0 && all.every((c) => c.ok) };
 });
 
