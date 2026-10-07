@@ -569,3 +569,15 @@ body {
     transform: translate(-50%, -50%);
   }
 }
+
+/* A quiet note (ui/QuietNote): fades in, stays a moment, fades out. With reduced motion it simply shows
+   and is removed by its timer. */
+@keyframes quiet-note {
+  0% { opacity: 0; }
+  10%, 80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.quiet-note { animation: quiet-note 4.5s ease-in-out forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .quiet-note { animation: none; }
+}
