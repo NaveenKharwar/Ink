@@ -178,7 +178,8 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
   // Send what is still on the device before the token goes away (never wait more than 2s).
   const signOut = async () => {
     await Promise.race([sync.syncAll(userId), new Promise((r) => setTimeout(r, 2000))]);
-    await supabase.auth.signOut();
+    // This device only: the writer's other devices stay signed in (a new password ends those).
+    await supabase.auth.signOut({ scope: "local" });
     // The next writer must not land on this one's piece.
     window.history.replaceState(null, "", "/");
   };
