@@ -70,9 +70,18 @@ const toNote = ({ id, title, text, language, style, createdAt, updatedAt }: Cand
 export type Ranked = Omit<RelatedResponse, "keptOut">;
 
 export function rankRelated(current: Candidate, others: Candidate[], now: Date): Ranked {
+  return rankWithPicks(current, others, now).ranked;
+}
+
+/** Which list a piece landed in, and the numbers behind it. Ids and numbers only, never any text. */
+export type Pick = { id: string; list: "related" | "forgotten" | "loose"; similarity: number | null; overlap: number };
+export type Picks = { considered: number; withoutVector: number; picks: Pick[] };
+
+/** `rankRelated`, plus what a debugging log needs to say why each piece was shown. */
+export function rankWithPicks(current: Candidate, others: Candidate[], now: Date): { ranked: Ranked; trace: Picks } {
   const mine = wordsOf(current.text);
   // A blank or one-word page has nothing to be close to: the panel says "Nothing yet".
-  if (mine.size === 0 || wordCount(current.text) < MIN_WORDS) return { related: [], forgotten: [], loose: [], looked: false };
+  if (mine.size === 0 || wordCount(current.text) < MIN_WORDS) return { ranked: { related: [], forgotten: [], loose: [], looked: false }, trace: { considered: 0, withoutVector: 0, picks: [] } };
 
   // Noise out: pieces too short to be a line, copies of the page being written, and the same words
   // written twice (the newest of those is kept).
@@ -129,10 +138,18 @@ export function rankRelated(current: Candidate, others: Candidate[], now: Date):
     .sort((a, b) => b.score - a.score || b.piece.updatedAt.localeCompare(a.piece.updatedAt))
     .slice(0, RELATED_LIMIT);
 
+  const pick = (list: Pick["list"]) => (item: (typeof scored)[number]): Pick => ({ id: item.piece.id, list, similarity: item.similarity === null ? null : Math.round(item.similarity * 1000) / 1000, overlap: item.overlap });
   return {
-    related: related.map(({ piece }) => toNote(piece)),
-    forgotten: forgotten.map(({ piece }) => toNote(piece)),
-    loose: loose.map(({ piece }) => toNote(piece)),
-    looked: true
+    ranked: {
+      related: related.map(({ piece }) => toNote(piece)),
+      forgotten: forgotten.map(({ piece }) => toNote(piece)),
+      loose: loose.map(({ piece }) => toNote(piece)),
+      looked: true
+    },
+    trace: {
+      considered: scored.length,
+      withoutVector: scored.filter(({ similarity }) => similarity === null).length,
+      picks: [...related.map(pick("related")), ...forgotten.map(pick("forgotten")), ...loose.map(pick("loose"))]
+    }
   };
 }

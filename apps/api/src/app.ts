@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import Fastify from "fastify";
 import { noEmbeddingQueue, type EmbeddingQueue } from "./embeddings/queue.js";
 import { requireUser, type VerifyToken } from "./auth.js";
@@ -28,7 +29,9 @@ export type AppDeps = {
 };
 
 export async function buildApp({ repo, related, pictures, verify, embeddings = noEmbeddingQueue, meaning, logger = false, docs = false }: AppDeps) {
-  const app = Fastify({ logger: loggerOptions(logger) });
+  // Every request gets its own id (not a counter that restarts), so one failure can be found across log lines.
+  const app = Fastify({ logger: loggerOptions(logger), genReqId: () => randomUUID() });
+  app.addHook("onSend", async (request, reply) => void reply.header("x-request-id", request.id));
   app.decorateRequest("userId", "");
   registerErrorHandling(app);
 

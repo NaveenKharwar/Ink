@@ -179,6 +179,26 @@ test("a piece kept out of memory says so, and nothing is looked at beside it", a
   assert.equal((await app.inject({ method: "GET", url: `/api/pieces/${A}/related`, headers: as(ASHA) })).json().keptOut, false);
 });
 
+test("the log says why pieces were shown by id and score, never by text, and every answer carries a request id", async () => {
+  const lines: string[] = [];
+  const stub = stubRepo();
+  const verify: VerifyToken = async (token) => ({ userId: token.slice("token-".length) });
+  const app = await buildApp({
+    repo: {} as PiecesRepo, related: stub.repo, pictures: { store: memoryPictureStore(), repo: memoryPicturesRepo() }, verify,
+    logger: { write: (line) => void lines.push(line) }
+  });
+  const res = await app.inject({ method: "GET", url: `/api/pieces/${A}/related`, headers: { authorization: `Bearer token-${ASHA}` } });
+  assert.equal(res.statusCode, 200);
+  const id = res.headers["x-request-id"];
+  assert.match(String(id), /^[0-9a-f-]{36}$/);
+  const entry = lines.map((line) => JSON.parse(line)).find((line) => line.msg === "Related looked");
+  assert.equal(entry.reqId, id);
+  assert.deepEqual(entry.related.picks, [{ id: B, list: "loose", similarity: null, overlap: 1 }]);
+  assert.equal(entry.related.considered, 1);
+  assert.equal(entry.related.withoutVector, 1);
+  assert.doesNotMatch(lines.join(""), /kettle/);
+});
+
 test("dismissing and undoing answer 204, repeat safely, and refuse pieces that are not the writer's", async () => {
   const { app, as, dismissed } = await setup();
   const url = `/api/pieces/${A}/related/${B}/dismissed`;
