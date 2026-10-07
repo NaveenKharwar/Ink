@@ -326,3 +326,25 @@ test("the same idea in the other language: Hindi for English or English for Hind
   // Three of the same thing still wins; with one close piece in the other language it is a crossing.
   assert.equal(noticeOne(current, [hi("h1", "2025-02-01T00:00:00Z", 0.7)], NOW)?.kind, "crosses");
 });
+
+test("the log file gets the same lines as the terminal, with a readable time", async () => {
+  const { mkdtempSync, readFileSync, rmSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const { fileLogStream } = await import("../logging.js");
+  const dir = mkdtempSync(join(tmpdir(), "ink-log-"));
+  const path = join(dir, "nested", "api.log");
+  {
+    const stream = fileLogStream(path, () => {});
+    const verify: VerifyToken = async (token) => ({ userId: token.slice("token-".length) });
+    const app = await buildApp({ repo: {} as PiecesRepo, related: stubRepo().repo, pictures: { store: memoryPictureStore(), repo: memoryPicturesRepo() }, verify, logger: stream });
+    await app.inject({ method: "GET", url: `/api/pieces/${A}/related`, headers: { authorization: `Bearer token-${ASHA}` } });
+    await app.close();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  const text = readFileSync(path, "utf8");
+  rmSync(dir, { recursive: true });
+  assert.match(text, /"time":"\d{4}-\d\d-\d\dT[\d:.]+Z"/);
+  assert.match(text, /Related looked/);
+  assert.doesNotMatch(text, /kettle/);
+});
