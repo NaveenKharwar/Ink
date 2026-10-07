@@ -14,6 +14,10 @@ auth:bearer {
   token: {{process.env.EXPIRED_TOKEN}}
 }
 
+assert {
+  res.status: eq 401
+}
+
 docs {
   Sends a real token that has run out (they last about an hour). Put an old one in EXPIRED_TOKEN in the .env file: copy a token from an earlier sign-in and wait an hour.
   Expect 401 unauthorized: "Your session has expired. Sign in again." A 200 means expired tokens still work.

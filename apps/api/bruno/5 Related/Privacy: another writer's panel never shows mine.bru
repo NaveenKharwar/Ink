@@ -1,7 +1,7 @@
 meta {
   name: Privacy: another writer's panel never shows mine
   type: http
-  seq: 9
+  seq: 14
 }
 
 get {
@@ -11,10 +11,47 @@ get {
 }
 
 auth:bearer {
-  token: {{token}}
+  token: {{secondToken}}
+}
+
+script:pre-request {
+  // Meaning vectors are made in the background a moment after a save. Wait until both pieces have theirs
+  // (asked of the database directly), so the lists below are ranked by meaning and not by the shared-words
+  // fallback, and an empty list cannot pass for the wrong reason.
+  const ids = [bru.interpolate("{{secondPieceId}}"), bru.interpolate("{{secondOtherPieceId}}")];
+  const key = bru.getProcessEnv("SUPABASE_SERVICE_ROLE_KEY");
+  let ready = false;
+  const deadline = Date.now() + 40000;
+  while (!ready && Date.now() < deadline) {
+    try {
+      const found = await bru.sendRequest({
+        method: "GET",
+        url: bru.getProcessEnv("SUPABASE_URL") + "/rest/v1/piece_embeddings?select=piece_id&piece_id=in.(" + ids.join(",") + ")",
+        headers: { apikey: key, Authorization: "Bearer " + key }
+      });
+      ready = Array.isArray(found.data) && found.data.length === ids.length;
+    } catch (error) {
+      // not reachable yet: look again
+    }
+    if (!ready) await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+  bru.setVar("vectorsReady", ready);
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("both pieces had their meaning vectors, so the lists are ranked by meaning", () => expect(bru.getVar("vectorsReady")).to.equal(true));
+  test("their own other piece is listed, so the list is not just empty", () => expect(JSON.stringify(res.body)).to.include(bru.interpolate("{{secondOtherPieceId}}")));
+  test("nothing of the first writer's shows up", () => {
+    const body = JSON.stringify(res.body);
+    [expect(bru.interpolate("{{pieceId}}")).to.have.length(36), expect(body).to.not.include(bru.interpolate("{{pieceId}}"))];
+    [expect(bru.interpolate("{{otherPieceId}}")).to.have.length(36), expect(body).to.not.include(bru.interpolate("{{otherPieceId}}"))];
+  });
 }
 
 docs {
-  As the second writer, after "another writer writes a similar piece". Expect 200. No note in related, forgotten or loose may have the id {{pieceId}} or {{otherPieceId}}: those are the first writer's, and their words are almost the same. If the second writer has no other pieces, all three lists are empty, and any note at all is a leak.
-  Then run "1 Sign in / Get a token" to go back to your own account.
+  As the second writer, after their two similar pieces are written. Waits until this panel lists the second writer's own other piece, then expects 200. No note in related, forgotten or loose may have the id {{pieceId}} or {{otherPieceId}}: those are the first writer's, and their words are almost the same. The list has a real note in it, so "nothing of the first writer's" is not true just because the list is empty.
 }

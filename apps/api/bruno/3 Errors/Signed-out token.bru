@@ -5,7 +5,7 @@ meta {
 }
 
 post {
-  url: {{process.env.SUPABASE_URL}}/auth/v1/logout
+  url: {{process.env.SUPABASE_URL}}/auth/v1/logout?scope=local
   body: none
   auth: bearer
 }
@@ -15,17 +15,35 @@ headers {
 }
 
 auth:bearer {
-  token: {{token}}
+  token: {{throwawayToken}}
+}
+
+script:pre-request {
+  // A session of its own, so signing it out does not end the one the other requests use.
+  const signIn = await bru.sendRequest({
+    method: "POST",
+    url: bru.getProcessEnv("SUPABASE_URL") + "/auth/v1/token?grant_type=password",
+    headers: { apikey: bru.getProcessEnv("SUPABASE_ANON_KEY"), "Content-Type": "application/json" },
+    data: { email: bru.getProcessEnv("TEST_EMAIL"), password: bru.getProcessEnv("TEST_PASSWORD") }
+  });
+  bru.setVar("throwawayToken", signIn.data.access_token);
 }
 
 script:post-response {
   // Signing out deletes the sign-in session; the token itself is still signed and unexpired.
-  const res2 = await bru.sendRequest({
-    method: "GET",
-    url: bru.getEnvVar("baseUrl") + "/api/pieces",
-    headers: { Authorization: "Bearer " + bru.getVar("token") }
-  });
-  bru.setVar("signedOutStatus", res2.status);
+  // Only this one session is ended (scope=local); the default would sign the writer out everywhere.
+  // A refused request is thrown by sendRequest, so the status is read from the error.
+  let status;
+  try {
+    status = (await bru.sendRequest({
+      method: "GET",
+      url: bru.getEnvVar("baseUrl") + "/api/pieces",
+      headers: { Authorization: "Bearer " + bru.getVar("throwawayToken") }
+    })).status;
+  } catch (error) {
+    status = error.response?.status ?? error.status ?? Number(/status code (\d+)/.exec(String(error.message))?.[1]);
+  }
+  bru.setVar("signedOutStatus", status);
 }
 
 tests {
@@ -34,7 +52,7 @@ tests {
 }
 
 docs {
-  Run "Get a token" first. This signs that session out with Supabase, then asks the API for pieces with the same token, which is still signed and not yet expired.
+  This signs a new session of the first user in, signs it out with Supabase, then asks the API for pieces with the same token, which is still signed and not yet expired.
   Expect the sign-out to answer 204 and the API to answer 401: signing out ends access at once. A 200 means a signed-out token still works.
-  Afterwards, run "Get a token" again before anything else: this token is gone for good.
+  The session is a throwaway one made just for this request, so your own token keeps working afterwards.
 }

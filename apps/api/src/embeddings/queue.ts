@@ -30,7 +30,8 @@ export async function startEmbeddingQueue(
   pool: pg.Pool,
   repo: EmbeddingsRepo,
   provider: EmbeddingProvider,
-  log: { warn: (message: string) => void }
+  log: { warn: (message: string) => void },
+  quietSeconds = QUIET_SECONDS
 ): Promise<EmbeddingQueue> {
   const boss = new PgBoss({ db: { executeSql: (text, values) => pool.query(text, values as unknown[]) } });
   boss.on("error", (err) => log.warn(`Embedding queue: ${err.message}`));
@@ -41,7 +42,7 @@ export async function startEmbeddingQueue(
   });
   const enqueue = async (pieceId: string) => {
     try {
-      await boss.sendDebounced(QUEUE, { pieceId }, null, QUIET_SECONDS, pieceId);
+      await boss.sendDebounced(QUEUE, { pieceId }, null, quietSeconds, pieceId);
     } catch (err) {
       log.warn(`Could not queue embedding: ${(err as Error).message}`);
     }

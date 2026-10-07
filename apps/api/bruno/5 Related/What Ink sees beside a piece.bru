@@ -14,6 +14,39 @@ auth:bearer {
   token: {{token}}
 }
 
+script:pre-request {
+  // Meaning vectors are made in the background a moment after a save. Wait until both pieces have theirs
+  // (asked of the database directly), so the lists below are ranked by meaning and not by the shared-words
+  // fallback, and an empty list cannot pass for the wrong reason.
+  const ids = [bru.interpolate("{{pieceId}}"), bru.interpolate("{{otherPieceId}}")];
+  const key = bru.getProcessEnv("SUPABASE_SERVICE_ROLE_KEY");
+  let ready = false;
+  const deadline = Date.now() + 40000;
+  while (!ready && Date.now() < deadline) {
+    try {
+      const found = await bru.sendRequest({
+        method: "GET",
+        url: bru.getProcessEnv("SUPABASE_URL") + "/rest/v1/piece_embeddings?select=piece_id&piece_id=in.(" + ids.join(",") + ")",
+        headers: { apikey: key, Authorization: "Bearer " + key }
+      });
+      ready = Array.isArray(found.data) && found.data.length === ids.length;
+    } catch (error) {
+      // not reachable yet: look again
+    }
+    if (!ready) await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+  bru.setVar("vectorsReady", ready);
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("both pieces had their meaning vectors, so the lists are ranked by meaning", () => expect(bru.getVar("vectorsReady")).to.equal(true));
+  test("the second piece, with the same words, is listed", () => expect(JSON.stringify(res.body)).to.include(bru.interpolate("{{otherPieceId}}")));
+}
+
 docs {
   Three lists: related, forgotten and loose, each note with its own opening lines, title and dates, and looked (false while the page is too short to compare). Only your own pieces. Close means close in meaning: related needs 0.45, forgotten and loose need 0.53, so any list can be empty. Pieces without a vector yet fall back to sharing words. Needs pieceId to be a piece of yours that has words.
 }

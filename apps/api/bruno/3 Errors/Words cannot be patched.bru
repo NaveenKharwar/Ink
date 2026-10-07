@@ -24,6 +24,10 @@ body:json {
   }
 }
 
+assert {
+  res.status: eq 400
+}
+
 docs {
   The words, title and language are only written by syncing. None of these are fields here, so this is the same 400 as an empty patch.
 }

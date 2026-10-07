@@ -1,0 +1,27 @@
+meta {
+  name: My panel after the other writer tried to undo
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/api/pieces/{{pieceId}}/related
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("the other piece is not listed", () => [expect(bru.interpolate("{{otherPieceId}}")).to.have.length(36), expect(JSON.stringify(res.body)).to.not.include(bru.interpolate("{{otherPieceId}}"))]);
+}
+
+docs {
+  After the second writer's refused undo, the dismissal stands: the second piece is still gone from the panel.
+}

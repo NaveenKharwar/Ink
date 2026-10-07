@@ -5,7 +5,29 @@ on:
     branches: [main]
   pull_request:
 
+# Read-only by default; a job that needs more says so itself.
+permissions:
+  contents: read
+
+# A push to a pull request cancels the runs it supersedes. Runs on main always finish.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
+  # Keeps private planning, tooling and assistant traces out of the public repo (files, commits, branch name).
+  hygiene:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check the repo
+        env:
+          BASE: ${{ github.base_ref }}
+        run: .github/hygiene.sh ${BASE:+origin/$BASE}
+
   build:
     runs-on: ubuntu-latest
     steps:
@@ -24,3 +46,125 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+
+  # The Bruno privacy and token checks: two writers against a real local Supabase
+  # (database, sign-in, storage), the real API, and a stand-in embedder. Fails the PR if one writer
+  # can reach another's writing, or a bad token gets in.
+  api-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.6.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build the shared schemas
+        run: pnpm --filter @ink/schemas build
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.120.0
+
+      - name: Start a local Supabase
+        run: |
+          supabase init --force
+          supabase start -x realtime,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+
+      - name: Apply the migrations and create two writers
+        run: apps/api/ci/prepare.sh
+
+      - name: Make an expired token
+        run: |
+          eval "$(supabase status -o env | sed 's/^/export /')"
+          token="$(node apps/api/ci/mint-expired-token.mjs)"
+          echo "::add-mask::$token"
+          echo "EXPIRED_TOKEN=$token" >> "$GITHUB_ENV"
+
+      - name: Start the stand-in embedder and the API
+        run: |
+          nohup pnpm --filter @ink/api exec tsx ci/fake-embedder.ts > fake-embedder.log 2>&1 &
+          NODE_ENV=development EMBEDDER_URL=http://127.0.0.1:8001 EMBED_QUIET_SECONDS=1 nohup pnpm --filter @ink/api exec tsx src/server.ts > api.out.log 2>&1 &
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:3001/health > /dev/null && exit 0
+            sleep 1
+          done
+          echo "The API did not start"; cat api.out.log; exit 1
+
+      - name: Run the Bruno collection
+        run: npx --yes @usebruno/cli@4.2.1 run --env Local --reporter-json "$GITHUB_WORKSPACE/bruno-results.json"
+        working-directory: apps/api/bruno
+
+      - name: The embeddings were really made
+        if: always()
+        run: |
+          eval "$(supabase status -o env | sed 's/^/export /')"
+          count=$(psql "$DB_URL" -tA -c "select count(*) from public.piece_embeddings")
+          echo "embeddings: $count"
+          echo "Meaning vectors made during the run: $count. The privacy checks only mean something if there were some." > embeddings.md
+          [ "$count" -ge 4 ]
+
+      - name: Write the summary
+        if: always()
+        run: |
+          {
+            node apps/api/ci/summary.mjs bruno-results.json short
+            echo
+            cat embeddings.md 2>/dev/null || true
+          } > summary.md
+          {
+            node apps/api/ci/summary.mjs bruno-results.json
+            echo
+            cat embeddings.md 2>/dev/null || true
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # One comment per pull request, edited on every run, so the latest result is always right there.
+      - name: Post the summary on the pull request
+        if: always() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          {
+            echo "<!-- api-checks -->"
+            cat summary.md
+            echo
+            echo "[Every check]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID) · commit ${GITHUB_SHA::7}"
+          } > comment.md
+          id=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate -q '.[] | select(.body | startswith("<!-- api-checks -->")) | .id' | head -1)
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$id" -F body=@comment.md > /dev/null
+          else
+            gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -F body=@comment.md > /dev/null
+          fi
+
+      - name: Logs
+        if: failure()
+        run: |
+          echo "--- API"; tail -n 200 api.out.log || true
+          echo "--- embedder"; tail -n 50 fake-embedder.log || true
+
+      # The whole logs and the Bruno report, to download from the run page when a check fails.
+      - name: Keep the logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-check-logs
+          path: |
+            api.out.log
+            fake-embedder.log
+            apps/api/logs/api.log
+            bruno-results.json
+          if-no-files-found: ignore
+          retention-days: 7

@@ -14,6 +14,10 @@ auth:bearer {
   token: {{token}}x
 }
 
+assert {
+  res.status: eq 401
+}
+
 docs {
   Sends your real token with one wrong character added at the end.
   Expect 401 unauthorized: "Your session has expired. Sign in again."

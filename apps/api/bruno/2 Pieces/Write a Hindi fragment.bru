@@ -21,6 +21,18 @@ body:json {
   }
 }
 
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("Hindi, in two stanzas", () => {
+    expect(res.body.piece.language).to.equal("hi");
+    expect(res.body.piece.text).to.include("\n\n");
+    expect(res.body.piece.text).to.include("सर्दियों");
+  });
+}
+
 docs {
   A new piece (random id): two stanzas in Hindi, language "hi" set inside the document.
   In `piece.text` the stanzas are separated by a blank line.

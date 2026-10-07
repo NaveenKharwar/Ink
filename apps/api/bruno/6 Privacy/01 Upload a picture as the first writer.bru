@@ -1,0 +1,27 @@
+meta {
+  name: Upload a picture as the first writer
+  type: http
+  seq: 1
+}
+
+put {
+  url: {{baseUrl}}/api/pictures/{{privatePictureId}}
+  body: file
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:file {
+  file: @file(4 Pictures/sample.jpg) @contentType(image/jpeg)
+}
+
+assert {
+  res.status: eq 204
+}
+
+docs {
+  Puts a picture in the first writer's private folder, for the requests below to go after. Expect 204.
+}

@@ -21,6 +21,10 @@ body:json {
   }
 }
 
+assert {
+  res.status: eq 400
+}
+
 docs {
   Valid base64, but not a Yjs update. Expect 400 invalid_request: "The update is not valid."
 }

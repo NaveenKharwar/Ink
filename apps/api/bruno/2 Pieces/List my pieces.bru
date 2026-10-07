@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: {{baseUrl}}/api/pieces?limit=2
+  url: {{baseUrl}}/api/pieces?limit=1
   body: none
   auth: bearer
 }
@@ -16,8 +16,20 @@ auth:bearer {
 
 script:post-response {
   bru.setVar("cursor", res.body.nextCursor || "");
+  bru.setVar("firstPageId", res.body.items[0] && res.body.items[0].id);
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("one piece, and a next page", () => {
+    expect(res.body.items.length).to.equal(1);
+    expect(res.body.nextCursor).to.be.a("string");
+  });
 }
 
 docs {
-  Newest first, 2 per page, without `content`. If there are more, nextCursor is kept for "List the next page"; if not, it is cleared.
+  Newest first, 1 per page (so a second page exists even with two pieces), without `content`. If there are more, nextCursor is kept for "List the next page"; if not, it is cleared.
 }

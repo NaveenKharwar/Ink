@@ -18,6 +18,10 @@ body:file {
   file: @file(4 Pictures/sample.jpg) @contentType(image/jpeg)
 }
 
+assert {
+  res.status: eq 204
+}
+
 docs {
   Stores a small JPEG under pictureId in your own private folder. Expect 204.
   Sending it again replaces it (also 204), so a retry is safe.

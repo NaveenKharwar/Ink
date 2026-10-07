@@ -18,6 +18,10 @@ body:json {
   {}
 }
 
+assert {
+  res.status: eq 400
+}
+
 docs {
   Expect 400 invalid_request: "Nothing to update".
 }

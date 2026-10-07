@@ -25,6 +25,10 @@ script:post-response {
   if (res.status === 200) bru.setVar("token", res.body.access_token);
 }
 
+assert {
+  res.status: eq 200
+}
+
 docs {
   Signs in the test user with Supabase and keeps the access token for the other requests.
   Reads SUPABASE_URL, SUPABASE_ANON_KEY, TEST_EMAIL and TEST_PASSWORD from the .env file in this collection folder (git ignores it).

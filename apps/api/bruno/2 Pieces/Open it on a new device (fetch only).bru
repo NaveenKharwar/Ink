@@ -20,6 +20,14 @@ body:json {
   }
 }
 
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("the answer carries the whole piece", () => expect(res.body.update.length).to.be.greaterThan(20));
+}
+
 docs {
   A device that has nothing sends no `update` and an empty state vector (AA==).
   The answer's `update` holds the whole piece.

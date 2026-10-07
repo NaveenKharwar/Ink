@@ -21,6 +21,18 @@ body:json {
   }
 }
 
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("the phone's addition is in the text", () => expect(res.body.piece.text).to.include("(added on the phone)"));
+}
+
+script:post-response {
+  bru.setVar("phoneText", res.body.piece.text);
+}
+
 docs {
   Device B had the poem and added " (added on the phone)" to the last line. Expect the text to show it.
   The answer's `update` is empty: B already had everything else.

@@ -14,6 +14,19 @@ auth:bearer {
   token: {{token}}
 }
 
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("words and close are separate lists", () => {
+    expect(res.body.items).to.be.an("array");
+    expect(res.body.close).to.be.an("array");
+    const words = JSON.stringify(res.body.items.map((item) => item.id));
+    expect(res.body.close.some((item) => words.includes(item.id))).to.equal(false);
+  });
+}
+
 docs {
   Needs the embedder running (EMBEDDER_URL). `items` holds pieces with the word, `close` holds up to 5 pieces about the same thing without it (first line only, no marks, no matched line). No piece is in both. With the embedder stopped, `close` is [] and `items` still works. Signed in as the second writer, neither list may show the first writer's pieces.
 }

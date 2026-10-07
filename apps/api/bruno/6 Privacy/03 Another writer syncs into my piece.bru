@@ -1,0 +1,29 @@
+meta {
+  name: Another writer syncs into my piece
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/pieces/{{pieceId}}/sync
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{secondToken}}
+}
+
+body:json {
+  {
+    "stateVector": "AA=="
+  }
+}
+
+assert {
+  res.status: eq 404
+}
+
+docs {
+  The second writer opens the first writer's piece by its id. Expect 404 and nothing in the answer.
+}

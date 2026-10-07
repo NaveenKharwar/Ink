@@ -1,0 +1,23 @@
+meta {
+  name: Delete my picture
+  type: http
+  seq: 13
+}
+
+delete {
+  url: {{baseUrl}}/api/pictures/{{privatePictureId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 204
+}
+
+docs {
+  Cleans up after the checks. Expect 204.
+}

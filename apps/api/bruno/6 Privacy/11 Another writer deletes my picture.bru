@@ -1,0 +1,23 @@
+meta {
+  name: Another writer deletes my picture
+  type: http
+  seq: 11
+}
+
+delete {
+  url: {{baseUrl}}/api/pictures/{{privatePictureId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{secondToken}}
+}
+
+assert {
+  res.status: eq 404
+}
+
+docs {
+  Expect 404 and the picture stays (the next request checks).
+}

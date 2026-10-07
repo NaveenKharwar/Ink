@@ -1,0 +1,23 @@
+meta {
+  name: Another writer gets my picture
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/api/pictures/{{privatePictureId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{secondToken}}
+}
+
+assert {
+  res.status: eq 404
+}
+
+docs {
+  The second writer asks for the first writer's picture. Expect 404.
+}

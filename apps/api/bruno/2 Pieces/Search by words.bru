@@ -1,0 +1,27 @@
+meta {
+  name: Search by words
+  type: http
+  seq: 15
+}
+
+get {
+  url: {{baseUrl}}/api/search?q=kettle
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("the piece with that word is found", () => expect(JSON.stringify(res.body.items)).to.include(bru.interpolate("{{pieceId}}")));
+}
+
+docs {
+  Searches the words as typed. The piece about the kettle must come back in `items`.
+}

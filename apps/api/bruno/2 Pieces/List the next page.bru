@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: {{baseUrl}}/api/pieces?limit=2&cursor={{cursor}}
+  url: {{baseUrl}}/api/pieces?limit=1&cursor={{cursor}}
   body: none
   auth: bearer
 }
@@ -20,6 +20,17 @@ script:pre-request {
   if (!cursor) {
     throw new Error("There is no next page: the last list returned nextCursor: null. Create more pieces, run List my pieces again, then try this.");
   }
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("a different piece than the first page", () => {
+    expect(res.body.items.length).to.equal(1);
+    expect(res.body.items[0].id).to.not.equal(bru.getVar("firstPageId"));
+  });
 }
 
 docs {

@@ -1,7 +1,7 @@
 meta {
   name: Undo not related
   type: http
-  seq: 4
+  seq: 9
 }
 
 delete {
@@ -12,6 +12,10 @@ delete {
 
 auth:bearer {
   token: {{token}}
+}
+
+assert {
+  res.status: eq 204
 }
 
 docs {

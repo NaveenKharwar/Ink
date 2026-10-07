@@ -1,7 +1,7 @@
 meta {
   name: Privacy: another writer asks about my piece
   type: http
-  seq: 5
+  seq: 11
 }
 
 get {
@@ -11,9 +11,13 @@ get {
 }
 
 auth:bearer {
-  token: {{token}}
+  token: {{secondToken}}
+}
+
+assert {
+  res.status: eq 404
 }
 
 docs {
-  Run "1 Sign in / Get a token (second user)" first, so the token is the second writer. Expect 404. Then run "Get a token" again to go back to your own.
+  Sent with the second writer's token. Expect 404.
 }

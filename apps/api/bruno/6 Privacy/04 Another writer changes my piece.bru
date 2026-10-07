@@ -1,0 +1,29 @@
+meta {
+  name: Another writer changes my piece
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/api/pieces/{{pieceId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{secondToken}}
+}
+
+body:json {
+  {
+    "status": "finished"
+  }
+}
+
+assert {
+  res.status: eq 404
+}
+
+docs {
+  The second writer tries to mark the first writer's piece finished. Expect 404.
+}

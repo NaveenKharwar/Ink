@@ -14,6 +14,14 @@ auth:bearer {
   token: {{token}}
 }
 
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("the picture is listed", () => expect(JSON.stringify(res.body)).to.include(bru.interpolate("{{pictureId}}")));
+}
+
 docs {
   Your pictures, newest first, with totalBytes (the space they take). Only yours: a second user's token lists only theirs.
 }

@@ -20,6 +20,10 @@ body:json {
   }
 }
 
+assert {
+  res.status: eq 400
+}
+
 docs {
   Expect 400 invalid_request with an `issues` list: stateVector is required and update must be text (base64).
 }
