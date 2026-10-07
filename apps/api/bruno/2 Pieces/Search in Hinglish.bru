@@ -18,6 +18,10 @@ assert {
   res.status: eq 200
 }
 
+tests {
+  test("the Hindi fragment is found", () => expect(res.body.items.length).to.be.greaterThan(0));
+}
+
 docs {
   Typing Hinglish finds the Hindi fragment from "Write a Hindi fragment" (और सर्दियों में). The result has the first line and, when the words are on another line, that line; marks are the found words. Signed in as another writer, it must come back empty.
 }

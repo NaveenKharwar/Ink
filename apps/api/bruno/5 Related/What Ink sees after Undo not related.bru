@@ -1,0 +1,27 @@
+meta {
+  name: What Ink sees after Undo not related
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/api/pieces/{{pieceId}}/related
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("the other piece is listed", () => expect(JSON.stringify(res.body)).to.include(bru.getVar("otherPieceId")));
+}
+
+docs {
+  After "Undo not related" the second piece is back in the panel.
+}

@@ -18,6 +18,10 @@ assert {
   res.status: eq 200
 }
 
+tests {
+  test("a list, empty while no piece uses it", () => expect(res.body.items).to.be.an("array"));
+}
+
 docs {
   The pieces that use pictureId as their cover or in their text: { items: [{ id, title, firstLine }] }.
   A second user's token gets an empty list.

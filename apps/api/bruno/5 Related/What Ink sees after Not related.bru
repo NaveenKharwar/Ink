@@ -1,0 +1,27 @@
+meta {
+  name: What Ink sees after Not related
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/api/pieces/{{pieceId}}/related
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("the other piece is not listed", () => expect(JSON.stringify(res.body)).to.not.include(bru.getVar("otherPieceId")));
+}
+
+docs {
+  After "Not related", the second piece is gone from the panel.
+}

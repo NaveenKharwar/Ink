@@ -14,8 +14,27 @@ auth:bearer {
   token: {{token}}
 }
 
+script:pre-request {
+  // Meaning vectors are made in the background a moment after a save. Wait until the panel shows the second
+  // piece, so the checks that follow compare real lists and not empty ones.
+  const deadline = Date.now() + 30000;
+  while (Date.now() < deadline) {
+    const answer = await bru.sendRequest({
+      method: "GET",
+      url: bru.getEnvVar("baseUrl") + "/api/pieces/" + bru.getVar("pieceId") + "/related",
+      headers: { Authorization: "Bearer " + bru.getVar("token") }
+    });
+    if (JSON.stringify(answer.data).includes(bru.getVar("otherPieceId"))) break;
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+  }
+}
+
 assert {
   res.status: eq 200
+}
+
+tests {
+  test("the second piece, with the same words, is listed", () => expect(JSON.stringify(res.body)).to.include(bru.getVar("otherPieceId")));
 }
 
 docs {

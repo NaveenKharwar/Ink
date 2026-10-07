@@ -22,6 +22,17 @@ assert {
   res.status: eq 200
 }
 
+tests {
+  test("one piece, and a next page", () => {
+    expect(res.body.items.length).to.equal(1);
+    expect(res.body.nextCursor).to.be.a("string");
+  });
+}
+
+script:post-response {
+  bru.setVar("firstPageId", res.body.items[0] && res.body.items[0].id);
+}
+
 docs {
   Newest first, 1 per page (so a second page exists even with two pieces), without `content`. If there are more, nextCursor is kept for "List the next page"; if not, it is cleared.
 }

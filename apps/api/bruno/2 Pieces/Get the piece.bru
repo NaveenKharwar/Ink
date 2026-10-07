@@ -18,6 +18,10 @@ assert {
   res.status: eq 200
 }
 
+tests {
+  test("it is the piece asked for", () => expect(JSON.stringify(res.body)).to.include(bru.getVar("pieceId")));
+}
+
 docs {
   The full piece, including the editor document in `content`.
 }

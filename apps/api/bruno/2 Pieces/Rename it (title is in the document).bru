@@ -25,6 +25,13 @@ assert {
   res.status: eq 200
 }
 
+tests {
+  test("the title changed and the words are untouched", () => {
+    expect(res.body.piece.title).to.equal("Kettle");
+    expect(res.body.piece.text).to.include("(added on the phone)");
+  });
+}
+
 docs {
   The title is part of the piece's Yjs data, not a separate field. This update only sets meta.title.
   Expect `piece.title` to be "Kettle" and the words untouched.

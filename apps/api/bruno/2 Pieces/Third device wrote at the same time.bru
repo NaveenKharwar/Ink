@@ -25,6 +25,13 @@ assert {
   res.status: eq 200
 }
 
+tests {
+  test("both devices' writing is there, nothing overwritten", () => {
+    expect(res.body.piece.text).to.include("(added on the phone)");
+    expect(res.body.piece.text.length).to.be.greaterThan(bru.getVar("phoneText").length);
+  });
+}
+
 docs {
   Device C had the poem too but never saw B's change; it wrote a new stanza. Expect BOTH in `piece.text`:
   the phone's addition and the laptop's stanza. Nothing is overwritten.

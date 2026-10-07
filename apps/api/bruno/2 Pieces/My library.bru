@@ -18,6 +18,10 @@ assert {
   res.status: eq 200
 }
 
+tests {
+  test("the piece is in the library", () => expect(JSON.stringify(res.body)).to.include(bru.getVar("pieceId")));
+}
+
 docs {
   Every piece of yours, newest written first, with its first two lines instead of the words. Signed in as another writer, none of yours may appear.
 }

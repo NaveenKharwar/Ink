@@ -25,6 +25,18 @@ assert {
   res.status: eq 200
 }
 
+tests {
+  test("the words and the language were read out of the document", () => {
+    expect(res.body.piece.text).to.include("The kettle clicks off");
+    expect(res.body.piece.text).to.include("remembers you");
+    expect(res.body.piece.language).to.equal("en");
+  });
+}
+
+script:post-response {
+  bru.setVar("firstText", res.body.piece.text);
+}
+
 docs {
   The piece is created by its first sync, under the id in {{pieceId}}.
   Look at `piece.text` (the API read the words out of the Yjs data) and `piece.language` ("en": the language is in the document too).

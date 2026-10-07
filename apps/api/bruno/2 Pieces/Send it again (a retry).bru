@@ -25,6 +25,10 @@ assert {
   res.status: eq 200
 }
 
+tests {
+  test("a retry changes nothing", () => expect(res.body.piece.text).to.equal(bru.getVar("firstText")));
+}
+
 docs {
   Exactly the same request. Expect 200 and the same text, no duplicate. Yjs updates are safe to repeat,
   so a retry after a dropped connection changes nothing.

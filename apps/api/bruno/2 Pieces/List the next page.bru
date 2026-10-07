@@ -26,6 +26,13 @@ assert {
   res.status: eq 200
 }
 
+tests {
+  test("a different piece than the first page", () => {
+    expect(res.body.items.length).to.equal(1);
+    expect(res.body.items[0].id).to.not.equal(bru.getVar("firstPageId"));
+  });
+}
+
 docs {
   Continues after the last piece of the previous page, using the nextCursor kept by "List my pieces".
   If that list had no next page (nextCursor: null), this request stops before sending and says so.

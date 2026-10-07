@@ -1,7 +1,7 @@
 meta {
   name: Privacy: another writer's panel never shows mine
   type: http
-  seq: 9
+  seq: 14
 }
 
 get {
@@ -15,9 +15,18 @@ auth:bearer {
 }
 
 script:pre-request {
-  // Pieces are embedded in the background, a moment after they are saved (CI shortens the wait to 1 second).
-  // Give that time to finish, so there is something to leak.
-  await new Promise((resolve) => setTimeout(resolve, 8000));
+  // Meaning vectors are made in the background a moment after a save. Wait until this panel lists the second
+  // writer's own other piece, so "none of the first writer's" is said about a list that has real notes in it.
+  const deadline = Date.now() + 30000;
+  while (Date.now() < deadline) {
+    const answer = await bru.sendRequest({
+      method: "GET",
+      url: bru.getEnvVar("baseUrl") + "/api/pieces/" + bru.getVar("secondPieceId") + "/related",
+      headers: { Authorization: "Bearer " + bru.getVar("secondToken") }
+    });
+    if (JSON.stringify(answer.data).includes(bru.getVar("secondOtherPieceId"))) break;
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+  }
 }
 
 assert {
@@ -25,6 +34,7 @@ assert {
 }
 
 tests {
+  test("their own other piece is listed, so the list is not just empty", () => expect(JSON.stringify(res.body)).to.include(bru.getVar("secondOtherPieceId")));
   test("nothing of the first writer's shows up", () => {
     const body = JSON.stringify(res.body);
     expect(body).to.not.include(bru.getVar("pieceId"));
@@ -33,6 +43,5 @@ tests {
 }
 
 docs {
-  As the second writer, after "another writer writes a similar piece". Expect 200. No note in related, forgotten or loose may have the id {{pieceId}} or {{otherPieceId}}: those are the first writer's, and their words are almost the same. If the second writer has no other pieces, all three lists are empty, and any note at all is a leak.
-  Then run "1 Sign in / Get a token" to go back to your own account.
+  As the second writer, after their two similar pieces are written. Waits until this panel lists the second writer's own other piece, then expects 200. No note in related, forgotten or loose may have the id {{pieceId}} or {{otherPieceId}}: those are the first writer's, and their words are almost the same. The list has a real note in it, so "nothing of the first writer's" is not true just because the list is empty.
 }

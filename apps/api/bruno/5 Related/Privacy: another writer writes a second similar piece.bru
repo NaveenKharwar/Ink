@@ -1,0 +1,34 @@
+meta {
+  name: Privacy: another writer writes a second similar piece
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{baseUrl}}/api/pieces/{{secondOtherPieceId}}/sync
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{secondToken}}
+}
+
+body:json {
+  {
+    "update": "AQrRk4DMBwAHAQdkZWZhdWx0AwlwYXJhZ3JhcGgHANGTgMwHAAYEANGTgMwHARVUaGUga2V0dGxlIGNsaWNrcyBvZmaH0ZOAzAcBAwloYXJkQnJlYWuH0ZOAzAcXBgQA0ZOAzAcYGWFuZCBmb3IgYSBzZWNvbmQgdGhlIHJvb22H0ZOAzAcYAwloYXJkQnJlYWuH0ZOAzAcyBgQA0ZOAzAczDXJlbWVtYmVycyB5b3UoAQRtZXRhCGxhbmd1YWdlAXcCZW4A",
+    "stateVector": "AA=="
+  }
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("the piece was written", () => expect(res.body.piece.text.trim().endsWith("remembers you")).to.equal(true));
+}
+
+docs {
+  As the second writer: a second piece of theirs, under {{secondOtherPieceId}}, close to their first ("room" where it says "kitchen") but not a copy, so their own panel has something real to list. Expect 200.
+}
