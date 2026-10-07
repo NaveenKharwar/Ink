@@ -11,7 +11,19 @@ get {
 }
 
 auth:bearer {
-  token: {{token}}
+  token: {{secondToken}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("nothing of the first writer's shows up", () => {
+    const body = JSON.stringify(res.body);
+    expect(body).to.not.include(bru.getVar("pieceId"));
+    expect(body).to.not.include(bru.getVar("otherPieceId"));
+  });
 }
 
 docs {

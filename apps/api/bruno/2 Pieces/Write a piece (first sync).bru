@@ -21,6 +21,10 @@ body:json {
   }
 }
 
+assert {
+  res.status: eq 200
+}
+
 docs {
   The piece is created by its first sync, under the id in {{pieceId}}.
   Look at `piece.text` (the API read the words out of the Yjs data) and `piece.language` ("en": the language is in the document too).

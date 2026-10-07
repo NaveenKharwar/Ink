@@ -24,3 +24,69 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+
+  # The checks that used to be run by hand in Bruno: two writers against a real local Supabase
+  # (database, sign-in, storage), the real API, and a stand-in embedder. Fails the PR if one writer
+  # can reach another's writing, or a bad token gets in.
+  api-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.6.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.120.0
+
+      - name: Start a local Supabase
+        run: |
+          supabase init --force
+          supabase start -x realtime,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+
+      - name: Apply the migrations and create two writers
+        run: apps/api/ci/prepare.sh
+
+      - name: Make an expired token
+        run: |
+          eval "$(supabase status -o env | sed 's/^/export /')"
+          token="$(node apps/api/ci/mint-expired-token.mjs)"
+          echo "::add-mask::$token"
+          echo "EXPIRED_TOKEN=$token" >> "$GITHUB_ENV"
+
+      - name: Start the stand-in embedder and the API
+        run: |
+          nohup pnpm --filter @ink/api exec tsx ci/fake-embedder.ts > fake-embedder.log 2>&1 &
+          NODE_ENV=development EMBEDDER_URL=http://127.0.0.1:8001 nohup pnpm --filter @ink/api exec tsx src/server.ts > api.out.log 2>&1 &
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:3001/health > /dev/null && exit 0
+            sleep 1
+          done
+          echo "The API did not start"; cat api.out.log; exit 1
+
+      - name: Run the Bruno collection
+        run: npx --yes @usebruno/cli@4.2.1 run --env Local
+        working-directory: apps/api/bruno
+
+      - name: The embeddings were really made
+        run: |
+          eval "$(supabase status -o env | sed 's/^/export /')"
+          count=$(psql "$DB_URL" -tA -c "select count(*) from public.piece_embeddings")
+          echo "embeddings: $count"
+          [ "$count" -ge 3 ]
+
+      - name: Logs
+        if: failure()
+        run: |
+          echo "--- API"; tail -n 200 api.out.log || true
+          echo "--- embedder"; tail -n 50 fake-embedder.log || true

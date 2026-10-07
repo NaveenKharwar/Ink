@@ -1,0 +1,23 @@
+meta {
+  name: Another writer reads my piece
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/pieces/{{pieceId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{secondToken}}
+}
+
+assert {
+  res.status: eq 404
+}
+
+docs {
+  The second writer asks for the first writer's piece. Expect 404, the same answer as for a piece that does not exist.
+}

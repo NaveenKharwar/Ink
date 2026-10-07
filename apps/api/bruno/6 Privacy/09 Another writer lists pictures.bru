@@ -1,0 +1,27 @@
+meta {
+  name: Another writer lists pictures
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/api/pictures
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{secondToken}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("the first writer's picture is not listed", () => expect(JSON.stringify(res.body)).to.not.include(bru.getVar("privatePictureId")));
+}
+
+docs {
+  The second writer's own pictures. The first writer's picture must not be in it.
+}

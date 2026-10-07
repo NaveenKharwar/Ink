@@ -11,7 +11,7 @@ post {
 }
 
 auth:bearer {
-  token: {{token}}
+  token: {{secondToken}}
 }
 
 body:json {
@@ -19,6 +19,14 @@ body:json {
     "update": "AgG6tOjoAwCE6QcyB2tpdGNoZW4L6QcABwEHZGVmYXVsdAMJcGFyYWdyYXBoBwDpBwAGBADpBwEVVGhlIGtldHRsZSBjbGlja3Mgb2Zmh+kHAQMJaGFyZEJyZWFrh+kHFwYEAOkHGBVhbmQgZm9yIGEgc2Vjb25kIHRoZSCB6QctBYfpBxgDCWhhcmRCcmVha4fpBzMGBADpBzQNcmVtZW1iZXJzIHlvdSgBBG1ldGEIbGFuZ3VhZ2UBdwJlbgHpBwEuBQ==",
     "stateVector": "AA=="
   }
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("the piece was written", () => expect(res.body.piece.text.trim().endsWith("remembers you")).to.equal(true));
 }
 
 docs {

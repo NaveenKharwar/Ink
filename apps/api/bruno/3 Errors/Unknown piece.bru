@@ -14,6 +14,10 @@ auth:bearer {
   token: {{token}}
 }
 
+assert {
+  res.status: eq 404
+}
+
 docs {
   Expect 404 not_found. Someone else's piece answers exactly the same way.
 }

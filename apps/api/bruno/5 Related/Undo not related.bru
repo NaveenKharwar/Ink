@@ -14,6 +14,10 @@ auth:bearer {
   token: {{token}}
 }
 
+assert {
+  res.status: eq 204
+}
+
 docs {
   Expect 204. The piece is back in "What Ink sees beside a piece" (if it still qualifies).
 }

@@ -14,6 +14,10 @@ auth:bearer {
   token: {{token}}
 }
 
+assert {
+  res.status: eq 200
+}
+
 docs {
   Every piece of yours, newest written first, with its first two lines instead of the words. Signed in as another writer, none of yours may appear.
 }

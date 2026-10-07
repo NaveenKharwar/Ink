@@ -21,6 +21,10 @@ body:json {
   }
 }
 
+assert {
+  res.status: eq 200
+}
+
 docs {
   Creates a second piece of yours, under the id in {{otherPieceId}}, with the same words as the first one, so the two are related.
   Run it as the first user, after "Write a piece (first sync)". The requests below that need a second piece of yours (Not related, Undo not related and the privacy check on dismissing) use this id.

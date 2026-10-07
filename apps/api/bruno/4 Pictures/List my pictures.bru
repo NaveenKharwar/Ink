@@ -14,6 +14,10 @@ auth:bearer {
   token: {{token}}
 }
 
+assert {
+  res.status: eq 200
+}
+
 docs {
   Your pictures, newest first, with totalBytes (the space they take). Only yours: a second user's token lists only theirs.
 }

@@ -21,6 +21,10 @@ body:json {
   }
 }
 
+assert {
+  res.status: eq 200
+}
+
 docs {
   Device C had the poem too but never saw B's change; it wrote a new stanza. Expect BOTH in `piece.text`:
   the phone's addition and the laptop's stanza. Nothing is overwritten.

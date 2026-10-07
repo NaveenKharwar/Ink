@@ -1,5 +1,7 @@
 # Trying the API with Bruno
 
+CI runs this whole collection on every pull request (the `api-checks` job in `.github/workflows/ci.yml`): a real local Supabase, the real API and a stand-in embedder, two throwaway writers. A request fails the job when its `assert` or `tests` block fails. So you no longer have to run the privacy and token checks by hand before a PR; this guide is for trying the API yourself, and for adding requests.
+
 This folder is a Bruno collection. Each `.bru` file is one request you can send to the API by hand, and the numbered folders group them by area. It's the quickest way to see what the real API does with the real database. The automated tests use an in-memory stand-in and never touch the database, so this is where you check the real thing.
 
 ## Getting started
@@ -53,9 +55,9 @@ Press **Send** to run one request, or right-click a folder and choose **Run** to
 
 ## Trying it as someone else
 
-To act as the second user, run its sign-in request. It replaces the token, so everything after it runs as them. To switch back, run the first user's sign-in again.
+The second user's sign-in saves its own token as `secondToken`. The requests that act as the second writer (the "Privacy" ones) use it, and everything else uses `token`. Nothing needs switching by hand.
 
-Always look at the answer of the sign-in itself. If it fails, Bruno quietly keeps the old token, and you carry on thinking you're someone else when you're not. This one is easy to miss.
+Always look at the answer of the sign-in itself. If it fails, Bruno quietly keeps the old variable, and you carry on thinking you're someone else when you're not.
 
 Also remember that things belong to whoever created them. If you create something while signed in as the second user, it's theirs, and if you later ask for it as that same user, a 200 is the right answer. So when a request succeeds and you expected it to fail, find out who owns the data before you blame the API. In the Supabase SQL editor, something like this will tell you:
 
@@ -70,10 +72,13 @@ If you want a clean start, put a fresh id (run `uuidgen` in a terminal) into the
 1. Right-click the folder it belongs in and choose **New Request**. Pick the method and use `{{baseUrl}}/api/...` as the URL.
 2. Set Auth to Bearer with `{{token}}`, unless the endpoint is meant to be public.
 3. Add a body if it needs one.
-4. Write the Docs tab: what it does, which status you should get, and anything else worth checking.
-5. Keep it with the others in its area. Only start a new numbered folder for a genuinely new area.
-6. Keep secrets, real emails and real writing out of it. Use `{{process.env.NAME}}` and made-up sample text.
+4. Add an `assert` for the status you expect (and a `tests` block for anything in the body that matters). CI fails the PR on these.
+5. Write the Docs tab: what it does, which status you should get, and anything else worth checking.
+6. Keep it with the others in its area. Only start a new numbered folder for a genuinely new area.
+7. Keep secrets, real emails and real writing out of it. Use `{{process.env.NAME}}` and made-up sample text.
 
 ## What to run, and when
 
-Run the folders for the area you changed. If you changed anything that decides who owns or can see something (database queries, sign-in, sharing), also run the requests that check a second user gets refused, and the ones with a missing or broken token. Only this collection can prove those, and the automated tests can't.
+CI runs everything on each PR, against a real database, so the second-user and broken-token checks no longer depend on you remembering. Run folders by hand only to look at an answer yourself.
+
+What CI cannot tell you is how good the real embedder's answers are (floors, ranking): it uses a stand-in that only needs shared words. Check that against the real embedder on your Mac.

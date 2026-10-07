@@ -21,6 +21,10 @@ body:json {
   }
 }
 
+assert {
+  res.status: eq 200
+}
+
 docs {
   Device B had the poem and added " (added on the phone)" to the last line. Expect the text to show it.
   The answer's `update` is empty: B already had everything else.

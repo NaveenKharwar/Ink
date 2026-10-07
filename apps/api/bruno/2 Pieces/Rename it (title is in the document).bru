@@ -21,6 +21,10 @@ body:json {
   }
 }
 
+assert {
+  res.status: eq 200
+}
+
 docs {
   The title is part of the piece's Yjs data, not a separate field. This update only sets meta.title.
   Expect `piece.title` to be "Kettle" and the words untouched.

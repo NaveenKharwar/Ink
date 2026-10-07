@@ -14,6 +14,10 @@ auth:bearer {
   token: {{token}}
 }
 
+assert {
+  res.status: eq 204
+}
+
 docs {
   Needs the second piece from "Write a second piece". Expect 204, also when repeated. Run "What Ink sees beside a piece" again: that piece is gone from the lists, and pieceId is gone from the lists of otherPieceId too.
 }

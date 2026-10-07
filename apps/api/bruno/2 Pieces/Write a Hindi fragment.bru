@@ -21,6 +21,10 @@ body:json {
   }
 }
 
+assert {
+  res.status: eq 200
+}
+
 docs {
   A new piece (random id): two stanzas in Hindi, language "hi" set inside the document.
   In `piece.text` the stanzas are separated by a blank line.

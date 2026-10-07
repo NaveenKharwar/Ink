@@ -14,6 +14,10 @@ auth:bearer {
   token: {{token}}
 }
 
+assert {
+  res.status: eq 200
+}
+
 docs {
   The full piece, including the editor document in `content`.
 }

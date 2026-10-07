@@ -20,6 +20,10 @@ body:json {
   }
 }
 
+assert {
+  res.status: eq 404
+}
+
 docs {
   Nothing to create it from, so expect 404 (and nothing is created).
 }

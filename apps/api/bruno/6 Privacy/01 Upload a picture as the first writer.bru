@@ -1,11 +1,11 @@
 meta {
-  name: Upload a picture
+  name: Upload a picture as the first writer
   type: http
   seq: 1
 }
 
 put {
-  url: {{baseUrl}}/api/pictures/{{pictureId}}
+  url: {{baseUrl}}/api/pictures/{{privatePictureId}}
   body: file
   auth: bearer
 }
@@ -23,6 +23,5 @@ assert {
 }
 
 docs {
-  Stores a small JPEG under pictureId in your own private folder. Expect 204.
-  Sending it again replaces it (also 204), so a retry is safe.
+  Puts a picture in the first writer's private folder, for the requests below to go after. Expect 204.
 }

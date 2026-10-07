@@ -15,7 +15,18 @@ headers {
 }
 
 auth:bearer {
-  token: {{token}}
+  token: {{throwawayToken}}
+}
+
+script:pre-request {
+  // A session of its own, so signing it out does not end the one the other requests use.
+  const signIn = await bru.sendRequest({
+    method: "POST",
+    url: bru.getProcessEnv("SUPABASE_URL") + "/auth/v1/token?grant_type=password",
+    headers: { apikey: bru.getProcessEnv("SUPABASE_ANON_KEY"), "Content-Type": "application/json" },
+    data: { email: bru.getProcessEnv("TEST_EMAIL"), password: bru.getProcessEnv("TEST_PASSWORD") }
+  });
+  bru.setVar("throwawayToken", signIn.data.access_token);
 }
 
 script:post-response {
@@ -23,7 +34,7 @@ script:post-response {
   const res2 = await bru.sendRequest({
     method: "GET",
     url: bru.getEnvVar("baseUrl") + "/api/pieces",
-    headers: { Authorization: "Bearer " + bru.getVar("token") }
+    headers: { Authorization: "Bearer " + bru.getVar("throwawayToken") }
   });
   bru.setVar("signedOutStatus", res2.status);
 }
@@ -34,7 +45,7 @@ tests {
 }
 
 docs {
-  Run "Get a token" first. This signs that session out with Supabase, then asks the API for pieces with the same token, which is still signed and not yet expired.
+  This signs a new session of the first user in, signs it out with Supabase, then asks the API for pieces with the same token, which is still signed and not yet expired.
   Expect the sign-out to answer 204 and the API to answer 401: signing out ends access at once. A 200 means a signed-out token still works.
-  Afterwards, run "Get a token" again before anything else: this token is gone for good.
+  The session is a throwaway one made just for this request, so your own token keeps working afterwards.
 }

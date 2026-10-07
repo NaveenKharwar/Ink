@@ -1,0 +1,27 @@
+meta {
+  name: Another writer asks where my picture is used
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/api/pictures/{{privatePictureId}}/uses
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{secondToken}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("nothing is listed", () => expect(res.body.items).to.deep.equal([]));
+}
+
+docs {
+  A second writer's token gets an empty list, never the first writer's pieces.
+}

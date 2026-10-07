@@ -22,6 +22,10 @@ script:pre-request {
   }
 }
 
+assert {
+  res.status: eq 200
+}
+
 docs {
   Continues after the last piece of the previous page, using the nextCursor kept by "List my pieces".
   If that list had no next page (nextCursor: null), this request stops before sending and says so.

@@ -11,7 +11,11 @@ delete {
 }
 
 auth:bearer {
-  token: {{token}}
+  token: {{secondToken}}
+}
+
+assert {
+  res.status: eq 404
 }
 
 docs {

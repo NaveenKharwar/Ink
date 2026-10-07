@@ -22,6 +22,10 @@ body:text {
   this says it is a JPEG but it is not
 }
 
+assert {
+  res.status: eq 415
+}
+
 docs {
   The server checks the bytes, not the Content-Type. Expect 415 { error: "unsupported_media_type" } and nothing stored.
 }

@@ -22,11 +22,14 @@ body:json {
 }
 
 script:post-response {
-  if (res.status === 200) bru.setVar("token", res.body.access_token);
+  if (res.status === 200) bru.setVar("secondToken", res.body.access_token);
+}
+
+assert {
+  res.status: eq 200
 }
 
 docs {
-  For the privacy check only. Signs in a SECOND writer and replaces the saved token, so every request after this runs as them.
-  Run "Get a token" again to go back to the first user.
+  For the privacy check only. Signs in a SECOND writer and saves its token as secondToken. The requests that act as them (the "Privacy" ones) use it; everything else keeps using the first writer's token.
   Needs SECOND_EMAIL and SECOND_PASSWORD in the .env file.
 }

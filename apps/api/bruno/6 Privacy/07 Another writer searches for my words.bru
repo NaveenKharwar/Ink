@@ -1,0 +1,31 @@
+meta {
+  name: Another writer searches for my words
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/api/search?q=kettle
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{secondToken}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("none of the first writer's pieces", () => {
+    const body = JSON.stringify(res.body);
+    expect(body).to.not.include(bru.getVar("pieceId"));
+    expect(body).to.not.include(bru.getVar("otherPieceId"));
+  });
+}
+
+docs {
+  The first writer's piece is about a kettle. The second writer searching for it must not find it, by words or by meaning.
+}

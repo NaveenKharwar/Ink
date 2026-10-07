@@ -1,0 +1,31 @@
+meta {
+  name: Another writer reads the library
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/api/library
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{secondToken}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("none of the first writer's pieces", () => {
+    const body = JSON.stringify(res.body);
+    expect(body).to.not.include(bru.getVar("pieceId"));
+    expect(body).to.not.include(bru.getVar("otherPieceId"));
+  });
+}
+
+docs {
+  The second writer's library. None of the first writer's pieces may be in it.
+}

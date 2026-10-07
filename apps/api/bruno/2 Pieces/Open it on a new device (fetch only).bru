@@ -20,6 +20,10 @@ body:json {
   }
 }
 
+assert {
+  res.status: eq 200
+}
+
 docs {
   A device that has nothing sends no `update` and an empty state vector (AA==).
   The answer's `update` holds the whole piece.

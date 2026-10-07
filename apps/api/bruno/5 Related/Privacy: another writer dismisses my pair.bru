@@ -11,9 +11,13 @@ put {
 }
 
 auth:bearer {
-  token: {{token}}
+  token: {{secondToken}}
+}
+
+assert {
+  res.status: eq 404
 }
 
 docs {
-  As the second writer (see the request above): expect 404, and nothing changes for you. Needs the second piece from "Write a second piece", written by the first writer; without it a 404 proves nothing.
+  As the second writer: expect 404, and nothing changes for you. Needs the second piece from "Write a second piece", written by the first writer; without it a 404 proves nothing.
 }
