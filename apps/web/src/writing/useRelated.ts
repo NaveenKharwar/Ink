@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { pieces } from "../lib/api";
 import { onSaved } from "../lib/savedEvents";
 
-const EMPTY: RelatedResponse = { related: [], forgotten: [], loose: [], looked: false };
+const EMPTY: RelatedResponse = { related: [], forgotten: [], loose: [], looked: false, keptOut: false };
 // The panel looks again this long after the writer's last save, so it never shifts while they type.
 const AFTER_SAVE_MS = 8000;
 // Once more after the server has had time to make the piece's vector (it waits for 30 s of quiet),
@@ -17,6 +17,8 @@ export type Related = RelatedResponse & {
   loading: boolean;
   /** The last look failed and nothing is shown yet (the server could not be reached). */
   failed: boolean;
+  /** The server has answered for this piece, so it is on the server and the panel can offer to keep it out. */
+  known: boolean;
   /** Looks again now. */
   retry: () => void;
 };
@@ -30,6 +32,7 @@ export function useRelated(pieceId: string | null, exists: boolean): Related {
   const [data, setData] = useState<RelatedResponse>(EMPTY);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [known, setKnown] = useState(false);
   const [tick, setTick] = useState(0);
   const [saved, setSaved] = useState(false);
   const refresh = useCallback(() => setTick((n) => n + 1), []);
@@ -38,6 +41,7 @@ export function useRelated(pieceId: string | null, exists: boolean): Related {
     setData(EMPTY);
     setReady(false);
     setFailed(false);
+    setKnown(false);
     setSaved(false);
   }, [pieceId]);
 
@@ -49,6 +53,7 @@ export function useRelated(pieceId: string | null, exists: boolean): Related {
         if (controller.signal.aborted) return;
         setData(res);
         setFailed(false);
+        setKnown(true);
         setReady(true);
       },
       (err: { status?: number; name?: string }) => {
@@ -84,7 +89,7 @@ export function useRelated(pieceId: string | null, exists: boolean): Related {
 
   const asked = !!pieceId && (exists || saved);
   const nothingShown = data.related.length + data.forgotten.length + data.loose.length === 0;
-  return { ...data, ready, loading: asked && !ready, failed: failed && nothingShown, retry: refresh };
+  return { ...data, ready, known, loading: asked && !ready, failed: failed && nothingShown, retry: refresh };
 }
 
 export type Dismissal = "undo" | "gone";

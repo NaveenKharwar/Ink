@@ -1,5 +1,7 @@
 import type { RelatedNote } from "@ink/schemas";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { pieces } from "../lib/api";
+import { KEEP_OUT_FAILED, KEPT_OUT_BODY, keepOutAction } from "../lib/keepOut";
 import { noteLabel, seasonColorVar } from "../lib/related";
 import { deviceTimeZone, type SeasonSet } from "../lib/seasons";
 import { ChevronIcon, CloseIcon } from "./icons";
@@ -34,16 +36,27 @@ const focus = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visi
 const linkClass = (phone: boolean) =>
   `relative cursor-pointer border-0 border-b-[1.5px] border-dotted border-accent bg-transparent p-0 text-[14px] text-accent ${phone ? "before:absolute before:-inset-x-3 before:-inset-y-[14px] before:content-['']" : ""} ${focus}`;
 
+// The grey line that keeps a piece out of Ink's memory: quiet until the writer goes looking for it.
+const quietLinkClass = (phone: boolean) =>
+  `relative cursor-pointer border-0 border-b border-dotted border-ink-subtle bg-transparent p-0 text-[12px] leading-5 text-ink-muted hover:border-ink hover:text-ink ${
+    phone ? "before:absolute before:-inset-x-3 before:-inset-y-3 before:content-['']" : ""
+  } ${focus}`;
+
 // "Ink sees this too": older writing beside the piece, as plain notes under heading bars. Related
 // (soft blue: it leads to other writing), Forgotten (old pieces not edited for a long while) and
 // Loose lines (short ones). The panel is the only card; nothing inside it is boxed. A section with
-// nothing close is not shown at all.
+// nothing close is not shown at all. At the foot, one quiet grey line (always in the same place, no
+// divider) keeps the piece out of Ink's memory or puts it back; a kept-out piece has no notes, and the
+// panel says so.
 export function InkSeesPanel({ phone = false, shown = true, chosen = null, pieceId, exists, seasonSet, reading = [], onClose, onOpenBeside }: Props) {
   const found = useRelated(pieceId, exists);
   const dismissals = useDismissals(pieceId);
   const [selected, setSelected] = useState<string | null>(null);
   const [folded, setFolded] = useState<Record<string, boolean>>({});
   const [showAll, setShowAll] = useState(false);
+  // What the writer just chose, until the server's answer says the same (so the panel never waits on it).
+  const [keepChoice, setKeepChoice] = useState<boolean | null>(null);
+  const [keepFailed, setKeepFailed] = useState(false);
   const timeZone = deviceTimeZone();
   const panel = useRef<HTMLElement>(null);
 
@@ -62,6 +75,24 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
     );
     return () => cancelAnimationFrame(frame);
   }, [shown]);
+
+  useEffect(() => {
+    setKeepChoice(null);
+    setKeepFailed(false);
+  }, [pieceId, found.keptOut]);
+  const keptOut = keepChoice ?? found.keptOut;
+  const changeKeepOut = async () => {
+    if (!pieceId) return;
+    setKeepFailed(false);
+    setKeepChoice(!keptOut);
+    try {
+      await pieces.setInMemory(pieceId, keptOut);
+      found.retry();
+    } catch {
+      setKeepChoice(null);
+      setKeepFailed(true);
+    }
+  };
 
   const seen = (note: RelatedNote) => dismissals.state[note.id] !== "gone";
   const alive = (note: RelatedNote) => !dismissals.state[note.id];
@@ -130,7 +161,7 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
   };
 
   // Also true on a new page that is not saved yet (nothing asked, nothing loading): never a bare panel.
-  const empty = !found.loading && !found.failed && sections.length === 0;
+  const empty = !keptOut && !found.loading && !found.failed && sections.length === 0;
 
   return (
     <aside
@@ -153,8 +184,9 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
         </button>
       </div>
       <FadeScroll className="grow">
-        {found.loading && <ScreenLoader label="Looking through your writing" className="py-10" />}
-        {found.failed && (
+        {keptOut && <p className="m-0 px-4 py-5 leading-[1.5] text-ink-muted">{KEPT_OUT_BODY}</p>}
+        {!keptOut && found.loading && <ScreenLoader label="Looking through your writing" className="py-10" />}
+        {!keptOut && found.failed && (
           <p className="m-0 px-4 py-5 leading-[1.5] text-ink-muted">
             Couldn’t look just now.{" "}
             <button type="button" onClick={found.retry} className={linkClass(phone)}>
@@ -167,7 +199,7 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
             {found.looked ? "Nothing close to this yet." : "Nothing yet. Once you have written a few lines, related writing appears here."}
           </p>
         )}
-        {sections.map((section, index) => {
+        {(keptOut ? [] : sections).map((section, index) => {
           const visible = section.notes.filter(alive).length;
           const shown = section.notes.slice(0, section.limit);
           const more = section.notes.length - shown.length;
@@ -188,6 +220,16 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
           );
         })}
       </FadeScroll>
+      {pieceId && (found.known || keptOut) && (
+        <div aria-live="polite" className={`shrink-0 pb-3 pt-1 ${phone ? "px-6" : "px-4"}`}>
+          {keepFailed && <p className="m-0 mb-1 text-[12px] leading-5 text-ink-muted">{KEEP_OUT_FAILED}</p>}
+          <div className="flex min-h-9 items-center">
+            <button type="button" onClick={() => void changeKeepOut()} className={quietLinkClass(phone)}>
+              {keepOutAction(keptOut)}
+            </button>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }

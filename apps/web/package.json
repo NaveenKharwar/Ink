@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "echo \"(lint not configured yet)\"",
-    "test": "tsx --test src/editor/editor.test.ts src/lib/seasons.test.ts src/lib/sync.test.ts src/editor/yjs.test.ts src/lib/route.test.ts src/lib/openPiece.test.ts src/lib/layout.test.ts src/lib/password.test.ts src/lib/newId.test.ts src/lib/pictureSize.test.ts src/lib/coverLayout.test.ts src/lib/thread.test.ts src/lib/related.test.ts src/lib/beside.test.ts src/lib/connectionsMark.test.ts src/lib/reading.test.ts src/lib/finishedPrompt.test.ts src/lib/noticed.test.ts"
+    "test": "tsx --test src/editor/editor.test.ts src/lib/seasons.test.ts src/lib/sync.test.ts src/editor/yjs.test.ts src/lib/route.test.ts src/lib/openPiece.test.ts src/lib/layout.test.ts src/lib/password.test.ts src/lib/newId.test.ts src/lib/pictureSize.test.ts src/lib/coverLayout.test.ts src/lib/thread.test.ts src/lib/related.test.ts src/lib/beside.test.ts src/lib/connectionsMark.test.ts src/lib/reading.test.ts src/lib/finishedPrompt.test.ts src/lib/noticed.test.ts src/lib/keepOut.test.ts"
   },
   "dependencies": {
     "@fontsource-variable/dm-sans": "5.3.0",

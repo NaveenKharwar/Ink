@@ -6,9 +6,10 @@ import type { Candidate } from "./rank.js";
 export interface RelatedRepo {
   /**
    * The piece and the writer's other pieces, without the ones dismissed beside it and without
-   * pieces kept out of memory. Null when the piece is not the writer's.
+   * pieces kept out of memory. Null when the piece is not the writer's. `keptOut` is true when the
+   * piece itself is kept out of memory (then there are no others).
    */
-  candidates(userId: string, pieceId: string): Promise<{ current: Candidate; others: Candidate[] } | null>;
+  candidates(userId: string, pieceId: string): Promise<{ current: Candidate; others: Candidate[]; keptOut: boolean } | null>;
   /** The id of the writer's most recently edited piece that has words and counts for memory, if any. */
   latest(userId: string): Promise<string | null>;
   /** Records that Forgotten returned these pieces beside `pieceId`. Only the writer's own pieces are recorded. */
@@ -73,7 +74,7 @@ export function pgRelatedRepo(db: pg.Pool): RelatedRepo {
       const { rows: mine } = await db.query<Row>(`select ${COLUMNS} from pieces where id = $1 and user_id = $2`, [pieceId, userId]);
       if (!mine[0]) return null;
       const current = toCandidate(mine[0]);
-      if (!mine[0].include_in_memory) return { current, others: [] };
+      if (!mine[0].include_in_memory) return { current, others: [], keptOut: true };
       // Similarity is null when either piece has no vector yet; those fall back to shared words.
       // Candidates are the most recently edited pieces AND the closest ones by vector, so a very old
       // piece (what Forgotten is for) is still looked at in a large archive. Without a vector the
@@ -101,7 +102,7 @@ export function pgRelatedRepo(db: pg.Pool): RelatedRepo {
          order by updated_at desc, id desc`,
         [userId, pieceId, CANDIDATE_LIMIT]
       );
-      return { current, others: rows.map(toCandidate) };
+      return { current, others: rows.map(toCandidate), keptOut: false };
     },
 
     async markShown(userId, pieceId, shownIds) {
@@ -174,7 +175,7 @@ export function memoryRelatedRepo(pieces: PiecesRepo, vectors: Map<string, numbe
           const seen = shown.get(`${userId}|${p.id}`);
           return { ...toCandidate(p), similarity: a && b ? cosine(a, b) : null, shownAt: seen?.at ?? null, shownFor: seen?.for ?? null };
         });
-      return { current: toCandidate(mine), others: mine.includeInMemory ? others : [] };
+      return { current: toCandidate(mine), others: mine.includeInMemory ? others : [], keptOut: !mine.includeInMemory };
     },
     async markShown(userId, pieceId, shownIds) {
       for (const id of shownIds) shown.set(`${userId}|${id}`, { at: new Date().toISOString(), for: pieceId });

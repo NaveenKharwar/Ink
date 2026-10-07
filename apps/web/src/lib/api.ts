@@ -53,6 +53,10 @@ export const pieces = {
   setStatus: async (id: string, status: "draft" | "finished") => {
     await send(`/api/pieces/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify({ status }) });
   },
+  // "Keep it out of Ink's memory" (false) and "Put it back" (true): a kept-out piece is not looked at beside others.
+  setInMemory: async (id: string, include: boolean) => {
+    await send(`/api/pieces/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify({ includeInMemory: include }) });
+  },
   library: () => request<LibraryResponse>("/api/library"),
   get: (id: string) => request<Piece>(`/api/pieces/${encodeURIComponent(id)}`),
   // What "Ink sees this too" shows beside a piece. "Not related" hides a piece beside this one for good.

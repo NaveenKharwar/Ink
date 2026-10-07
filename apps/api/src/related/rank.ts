@@ -66,7 +66,10 @@ const toNote = ({ id, title, text, language, style, createdAt, updatedAt }: Cand
  * Splits the writer's other pieces into what the panel shows. `others` must already leave out
  * the piece itself, dismissed pairs and pieces kept out of memory.
  */
-export function rankRelated(current: Candidate, others: Candidate[], now: Date): RelatedResponse {
+/** What ranking decides; whether the writer kept the piece out of memory is added by the route. */
+export type Ranked = Omit<RelatedResponse, "keptOut">;
+
+export function rankRelated(current: Candidate, others: Candidate[], now: Date): Ranked {
   const mine = wordsOf(current.text);
   // A blank or one-word page has nothing to be close to: the panel says "Nothing yet".
   if (mine.size === 0 || wordCount(current.text) < MIN_WORDS) return { related: [], forgotten: [], loose: [], looked: false };
