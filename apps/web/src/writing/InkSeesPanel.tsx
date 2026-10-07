@@ -204,7 +204,7 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
           );
         })}
       </FadeScroll>
-      {pieceId && (found.known || keptOut || exists) && (
+      {pieceId && (found.known || keptOut || found.onServer) && (
         <MenuFoot aria-live="polite" className="px-5 pb-3 pt-2">
           {/* Settings first (switches, each with one line of what it does), then any actions, and
               Delete last, set apart. A new option is another row in the right group. */}
@@ -214,7 +214,7 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
               <span className="block text-[12px] leading-4 text-ink-muted">{memoryHint(keptOut)}</span>
             </MenuRow>
           )}
-          {exists && (
+          {found.onServer && (
             <>
               <MenuDivider />
               <DeletePiece pieceId={pieceId} userId={userId} onDeleted={onDeleted} />
