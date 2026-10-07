@@ -37,8 +37,8 @@ type Props = {
 const focus = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
 // The dotted-underline link ("Show 2 more", "Undo").
-const linkClass = (phone: boolean) =>
-  `relative cursor-pointer border-0 border-b-[1.5px] border-dotted border-accent bg-transparent p-0 text-[14px] text-accent ${phone ? "before:absolute before:-inset-x-3 before:-inset-y-[14px] before:content-['']" : ""} ${focus}`;
+const linkClass =
+  `relative cursor-pointer border-0 border-b-[1.5px] border-dotted border-accent bg-transparent p-0 text-[14px] text-accent before:absolute before:-inset-x-3 before:-inset-y-[14px] before:content-[''] ${focus}`;
 
 // A row in the panel's foot: the full width is the tap area, 44px tall (colour is set where it is used).
 const footRow = `flex min-h-11 w-full cursor-pointer items-center rounded-md border-0 bg-transparent px-2 text-left text-[14px] leading-5 ${focus}`;
@@ -130,7 +130,7 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
       ) : (
         <p className="m-0 mb-5 py-2.5 text-[13px] leading-5 text-ink-muted">
           Won’t show this here again.{" "}
-          <button type="button" onClick={() => dismissals.restore(n)} className={linkClass(phone)}>
+          <button type="button" onClick={() => dismissals.restore(n)} className={linkClass}>
             Undo
           </button>
         </p>
@@ -145,9 +145,7 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
         type="button"
         onClick={() => setFolded((f) => ({ ...f, [key]: open }))}
         aria-expanded={open}
-        className={`flex w-full cursor-pointer items-center justify-between border-0 border-b border-line px-6 text-left text-[14px] font-semibold text-ink ${
-          phone ? "h-14" : "h-[52px]"
-        } ${first ? "" : "border-t"} ${tint ? "bg-accent-soft" : "bg-transparent"} ${focus}`}
+        className={`flex w-full cursor-pointer items-center justify-between border-0 border-b border-line px-6 text-left text-[14px] font-semibold text-ink h-14 ${first ? "" : "border-t"} ${tint ? "bg-accent-soft" : "bg-transparent"} ${focus}`}
       >
         <span className="flex items-center">
           <span aria-hidden="true" className={`mr-2.5 h-[7px] w-[7px] rounded-full ${tint ? "bg-accent" : "bg-ink-muted opacity-55"}`} />
@@ -173,13 +171,13 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
         phone ? "w-[var(--phone-sheet-width)] border-l border-line" : "w-[var(--sheet-width)] rounded-l-panel border border-r-0 border-line"
       }`}
     >
-      <div className={`flex h-14 shrink-0 items-center justify-between border-b border-line pr-3 ${phone ? "pl-6" : "pl-4"}`}>
+      <div className={`flex h-14 shrink-0 items-center justify-between border-b border-line pr-3 pl-6`}>
         <span className="font-display text-[16px] leading-[22px]">Ink sees this too</span>
         <button
           type="button"
           onClick={onClose}
           aria-label="Close panel"
-          className={`flex cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-ink ${phone ? "h-11 w-11" : "h-[34px] w-[34px]"} ${focus}`}
+          className={`flex cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-ink h-11 w-11 ${focus}`}
         >
           <CloseIcon />
         </button>
@@ -190,7 +188,7 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
         {!keptOut && found.failed && (
           <p className="m-0 px-4 py-5 leading-[1.5] text-ink-muted">
             Couldn’t look just now.{" "}
-            <button type="button" onClick={found.retry} className={linkClass(phone)}>
+            <button type="button" onClick={found.retry} className={linkClass}>
               Try again
             </button>
           </p>
@@ -211,7 +209,7 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
                 <div className="px-6 pt-7 pb-8">
                   {shown.map(note)}
                   {more > 0 && (
-                    <button type="button" onClick={() => setShowAll(true)} className={`${linkClass(phone)} mt-1`}>
+                    <button type="button" onClick={() => setShowAll(true)} className={`${linkClass} mt-1`}>
                       Show {more} more
                     </button>
                   )}
@@ -222,7 +220,7 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
         })}
       </FadeScroll>
       {pieceId && (found.known || keptOut || exists) && (
-        <div aria-live="polite" className={`shrink-0 pb-3 ${phone ? "px-5" : "px-3"}`}>
+        <div aria-live="polite" className={`shrink-0 pb-3 px-5`}>
           {/* Settings first (switches, each with one line of what it does), then any actions, and
               Delete last, set apart. A new option is another row in the right group. */}
           <div className="mx-1 h-px bg-line" />
