@@ -245,7 +245,6 @@ export function SearchDialog({ wide, recent, seasonSet, onOpen, onClose }: Props
           {searching && <ScreenLoader label="Searching" className="py-10" />}
           {closing && <Loader size={16} label="Looking for close writing" delayMs={300} className="my-4" />}
           {query && !searching && !closing && found && !results.length && !failed && <p className="m-0 pt-2 text-ink-muted">Nothing with those words yet.</p>}
-          {failed && <p className="m-0 pt-2 text-ink-muted">Search isn't working right now. Check your connection.</p>}
         </FadeScroll>
       </div>
     </>

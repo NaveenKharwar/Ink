@@ -1,7 +1,7 @@
 import type { RelatedNote } from "@ink/schemas";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { pieces } from "../lib/api";
-import { KEEP_OUT_FAILED, KEPT_OUT_BODY, keepOutAction } from "../lib/keepOut";
+import { KEPT_OUT_BODY, keepOutAction } from "../lib/keepOut";
 import { noteLabel, seasonColorVar } from "../lib/related";
 import { deviceTimeZone, type SeasonSet } from "../lib/seasons";
 import { ChevronIcon, CloseIcon } from "./icons";
@@ -56,7 +56,6 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
   const [showAll, setShowAll] = useState(false);
   // What the writer just chose, until the server's answer says the same (so the panel never waits on it).
   const [keepChoice, setKeepChoice] = useState<boolean | null>(null);
-  const [keepFailed, setKeepFailed] = useState(false);
   const timeZone = deviceTimeZone();
   const panel = useRef<HTMLElement>(null);
 
@@ -78,19 +77,16 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
 
   useEffect(() => {
     setKeepChoice(null);
-    setKeepFailed(false);
   }, [pieceId, found.keptOut]);
   const keptOut = keepChoice ?? found.keptOut;
   const changeKeepOut = async () => {
     if (!pieceId) return;
-    setKeepFailed(false);
     setKeepChoice(!keptOut);
     try {
       await pieces.setInMemory(pieceId, keptOut);
       found.retry();
     } catch {
       setKeepChoice(null);
-      setKeepFailed(true);
     }
   };
 
@@ -161,7 +157,7 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
   };
 
   // Also true on a new page that is not saved yet (nothing asked, nothing loading): never a bare panel.
-  const empty = !keptOut && !found.loading && !found.failed && sections.length === 0;
+  const empty = !keptOut && !found.loading && sections.length === 0;
 
   return (
     <aside
@@ -186,14 +182,6 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
       <FadeScroll className="grow">
         {keptOut && <p className="m-0 px-4 py-5 leading-[1.5] text-ink-muted">{KEPT_OUT_BODY}</p>}
         {!keptOut && found.loading && <ScreenLoader label="Looking through your writing" className="py-10" />}
-        {!keptOut && found.failed && (
-          <p className="m-0 px-4 py-5 leading-[1.5] text-ink-muted">
-            Couldn’t look just now.{" "}
-            <button type="button" onClick={found.retry} className={linkClass(phone)}>
-              Try again
-            </button>
-          </p>
-        )}
         {empty && (
           <p className="m-0 px-4 py-5 leading-[1.5] text-ink-muted">
             {found.looked ? "Nothing close to this yet." : "Nothing yet. Once you have written a few lines, related writing appears here."}
@@ -222,7 +210,6 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
       </FadeScroll>
       {pieceId && (found.known || keptOut) && (
         <div aria-live="polite" className={`shrink-0 pb-3 pt-1 ${phone ? "px-6" : "px-4"}`}>
-          {keepFailed && <p className="m-0 mb-1 text-[12px] leading-5 text-ink-muted">{KEEP_OUT_FAILED}</p>}
           <div className="flex min-h-9 items-center">
             <button type="button" onClick={() => void changeKeepOut()} className={quietLinkClass(phone)}>
               {keepOutAction(keptOut)}

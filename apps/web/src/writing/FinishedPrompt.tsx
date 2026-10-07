@@ -1,8 +1,6 @@
 type Props = {
   /** What the quiet spot shows: nothing, "Mark finished", or "Finished · Reopen". */
   spot: "finished" | "mark" | "none";
-  /** The last tap could not reach the server. */
-  failed: boolean;
   onToggle: () => void;
 };
 
@@ -13,7 +11,7 @@ const target = "-my-3 cursor-pointer border-0 bg-transparent px-0 py-3 text-[14p
 // One quiet control under the last line of the page. It is the only way a piece becomes finished,
 // and the state is never shown anywhere else (see the design system). The button stays mounted
 // when its words change, so keyboard focus is not lost.
-export function FinishedPrompt({ spot, failed, onToggle }: Props) {
+export function FinishedPrompt({ spot, onToggle }: Props) {
   return (
     <div aria-live="polite" className="mt-8 min-h-5 font-sans text-[14px] leading-5 text-ink-muted">
       {spot !== "none" && (
@@ -32,7 +30,6 @@ export function FinishedPrompt({ spot, failed, onToggle }: Props) {
           </button>
         </div>
       )}
-      {failed && <p className="m-0 mt-3">Couldn’t save that. Try again.</p>}
     </div>
   );
 }

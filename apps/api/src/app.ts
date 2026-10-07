@@ -40,6 +40,9 @@ export async function buildApp({ repo, related, pictures, verify, embeddings = n
 
   await app.register(async (api) => {
     api.addHook("preHandler", requireUser(verify));
+    // Asks nothing and answers nothing: it is the app's way to learn, before it shows the writer's
+    // pages, that the sign-in is still accepted. No writer's data is read.
+    api.get("/api/session", async (_request, reply) => reply.code(204).send());
     registerPieceRoutes(api, repo, embeddings, meaning);
     registerRelatedRoutes(api, related);
     registerPictureRoutes(api, pictures.store, pictures.repo);

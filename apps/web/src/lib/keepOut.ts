@@ -8,4 +8,3 @@ export function keepOutAction(keptOut: boolean): string {
 /** The panel's body for a piece kept out: what happened and what it means. */
 export const KEPT_OUT_BODY = "Kept out of Ink’s memory. Ink isn’t looking beside this piece, and it won’t appear beside others.";
 
-export const KEEP_OUT_FAILED = "Couldn’t change that just now.";
