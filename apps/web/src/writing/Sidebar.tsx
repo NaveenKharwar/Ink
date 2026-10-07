@@ -223,7 +223,7 @@ export function Sidebar(props: Props) {
         )}
       </FadeScroll>
 
-      <div className="shrink-0 pt-3">
+      <div className="shrink-0">
         <AccountMenu name={name} onProfile={onProfile} onSignOut={onSignOut} />
       </div>
     </nav>
