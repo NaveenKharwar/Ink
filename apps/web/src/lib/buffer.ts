@@ -23,6 +23,8 @@ export type Buffer = {
   unsynced(userId: string): Promise<BufferedPiece[]>;
   // Removes the record only if it is still the version that was sent. True when removed.
   removeIfUnchanged(key: string, updatedAt: number): Promise<boolean>;
+  // Forgets a piece on this device, whatever it holds (the writer deleted it).
+  remove(key: string): Promise<void>;
   // Notes what the server has, without touching the writing.
   setServerVector(key: string, serverVector: Uint8Array): Promise<void>;
 };
@@ -55,6 +57,9 @@ export function openBuffer(name = "ink-buffer"): Buffer {
       if (same) await tx.store.delete(key);
       await tx.done;
       return same;
+    },
+    async remove(key) {
+      await (await open()).delete("pieces", key);
     },
     async setServerVector(key, serverVector) {
       const tx = (await open()).transaction("pieces", "readwrite");

@@ -1,0 +1,23 @@
+meta {
+  name: Another writer deletes my piece
+  type: http
+  seq: 14
+}
+
+delete {
+  url: {{baseUrl}}/api/pieces/{{pieceId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{secondToken}}
+}
+
+assert {
+  res.status: eq 404
+}
+
+docs {
+  The second writer tries to delete the first writer's piece. Expect 404.
+}

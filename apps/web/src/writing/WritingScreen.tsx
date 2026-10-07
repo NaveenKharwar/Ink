@@ -371,6 +371,10 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
           }
         }}
         onMenu={onMenu}
+        onDeleted={() => {
+          library.refresh();
+          newPiece();
+        }}
       />
     );
 

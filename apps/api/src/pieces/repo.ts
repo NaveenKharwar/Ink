@@ -25,6 +25,12 @@ export interface PiecesRepo {
   search(userId: string, words: SearchWords, limit: number): Promise<PieceSummary[]>;
   /** The writer's most recently edited pieces with their writing, for looking through when the exact search finds nothing. */
   nearPool(userId: string, limit: number): Promise<PieceSummary[]>;
+  /**
+   * Deletes the writer's piece for good: its words and everything made from them (the embedding,
+   * Related and Forgotten rows). Only its id is kept, so a device that still holds a copy cannot
+   * bring it back. False when the piece is not the writer's or does not exist.
+   */
+  remove(userId: string, id: string): Promise<boolean>;
 }
 
 export const LIBRARY_LIMIT = 5000;
@@ -79,6 +85,12 @@ export function pgPiecesRepo(db: pg.Pool): PiecesRepo {
       const client = await db.connect();
       try {
         await client.query("begin");
+        // A deleted piece stays deleted, even if a device still holds a copy.
+        const { rowCount: deleted } = await client.query("select 1 from deleted_pieces where id = $1", [id]);
+        if (deleted) {
+          await client.query("rollback");
+          return null;
+        }
         // Only a writer with something to write creates a piece. If the id is already
         // someone else's, nothing is inserted and the select below finds nothing.
         if (request.update) {
@@ -206,6 +218,26 @@ export function pgPiecesRepo(db: pg.Pool): PiecesRepo {
         [userId, limit]
       );
       return rows.map(toSummary);
+    },
+
+    async remove(userId, id) {
+      const client = await db.connect();
+      try {
+        await client.query("begin");
+        const { rowCount } = await client.query("delete from pieces where id = $1 and user_id = $2", [id, userId]);
+        if (!rowCount) {
+          await client.query("rollback");
+          return false;
+        }
+        await client.query("insert into deleted_pieces (id, user_id) values ($1, $2) on conflict (id) do nothing", [id, userId]);
+        await client.query("commit");
+        return true;
+      } catch (err) {
+        await client.query("rollback").catch(() => undefined);
+        throw err;
+      } finally {
+        client.release();
+      }
     },
 
     async update(userId, id, patch) {

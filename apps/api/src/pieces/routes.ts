@@ -174,4 +174,12 @@ export function registerPieceRoutes(app: FastifyInstance, repo: PiecesRepo, embe
     void embeddings.enqueue(params.data.id);
     return updated;
   });
+
+  // Gone for good: no trash, no undo.
+  app.delete("/api/pieces/:id", async (request, reply) => {
+    const params = idParams.safeParse(request.params);
+    if (!params.success) return notFound(reply);
+    if (!(await repo.remove(request.userId, params.data.id))) return notFound(reply);
+    return reply.code(204).send();
+  });
 }

@@ -57,6 +57,14 @@ export const pieces = {
   setInMemory: async (id: string, include: boolean) => {
     await send(`/api/pieces/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify({ includeInMemory: include }) });
   },
+  // Gone for good, with everything Ink made from it. A piece the server never had counts as deleted.
+  remove: async (id: string) => {
+    try {
+      await send(`/api/pieces/${encodeURIComponent(id)}`, { method: "DELETE" });
+    } catch (err) {
+      if (!(err instanceof ApiError && err.status === 404)) throw err;
+    }
+  },
   library: () => request<LibraryResponse>("/api/library"),
   get: (id: string) => request<Piece>(`/api/pieces/${encodeURIComponent(id)}`),
   // What "Ink sees this too" shows beside a piece. "Not related" hides a piece beside this one for good.

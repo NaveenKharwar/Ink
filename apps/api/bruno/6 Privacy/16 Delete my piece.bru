@@ -1,0 +1,23 @@
+meta {
+  name: Delete my piece
+  type: http
+  seq: 16
+}
+
+delete {
+  url: {{baseUrl}}/api/pieces/{{pieceId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 204
+}
+
+docs {
+  The first writer deletes their own piece for good. Expect 204.
+}

@@ -20,6 +20,7 @@ import { usePictureAdder } from "./usePictureAdder";
 import { usePieceMeta } from "./usePieceMeta";
 import { usePieceSave } from "./usePieceSave";
 import { FadeScroll } from "../ui/FadeScroll";
+import { DeletePiece } from "./DeletePiece";
 import { FinishedPrompt } from "./FinishedPrompt";
 import { useFinishedPrompt } from "./useFinishedPrompt";
 
@@ -35,12 +36,14 @@ type Props = {
   panelOpen: boolean;
   onPanelToggle: () => void;
   onMenu: () => void;
+  /** The writer deleted this piece (it is gone from the server and this device). */
+  onDeleted: () => void;
 };
 
 const EDITOR_ATTRIBUTES = { "aria-label": "Your writing", spellcheck: "false" };
 
 // The page panel: where the piece lives, the writing itself, and the tool bar.
-export function Page({ pieceId, userId, opened, wide, season, showMenuButton, panelOpen, onPanelToggle, onMenu }: Props) {
+export function Page({ pieceId, userId, opened, wide, season, showMenuButton, panelOpen, onPanelToggle, onMenu, onDeleted }: Props) {
   // The piece is a Yjs document: it merges with what other devices write.
   // Loaded before the editor exists, so the editor starts from the piece and adds nothing on top.
   const [ydoc] = useState(() => {
@@ -171,6 +174,7 @@ export function Page({ pieceId, userId, opened, wide, season, showMenuButton, pa
             <EditorContent editor={editor} />
             <LinkCard editor={editor} />
             <FinishedPrompt spot={finishing.spot} failed={finishing.failed} onToggle={finishing.toggle} />
+            {!empty && !showCards && <DeletePiece pieceId={pieceId} userId={userId} onDeleted={onDeleted} />}
             <StyleCards shown={showCards} wide={wide} onPick={changeStyle} selected={leaning} onSelect={setLeaning} />
           </div>
         </div>
