@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { groupByYear } from "../lib/seasons";
 import { FadeScroll } from "../ui/FadeScroll";
 import { ScreenLoader } from "../ui/Loader";
-import { MenuCount, MenuDivider, MenuLabel, MenuRow } from "../ui/MenuRow";
+import { MenuCount, MenuDivider, MenuFoot, MenuLabel, MenuRow } from "../ui/MenuRow";
 import { ChevronIcon, DocumentIcon, MenuIcon, PencilIcon, PictureIcon, SearchIcon, SeasonIcon } from "./icons";
 
 // Which screen is open. "write" is a new page (the only time Write is marked); "piece" is a saved
@@ -200,11 +200,9 @@ export function Sidebar(props: Props) {
       </FadeScroll>
 
       {/* The way to the profile: the writer's name once, "Profile" under it, and a chevron that says it opens. */}
-      <div className="shrink-0">
-        <MenuDivider />
+      <MenuFoot>
         <MenuRow
           tall
-          className="mt-2"
           selected={screen === "profile"}
           onClick={onProfile}
           trailing={
@@ -216,7 +214,7 @@ export function Sidebar(props: Props) {
           <span className="block truncate font-serif text-[17px] leading-[22px]">{name}</span>
           <span className="block text-[12px] font-normal leading-4 text-ink-muted">Profile</span>
         </MenuRow>
-      </div>
+      </MenuFoot>
     </nav>
   );
 }

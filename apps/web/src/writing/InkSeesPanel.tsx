@@ -9,7 +9,7 @@ import { DeletePiece } from "./DeletePiece";
 import { RelatedNoteView } from "./RelatedNoteView";
 import { useDismissals, useRelated } from "./useRelated";
 import { FadeScroll } from "../ui/FadeScroll";
-import { MenuDivider, MenuRow } from "../ui/MenuRow";
+import { MenuDivider, MenuFoot, MenuRow, MenuSwitch } from "../ui/MenuRow";
 import { ScreenLoader } from "../ui/Loader";
 
 const RELATED_SHOWN = 3;
@@ -205,23 +205,11 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
         })}
       </FadeScroll>
       {pieceId && (found.known || keptOut || exists) && (
-        <div aria-live="polite" className="shrink-0 bg-surface px-5 pb-3 pt-2">
+        <MenuFoot aria-live="polite" className="px-5 pb-3 pt-2">
           {/* Settings first (switches, each with one line of what it does), then any actions, and
               Delete last, set apart. A new option is another row in the right group. */}
-          <MenuDivider />
           {(found.known || keptOut) && (
-            <MenuRow
-              tall
-              tone="muted"
-              role="switch"
-              aria-checked={!keptOut}
-              onClick={() => void changeKeepOut()}
-              trailing={
-                <span aria-hidden className={`relative h-6 w-10 shrink-0 rounded-full transition-colors duration-150 motion-reduce:transition-none ${keptOut ? "bg-line-strong" : "bg-accent"}`}>
-                  <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-surface transition-[left] duration-150 motion-reduce:transition-none ${keptOut ? "left-0.5" : "left-[18px]"}`} />
-                </span>
-              }
-            >
+            <MenuRow tall tone="muted" role="switch" aria-checked={!keptOut} onClick={() => void changeKeepOut()} trailing={<MenuSwitch on={!keptOut} />}>
               <span className="block text-ink">{MEMORY_LABEL}</span>
               <span className="block text-[12px] leading-4 text-ink-muted">{memoryHint(keptOut)}</span>
             </MenuRow>
@@ -232,7 +220,7 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
               <DeletePiece pieceId={pieceId} userId={userId} onDeleted={onDeleted} />
             </>
           )}
-        </div>
+        </MenuFoot>
       )}
     </aside>
   );

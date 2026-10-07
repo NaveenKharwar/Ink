@@ -53,6 +53,28 @@ export function MenuDivider({ className = "" }: { className?: string }) {
   return <div role="separator" className={`mx-1 h-px shrink-0 bg-line ${className}`} />;
 }
 
+/**
+ * The foot of a menu: a hairline, then the options under it. It sits on a solid surface so a list
+ * that fades above it never runs into it. The host gives it its side and bottom room.
+ */
+export function MenuFoot({ children, className = "", ...rest }: { children: ReactNode; className?: string } & React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div {...rest} className={`shrink-0 bg-surface ${className}`}>
+      <MenuDivider />
+      <div className="pt-2">{children}</div>
+    </div>
+  );
+}
+
+/** The switch at the end of a switch row; the row itself carries role="switch". */
+export function MenuSwitch({ on }: { on: boolean }) {
+  return (
+    <span aria-hidden className={`relative h-6 w-10 shrink-0 rounded-full transition-colors duration-150 motion-reduce:transition-none ${on ? "bg-accent" : "bg-line-strong"}`}>
+      <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-surface transition-[left] duration-150 motion-reduce:transition-none ${on ? "left-[18px]" : "left-0.5"}`} />
+    </span>
+  );
+}
+
 /** A small grey heading over a group of rows ("Library", "Seasons"). */
 export function MenuLabel({ children }: { children: ReactNode }) {
   return <div className="px-3 pb-1.5 text-[13px] text-ink-muted">{children}</div>;
