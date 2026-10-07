@@ -4,6 +4,7 @@ import { CloudIcon, MenuIcon } from "./icons";
 import { ConnectionsButton } from "./ConnectionsButton";
 import { Dropdown } from "./Dropdown";
 import { STYLES } from "./StyleCards";
+import { QuietNote } from "../ui/QuietNote";
 import { LANGUAGES } from "./Toolbar";
 import type { SaveState } from "./usePieceSave";
 
@@ -37,6 +38,8 @@ type Props = {
   /** ☰: always on phone; on desktop while the menu is closed. */
   showMenuButton: boolean;
   onMenu: () => void;
+  /** A short sentence about something that just happened: it takes the place of the name for a moment. */
+  note: string | null;
 };
 
 const iconButton =
@@ -56,7 +59,8 @@ export function TopBar({
   panelOpen,
   onPanelToggle,
   showMenuButton,
-  onMenu
+  onMenu,
+  note
 }: Props) {
   return (
     <div className={`flex shrink-0 items-center justify-between gap-2 ${wide ? "h-14 pr-4 pl-4" : "h-[52px] pr-1.5 pl-1"}`}>
@@ -67,7 +71,7 @@ export function TopBar({
           </button>
         )}
         {/* Phone: no room for the season, so the name gets it all (the menu still shows it). */}
-        {wide && (
+        {wide && !note && (
           <>
             <span className={`whitespace-nowrap ${showMenuButton ? "" : "pl-2.5"}`}>{season}</span>
             <span className="text-ink-muted">/</span>
@@ -75,7 +79,13 @@ export function TopBar({
         )}
         {/* The page's heading for screen readers; sighted writers have the name beside it, renamed in place. */}
         <h1 className="sr-only">{title ?? (firstLine || "Untitled")}</h1>
-        <PieceName title={title} firstLine={firstLine} onRename={onRename} />
+        {note ? (
+          <span className={showMenuButton ? "" : "pl-2.5"}>
+            <QuietNote>{note}</QuietNote>
+          </span>
+        ) : (
+          <PieceName title={title} firstLine={firstLine} onRename={onRename} />
+        )}
       </div>
       <div className="flex shrink-0 items-center gap-2 text-[13px] text-ink-muted">
         {wide && save !== "idle" && (

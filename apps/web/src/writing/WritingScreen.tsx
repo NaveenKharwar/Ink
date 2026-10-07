@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import type { PieceStatus, RelatedNote } from "@ink/schemas";
 import { TETHER_VISITS, countTetherVisit, type Account } from "../lib/account";
 import { sync } from "../lib/localSave";
@@ -20,7 +20,7 @@ import { Tether, type TetherState } from "./Tether";
 import { useDesktopLayout } from "./useDesktopLayout";
 import { useLibrary } from "./useLibrary";
 import { newId } from "../lib/newId";
-import { QuietNote } from "../ui/QuietNote";
+import { NOTE_SHOWN_MS } from "../ui/QuietNote";
 import { useVisibleArea } from "../lib/visibleArea";
 
 type PhonePos = "menu" | "page" | "panel" | "reader";
@@ -153,7 +153,11 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
   };
   // The writer deleted the open piece: the list forgets it and a blank page opens.
   const [note, setNote] = useState<string | null>(null);
-  const clearNote = useCallback(() => setNote(null), []);
+  useEffect(() => {
+    if (!note) return;
+    const timer = setTimeout(() => setNote(null), NOTE_SHOWN_MS);
+    return () => clearTimeout(timer);
+  }, [note]);
   const deleted = () => {
     library.refresh();
     newPiece();
@@ -365,6 +369,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
         open={view.target.open}
         onWrite={newPiece}
         pieceId={view.target.id}
+        note={note}
         userId={userId}
         wide={wide}
         season={pieceSeason(view.target.id)}
@@ -403,7 +408,6 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
             style={{ width: reading ? reading.page : "var(--paper-width)", ...(narrowPage ? ({ "--page-gutter": "24px" } as React.CSSProperties) : null) }}
           >
             {page}
-            {note && <QuietNote onDone={clearNote}>{note}</QuietNote>}
           </main>
           {reading && (
             <div className="h-full shrink-0" style={{ marginLeft: READER_GAP, width: reading.reader }}>
@@ -499,7 +503,6 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
           <div inert={pos !== "page"} className="flex h-full flex-col">
             {page}
           </div>
-          {note && <QuietNote onDone={clearNote}>{note}</QuietNote>}
           {pos !== "page" && (
             <button
               type="button"
