@@ -2,7 +2,6 @@ import type { PieceStatus } from "@ink/schemas";
 import { useEffect, useRef, useState } from "react";
 import { groupByYear } from "../lib/seasons";
 import { FadeScroll } from "../ui/FadeScroll";
-import { AccountMenu } from "./AccountMenu";
 import { ChevronIcon, DocumentIcon, MenuIcon, PencilIcon, PictureIcon, SearchIcon, SeasonIcon } from "./icons";
 
 // Which screen is open. "write" is a new page (the only time Write is marked); "piece" is a saved
@@ -31,7 +30,6 @@ type Props = {
   onSeason: (key: string) => void;
   onFilter: (status: PieceStatus) => void;
   onProfile: () => void;
-  onSignOut: () => Promise<void>;
 };
 
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
@@ -54,7 +52,7 @@ function readOpenYears(): string[] {
 // The menu: search, Write, All writing, Pictures and the seasons, with the account at the foot.
 // Desktop: a side sheet from the left edge. Phone: the left side of the sliding track.
 export function Sidebar(props: Props) {
-  const { phone = false, name, screen, seasons, activeSeason, activeFilter, counts, onClose, onSearch, onWrite, onAll, onPictures, onSeason, onFilter, onProfile, onSignOut } = props;
+  const { phone = false, name, screen, seasons, activeSeason, activeFilter, counts, onClose, onSearch, onWrite, onAll, onPictures, onSeason, onFilter, onProfile } = props;
   const [openYears, setOpenYears] = useState(readOpenYears);
   useEffect(() => {
     try {
@@ -223,8 +221,23 @@ export function Sidebar(props: Props) {
         )}
       </FadeScroll>
 
+      {/* The way to the profile: the writer's name once, "Profile" under it, and a chevron that says it opens. */}
       <div className="shrink-0">
-        <AccountMenu name={name} onProfile={onProfile} onSignOut={onSignOut} />
+        <div className="mx-1 h-px bg-line" />
+        <button
+          type="button"
+          onClick={onProfile}
+          aria-current={screen === "profile" ? "page" : undefined}
+          className={`mt-2 box-border flex min-h-14 w-full cursor-pointer items-center gap-3 rounded-md border-0 px-3 text-left text-ink ${screen === "profile" ? "bg-surface-hover" : "bg-transparent"} ${focusRing}`}
+        >
+          <span className="min-w-0 grow">
+            <span className="block truncate font-serif text-[17px] leading-[22px]">{name}</span>
+            <span className="block text-[12px] leading-4 text-ink-muted">Profile</span>
+          </span>
+          <span className="shrink-0 -rotate-90 text-ink-muted">
+            <ChevronIcon size={16} />
+          </span>
+        </button>
       </div>
     </nav>
   );

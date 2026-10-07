@@ -316,8 +316,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
     onPictures: openPictures,
     onSeason: (key: string) => openAll(key),
     onFilter: (status: PieceStatus) => openAll(null, status),
-    onProfile: openProfile,
-    onSignOut: signOut
+    onProfile: openProfile
   };
 
   const onMenu = () => {
