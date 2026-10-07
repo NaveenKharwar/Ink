@@ -11,18 +11,16 @@ type Props = { pieceId: string; userId: string; onDeleted: () => void };
 export function DeletePiece({ pieceId, userId, onDeleted }: Props) {
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [failed, setFailed] = useState(false);
 
   const remove = async () => {
     setBusy(true);
-    setFailed(false);
     try {
       await pieces.remove(pieceId);
       // What this device still holds of it must not go up again.
       await buffer.remove(bufferKey(userId, pieceId)).catch(() => undefined);
     } catch {
+      // The app shows its one screen for a failure; the row is simply ready again.
       setBusy(false);
-      setFailed(true);
       return;
     }
     onDeleted();
@@ -47,7 +45,6 @@ export function DeletePiece({ pieceId, userId, onDeleted }: Props) {
           Keep
         </MenuRow>
       </span>
-      {failed && <span className="basis-full pb-2 text-[12px] text-ink-muted">Couldn’t delete that. Try again.</span>}
     </div>
   );
 }

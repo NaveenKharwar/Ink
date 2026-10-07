@@ -11,14 +11,12 @@ import { REMOTE, type SaveState } from "./usePieceSave";
  */
 export function useFinishedPrompt(pieceId: string, ydoc: Y.Doc, options: { finished: boolean; words: number; save: SaveState }) {
   const [finished, setFinished] = useState(options.finished);
-  const [failed, setFailed] = useState(false);
 
   // Anything the writer does to the piece (not what another device sent) reopens it.
   useEffect(() => {
     const onChange = (_update: Uint8Array, origin: unknown) => {
       if (origin === REMOTE) return;
       setFinished(false);
-      setFailed(false);
     };
     ydoc.on("update", onChange);
     return () => ydoc.off("update", onChange);
@@ -26,11 +24,10 @@ export function useFinishedPrompt(pieceId: string, ydoc: Y.Doc, options: { finis
 
   const toggle = useCallback(async () => {
     const next = !finished;
-    setFailed(false);
     try {
       await pieces.setStatus(pieceId, next ? "finished" : "draft");
     } catch {
-      setFailed(true);
+      // The app shows its one screen for a failure.
       return;
     }
     setFinished(next);
@@ -38,5 +35,5 @@ export function useFinishedPrompt(pieceId: string, ydoc: Y.Doc, options: { finis
 
   const saved = options.save === "saved" || options.save === "idle";
   const spot = spotFor({ finished, words: options.words, saved });
-  return { spot, failed, toggle: () => void toggle() };
+  return { spot, toggle: () => void toggle() };
 }

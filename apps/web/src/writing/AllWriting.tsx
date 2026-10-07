@@ -23,8 +23,6 @@ type Props = {
   onMenu: () => void;
   seasonSet: SeasonSet;
   groups: SeasonGroup<LibraryItem>[] | null;
-  failed: boolean;
-  onRetry: () => void;
   /** What the list is narrowed to: a season as it reads on its own ("Monsoon 2025"), or Drafts or Finished. */
   narrowedTo: { label: string; clear: string } | null;
   onClearNarrowing: () => void;
@@ -33,7 +31,7 @@ type Props = {
 
 // All writing: every piece, grouped by the season it was written in, newest first.
 // Each row is the writer's own first lines, not a title.
-export function AllWriting({ wide, showMenuButton, onMenu, seasonSet, groups, failed, onRetry, narrowedTo, onClearNarrowing, onOpen }: Props) {
+export function AllWriting({ wide, showMenuButton, onMenu, seasonSet, groups, narrowedTo, onClearNarrowing, onOpen }: Props) {
   const noticed = useNoticed();
   const total = groups?.reduce((n, g) => n + g.items.length, 0) ?? 0;
 
@@ -134,20 +132,8 @@ export function AllWriting({ wide, showMenuButton, onMenu, seasonSet, groups, fa
             </div>
           )}
 
-          {!groups && !failed && (
+          {!groups && (
             <ScreenLoader label="Loading your writing" className="pt-16" />
-          )}
-          {!groups && failed && (
-            <div className="flex flex-col items-start gap-3 pt-8 text-ink-muted">
-              <p className="m-0">Couldn't load your writing. Check your connection.</p>
-              <button
-                type="button"
-                onClick={onRetry}
-                className={`cursor-pointer rounded-md border border-line bg-transparent px-3 py-1.5 text-[14px] text-ink ${focusRing}`}
-              >
-                Try again
-              </button>
-            </div>
           )}
           {groups && total === 0 && <p className="mt-7 mb-0 text-ink-muted">Nothing here yet.</p>}
 

@@ -1,0 +1,23 @@
+meta {
+  name: Session is accepted
+  type: http
+  seq: 14
+}
+
+get {
+  url: {{baseUrl}}/api/session
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 204
+}
+
+docs {
+  The app asks this once before it shows a writer's pages, to learn the sign-in is still accepted. It reads no data. Expect 204.
+}

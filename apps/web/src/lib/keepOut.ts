@@ -4,8 +4,6 @@
 /** The panel's body for a piece kept out: what happened and what it means. */
 export const KEPT_OUT_BODY = "Kept out of Ink’s memory. Ink isn’t looking beside this piece, and it won’t appear beside others.";
 
-export const KEEP_OUT_FAILED = "Couldn’t change that just now.";
-
 /** The switch row in the panel's foot: on means Ink looks at the piece. */
 export const MEMORY_LABEL = "Ink remembers this";
 export const memoryHint = (keptOut: boolean): string => (keptOut ? "Kept out of Ink’s memory." : "Turn off to keep it private.");

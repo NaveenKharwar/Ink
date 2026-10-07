@@ -350,8 +350,6 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
         onMenu={onMenu}
         seasonSet={seasonSet}
         groups={shownGroups}
-        failed={library.failed}
-        onRetry={refresh}
         narrowedTo={seasonGroup ? { label: seasonGroup.text, clear: `Show all seasons, not only ${seasonGroup.text}` } : activeFilter ? { label: activeFilter === "draft" ? "Drafts" : "Finished", clear: `Show all writing, not only ${activeFilter === "draft" ? "drafts" : "finished pieces"}` } : null}
         onClearNarrowing={() => setView({ kind: "all", season: null, filter: null })}
         onOpen={openPiece}
