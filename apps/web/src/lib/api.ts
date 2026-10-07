@@ -75,6 +75,10 @@ export const pieces = {
   setInMemory: async (id: string, include: boolean) => {
     await send(`/api/pieces/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify({ includeInMemory: include }) });
   },
+  // Asks nothing and answers nothing: whether the sign-in is still accepted, before any page is shown.
+  session: async () => {
+    await send("/api/session");
+  },
   library: () => request<LibraryResponse>("/api/library"),
   get: (id: string) => request<Piece>(`/api/pieces/${encodeURIComponent(id)}`),
   // What "Ink sees this too" shows beside a piece. "Not related" hides a piece beside this one for good.

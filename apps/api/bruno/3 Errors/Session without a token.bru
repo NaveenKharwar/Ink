@@ -1,0 +1,19 @@
+meta {
+  name: Session without a token
+  type: http
+  seq: 15
+}
+
+get {
+  url: {{baseUrl}}/api/session
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 401
+}
+
+docs {
+  Without a token the session check is refused. Expect 401.
+}

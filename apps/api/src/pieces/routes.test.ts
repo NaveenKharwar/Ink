@@ -160,6 +160,10 @@ test("every pieces route needs a valid token", async () => {
   assert.equal(missing.statusCode, 401);
   const bad = await app.inject({ method: "GET", url: "/api/pieces", headers: { authorization: "Bearer nope" } });
   assert.equal(bad.statusCode, 401);
+  const sessionMissing = await app.inject({ method: "GET", url: "/api/session" });
+  assert.equal(sessionMissing.statusCode, 401);
+  const sessionOk = await app.inject({ method: "GET", url: "/api/session", headers: { authorization: `Bearer token-${ASHA}` } });
+  assert.equal(sessionOk.statusCode, 204);
   const health = await app.inject({ method: "GET", url: "/health" });
   assert.equal(health.statusCode, 200);
 });
