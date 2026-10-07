@@ -32,6 +32,7 @@
   --on-ink: #ffffff;
   --ink-muted: #666560;
   --accent: #456f0c;
+  --danger: #9a4a3c;
   --accent-soft: color-mix(in srgb, var(--accent) 10%, var(--surface));
   --dash: color-mix(in srgb, var(--accent) 35%, var(--surface));
   --surface-hover: #f5efe3;
@@ -64,6 +65,7 @@
     --on-ink: #121314;
     --ink-muted: #a3a3a0;
     --accent: #a8d86a;
+    --danger: #e39a88;
     --accent-soft: color-mix(in srgb, var(--accent) 9%, var(--surface));
     --dash: color-mix(in srgb, var(--accent) 40%, var(--surface));
     --surface-hover: #252119;
@@ -94,6 +96,7 @@
   --on-ink: #121314;
   --ink-muted: #a3a3a0;
   --accent: #a8d86a;
+  --danger: #e39a88;
   --accent-soft: color-mix(in srgb, var(--accent) 9%, var(--surface));
   --dash: color-mix(in srgb, var(--accent) 40%, var(--surface));
   --surface-hover: #252119;
@@ -123,6 +126,7 @@
   --color-on-ink: var(--on-ink);
   --color-ink-muted: var(--ink-muted);
   --color-accent: var(--accent);
+  --color-danger: var(--danger);
   --color-accent-soft: var(--accent-soft);
   --color-dash: var(--dash);
   --color-surface-hover: var(--surface-hover);

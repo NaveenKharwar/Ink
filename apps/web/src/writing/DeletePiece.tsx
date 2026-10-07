@@ -29,7 +29,7 @@ export function DeletePiece({ pieceId, userId, row, onDeleted }: Props) {
 
   if (!asking)
     return (
-      <button type="button" onClick={() => setAsking(true)} className={row}>
+      <button type="button" onClick={() => setAsking(true)} className={`${row} text-danger`}>
         Delete this piece
       </button>
     );
@@ -37,10 +37,10 @@ export function DeletePiece({ pieceId, userId, row, onDeleted }: Props) {
   return (
     <div className="flex min-h-11 flex-wrap items-center text-[14px] leading-5 text-ink-muted">
       <span className="px-2">Delete for good?</span>
-      <button type="button" onClick={() => void remove()} disabled={busy} className={`${row} w-auto underline`}>
+      <button type="button" onClick={() => void remove()} disabled={busy} className={`${row} w-auto text-ink underline`}>
         Delete
       </button>
-      <button type="button" onClick={() => setAsking(false)} disabled={busy} className={`${row} w-auto`}>
+      <button type="button" onClick={() => setAsking(false)} disabled={busy} className={`${row} w-auto text-ink-muted`}>
         Keep
       </button>
       {failed && <span className="basis-full px-2 text-[12px]">Couldn’t delete that. Try again.</span>}

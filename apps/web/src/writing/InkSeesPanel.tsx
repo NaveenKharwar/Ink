@@ -1,7 +1,7 @@
 import type { RelatedNote } from "@ink/schemas";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { pieces } from "../lib/api";
-import { KEEP_OUT_FAILED, KEPT_OUT_BODY, keepOutAction } from "../lib/keepOut";
+import { KEEP_OUT_FAILED, KEPT_OUT_BODY, MEMORY_LABEL, memoryHint } from "../lib/keepOut";
 import { noteLabel, seasonColorVar } from "../lib/related";
 import { deviceTimeZone, type SeasonSet } from "../lib/seasons";
 import { ChevronIcon, CloseIcon } from "./icons";
@@ -40,15 +40,15 @@ const focus = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visi
 const linkClass = (phone: boolean) =>
   `relative cursor-pointer border-0 border-b-[1.5px] border-dotted border-accent bg-transparent p-0 text-[14px] text-accent ${phone ? "before:absolute before:-inset-x-3 before:-inset-y-[14px] before:content-['']" : ""} ${focus}`;
 
-// A row in the panel's foot: the full width is the tap area, 44px tall, quiet grey that darkens on hover.
-const footRow = `flex min-h-11 w-full cursor-pointer items-center rounded-md border-0 bg-transparent px-2 text-left text-[14px] leading-5 text-ink-muted hover:text-ink active:text-ink ${focus}`;
+// A row in the panel's foot: the full width is the tap area, 44px tall (colour is set where it is used).
+const footRow = `flex min-h-11 w-full cursor-pointer items-center rounded-md border-0 bg-transparent px-2 text-left text-[14px] leading-5 ${focus}`;
 
 // "Ink sees this too": older writing beside the piece, as plain notes under heading bars. Related
 // (soft blue: it leads to other writing), Forgotten (old pieces not edited for a long while) and
 // Loose lines (short ones). The panel is the only card; nothing inside it is boxed. A section with
-// nothing close is not shown at all. At the foot, one quiet grey line (always in the same place, no
-// divider) keeps the piece out of Ink's memory or puts it back; a kept-out piece has no notes, and the
-// panel says so.
+// nothing close is not shown at all. Below a divider the foot holds the piece's
+// own options: a switch for whether Ink remembers it, then, set apart, Delete. A kept-out piece has no
+// notes, and the panel says so.
 export function InkSeesPanel({ phone = false, shown = true, chosen = null, pieceId, exists, seasonSet, reading = [], onClose, onOpenBeside, userId, onDeleted }: Props) {
   const found = useRelated(pieceId, exists);
   const dismissals = useDismissals(pieceId);
@@ -223,15 +223,32 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
       </FadeScroll>
       {pieceId && (found.known || keptOut || exists) && (
         <div aria-live="polite" className={`shrink-0 pb-3 ${phone ? "px-5" : "px-3"}`}>
+          {/* Settings first (switches, each with one line of what it does), then any actions, and
+              Delete last, set apart. A new option is another row in the right group. */}
           <div className="mx-1 h-px bg-line" />
-          <div className="px-2 pb-0.5 pt-3 text-[13px] text-ink-muted">This piece</div>
-          {keepFailed && <p className="m-0 px-2 text-[12px] leading-5 text-ink-muted">{KEEP_OUT_FAILED}</p>}
           {(found.known || keptOut) && (
-            <button type="button" onClick={() => void changeKeepOut()} className={footRow}>
-              {keepOutAction(keptOut)}
+            <button
+              type="button"
+              role="switch"
+              aria-checked={!keptOut}
+              onClick={() => void changeKeepOut()}
+              className={`${footRow} min-h-14 justify-between gap-3 py-1 text-ink-muted`}
+            >
+              <span className="flex flex-col">
+                <span className="text-ink">{MEMORY_LABEL}</span>
+                <span className="text-[12px] text-ink-muted">{keepFailed ? KEEP_OUT_FAILED : memoryHint(keptOut)}</span>
+              </span>
+              <span aria-hidden className={`relative h-6 w-10 shrink-0 rounded-full transition-colors duration-150 motion-reduce:transition-none ${keptOut ? "bg-line-strong" : "bg-accent"}`}>
+                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-surface transition-[left] duration-150 motion-reduce:transition-none ${keptOut ? "left-0.5" : "left-[18px]"}`} />
+              </span>
             </button>
           )}
-          {exists && <DeletePiece pieceId={pieceId} userId={userId} row={footRow} onDeleted={onDeleted} />}
+          {exists && (
+            <>
+              <div className="mx-1 h-px bg-line" />
+              <DeletePiece pieceId={pieceId} userId={userId} row={footRow} onDeleted={onDeleted} />
+            </>
+          )}
         </div>
       )}
     </aside>
