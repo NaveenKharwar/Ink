@@ -1,0 +1,23 @@
+meta {
+  name: My piece is still there
+  type: http
+  seq: 15
+}
+
+get {
+  url: {{baseUrl}}/api/pieces/{{pieceId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Back as the first writer: the piece survived the second writer's delete. Expect 200.
+}

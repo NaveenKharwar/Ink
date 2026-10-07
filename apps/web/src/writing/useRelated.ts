@@ -19,6 +19,8 @@ export type Related = RelatedResponse & {
   failed: boolean;
   /** The server has answered for this piece, so it is on the server and the panel can offer to keep it out. */
   known: boolean;
+  /** The piece has been saved to the server, here or in an earlier visit: it can be deleted. */
+  onServer: boolean;
   /** Looks again now. */
   retry: () => void;
 };
@@ -89,7 +91,7 @@ export function useRelated(pieceId: string | null, exists: boolean): Related {
 
   const asked = !!pieceId && (exists || saved);
   const nothingShown = data.related.length + data.forgotten.length + data.loose.length === 0;
-  return { ...data, ready, known, loading: asked && !ready, failed: failed && nothingShown, retry: refresh };
+  return { ...data, ready, known, onServer: exists || saved, loading: asked && !ready, failed: failed && nothingShown, retry: refresh };
 }
 
 export type Dismissal = "undo" | "gone";

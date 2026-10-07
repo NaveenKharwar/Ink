@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { PEN_NAME_MAX, savePenName, saveSeasons, sendPasswordCode, setPassword, type Account } from "../lib/account";
 import type { PasswordProblem } from "../lib/password";
 import { deviceTimeZone, resolveSeasonSet, seasonPlace, seasonSetFor, type SeasonChoice, type SeasonSet } from "../lib/seasons";
+import { useTheme, type ThemeChoice } from "../lib/theme";
 import { Button } from "../ui/Button";
 import { MenuIcon } from "./icons";
 import { SeasonPainting } from "./SeasonPainting";
@@ -82,6 +83,9 @@ export function Profile({ account, items, wide, showMenuButton, onMenu, onBack, 
           <PenName initial={account.penName ?? ""} />
           <Section>
             <Seasons initial={account.seasons} onChange={setSeasons} />
+          </Section>
+          <Section>
+            <Look />
           </Section>
           <Section>
             <Memory />
@@ -274,26 +278,44 @@ function Seasons({ initial, onChange }: { initial: SeasonChoice; onChange: (choi
       </p>
       <div className="mt-3 flex flex-col gap-1">
         {SEASON_OPTIONS.map((o) => (
-          <label
-            key={o.value}
-            className={`-mx-3 flex cursor-pointer items-start gap-3 rounded-md px-3 py-2.5 ${choice === o.value ? "bg-surface-hover" : ""}`}
-          >
-            <input
-              type="radio"
-              name="seasons"
-              value={o.value}
-              checked={choice === o.value}
-              onChange={() => void pick(o.value)}
-              className={`mt-[3px] h-4 w-4 shrink-0 accent-ink ${focusRing}`}
-            />
-            <span>
-              <span className="block font-medium">{o.label}</span>
-              <span className="block text-[13px] leading-[18px] text-ink-muted">{o.sub}</span>
-            </span>
-          </label>
+          <ChoiceRow key={o.value} name="seasons" value={o.value} label={o.label} sub={o.sub} checked={choice === o.value} onChoose={() => void pick(o.value)} />
         ))}
       </div>
       <SaveStatus state={state} />
+    </fieldset>
+  );
+}
+
+// One choice among several (Seasons, Look): a radio, its name and one line of what it means.
+function ChoiceRow({ name, value, label, sub, checked, onChoose }: { name: string; value: string; label: string; sub: string; checked: boolean; onChoose: () => void }) {
+  return (
+    <label className={`-mx-3 flex min-h-11 cursor-pointer items-start gap-3 rounded-md px-3 py-2.5 ${checked ? "bg-surface-hover" : ""}`}>
+      <input type="radio" name={name} value={value} checked={checked} onChange={onChoose} className={`mt-[3px] h-4 w-4 shrink-0 accent-ink ${focusRing}`} />
+      <span>
+        <span className="block font-medium">{label}</span>
+        <span className="block text-[13px] leading-[18px] text-ink-muted">{sub}</span>
+      </span>
+    </label>
+  );
+}
+
+const LOOKS: Array<{ value: ThemeChoice; label: string; sub: string }> = [
+  { value: "system", label: "System", sub: "Follows your device." },
+  { value: "light", label: "Light", sub: "Paper." },
+  { value: "dark", label: "Dark", sub: "Ink." }
+];
+
+// How Ink looks on this device. Remembered here, not on the account.
+function Look() {
+  const [theme, setTheme] = useTheme();
+  return (
+    <fieldset className="m-0 min-w-0 border-0 p-0">
+      <legend className="p-0 text-[14px] leading-5 font-semibold">Look</legend>
+      <div className="mt-3 flex flex-col gap-1">
+        {LOOKS.map((o) => (
+          <ChoiceRow key={o.value} name="look" value={o.value} label={o.label} sub={o.sub} checked={theme === o.value} onChoose={() => setTheme(o.value)} />
+        ))}
+      </div>
     </fieldset>
   );
 }

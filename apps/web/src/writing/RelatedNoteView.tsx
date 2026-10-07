@@ -6,7 +6,6 @@ type Props = {
   label: string;
   /** The season's colour, for the short dash beside the chosen note. */
   color: string;
-  phone: boolean;
   selected: boolean;
   /** Something else is chosen: this one steps back. */
   dimmed: boolean;
@@ -23,10 +22,8 @@ const focus = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visi
 // chosen, its two actions. No box, no reason. The chosen note gets a short dash in its season's
 // colour (the same dash as on the page, in the gutter so nothing shifts) and the others step back by taking the muted ink colour
 // (never by opacity: faded text fell under 4.5:1).
-export function RelatedNoteView({ note, label, color, phone, selected, dimmed, reading = false, onSelect, onOpenBeside, onDismiss }: Props) {
-  const action = `absolute top-1.5 z-10 flex cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-ink-muted hover:text-ink ${focus} ${
-    phone ? "h-11 w-11" : "h-7 w-7"
-  }`;
+export function RelatedNoteView({ note, label, color, selected, dimmed, reading = false, onSelect, onOpenBeside, onDismiss }: Props) {
+  const action = `absolute top-1.5 z-10 flex cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-ink-muted hover:text-ink ${focus} h-11 w-11`;
   if (reading) {
     // Its words are in the reading paper: never shown twice. One line in full ink with the season
     // dash (no open-beside icon: it is already open); choosing it brings that tab forward.
@@ -37,7 +34,7 @@ export function RelatedNoteView({ note, label, color, phone, selected, dimmed, r
           type="button"
           onClick={onOpenBeside}
           aria-label={`Reading beside the page: ${label}`}
-          className={`flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left text-ink ${phone ? "h-11" : "h-9"} ${focus}`}
+          className={`flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left text-ink h-11 ${focus}`}
         >
           <span className="min-w-0 grow truncate text-[12px] leading-4 font-medium tracking-[0.08em] uppercase">{label}</span>
         </button>
@@ -53,7 +50,7 @@ export function RelatedNoteView({ note, label, color, phone, selected, dimmed, r
         className={`absolute top-[18px] left-0 h-0.5 w-2 rounded-[1px] transition-opacity duration-[250ms] motion-reduce:transition-none ${selected ? "opacity-100" : "opacity-0"}`}
         style={{ background: color }}
       />
-      <span className={`mb-2 block truncate text-[12px] leading-4 font-medium tracking-[0.08em] text-ink-muted uppercase ${selected ? (phone ? "pr-24" : "pr-16") : ""}`}>
+      <span className={`mb-2 block truncate text-[12px] leading-4 font-medium tracking-[0.08em] text-ink-muted uppercase ${selected ? "pr-24" : ""}`}>
         {label}
       </span>
       <button
@@ -68,7 +65,7 @@ export function RelatedNoteView({ note, label, color, phone, selected, dimmed, r
       </button>
       {selected && (
         <>
-          <button type="button" onClick={onOpenBeside} aria-label="Open beside your page" title="Open beside your page" className={`${action} ${phone ? "right-11" : "right-9"}`}>
+          <button type="button" onClick={onOpenBeside} aria-label="Open beside your page" title="Open beside your page" className={`${action} right-11`}>
             <OpenBesideIcon />
           </button>
           <button type="button" onClick={onDismiss} aria-label="Not related" title="Not related" className={`${action} right-0`}>

@@ -29,6 +29,7 @@ type Row = Omit<Piece, "content" | "text"> & { userId: string; ydoc: Uint8Array;
 
 function memoryRepo(): PiecesRepo {
   const rows = new Map<string, Row>();
+  const deleted = new Set<string>();
   let clock = Date.parse("2026-09-27T10:00:00.000Z");
   const tick = () => new Date((clock += 1000)).toISOString();
   const strip = ({ userId: _u, ydoc: _y, ...piece }: Row): Piece => piece;
@@ -36,6 +37,7 @@ function memoryRepo(): PiecesRepo {
 
   return {
     async sync(userId, id, request) {
+      if (deleted.has(id)) return null;
       let row = rows.get(id);
       if (!row && request.update) {
         const now = tick();
@@ -95,6 +97,13 @@ function memoryRepo(): PiecesRepo {
         .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
         .slice(0, limit)
         .map((row) => summary(strip(row)));
+    },
+    async remove(userId, id) {
+      const row = rows.get(id);
+      if (!row || row.userId !== userId) return false;
+      rows.delete(id);
+      deleted.add(id);
+      return true;
     },
     async update(userId, id, patch) {
       const row = rows.get(id);
@@ -644,4 +653,31 @@ test("a save that writes queues the piece for embedding; a read or a refused sav
 
   await ctx.app.inject({ method: "PATCH", url: `/api/pieces/${id}`, headers: ctx.as(ASHA), payload: { includeInMemory: false } });
   assert.deepEqual(ctx.queued, [id, id]);
+});
+
+test("a writer can delete their piece for good; another writer's delete changes nothing; a stale device cannot bring it back", async () => {
+  const ctx = await setup();
+  const { app, as } = ctx;
+  const id = randomUUID();
+  const phone = device();
+  phone.write(["the rain kept"]);
+  const first = await syncFrom(ctx, ASHA, id, phone, null);
+  assert.equal(first.res.statusCode, 200);
+
+  const other = await app.inject({ method: "DELETE", url: `/api/pieces/${id}`, headers: as(RAVI) });
+  assert.equal(other.statusCode, 404);
+  assert.equal((await app.inject({ method: "GET", url: `/api/pieces/${id}`, headers: as(ASHA) })).statusCode, 200);
+
+  const gone = await app.inject({ method: "DELETE", url: `/api/pieces/${id}`, headers: as(ASHA) });
+  assert.equal(gone.statusCode, 204);
+  assert.equal((await app.inject({ method: "GET", url: `/api/pieces/${id}`, headers: as(ASHA) })).statusCode, 404);
+  const library = await app.inject({ method: "GET", url: "/api/library", headers: as(ASHA) });
+  assert.deepEqual(library.json().items, []);
+  assert.equal((await app.inject({ method: "DELETE", url: `/api/pieces/${id}`, headers: as(ASHA) })).statusCode, 404);
+
+  // A device that still has the piece open writes again: it is refused, not recreated.
+  phone.append(" asking for names");
+  const stale = await syncFrom(ctx, ASHA, id, phone, first.known);
+  assert.equal(stale.res.statusCode, 404);
+  assert.equal((await app.inject({ method: "GET", url: `/api/pieces/${id}`, headers: as(ASHA) })).statusCode, 404);
 });

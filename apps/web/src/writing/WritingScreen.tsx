@@ -20,6 +20,7 @@ import { Tether, type TetherState } from "./Tether";
 import { useDesktopLayout } from "./useDesktopLayout";
 import { useLibrary } from "./useLibrary";
 import { newId } from "../lib/newId";
+import { NOTE_SHOWN_MS } from "../ui/QuietNote";
 import { useVisibleArea } from "../lib/visibleArea";
 
 type PhonePos = "menu" | "page" | "panel" | "reader";
@@ -150,6 +151,18 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
       window.setTimeout(() => shell.stop(), 380);
     }
   };
+  // The writer deleted the open piece: the list forgets it and a blank page opens.
+  const [note, setNote] = useState<string | null>(null);
+  useEffect(() => {
+    if (!note) return;
+    const timer = setTimeout(() => setNote(null), NOTE_SHOWN_MS);
+    return () => clearTimeout(timer);
+  }, [note]);
+  const deleted = () => {
+    library.refresh();
+    newPiece();
+    setNote("Piece deleted");
+  };
   const readOlderPiece = (id: string) => {
     shell.stop();
     openPiece(id);
@@ -173,7 +186,8 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
   // Send what is still on the device before the token goes away (never wait more than 2s).
   const signOut = async () => {
     await Promise.race([sync.syncAll(userId), new Promise((r) => setTimeout(r, 2000))]);
-    await supabase.auth.signOut();
+    // This device only: the writer's other devices stay signed in (a new password ends those).
+    await supabase.auth.signOut({ scope: "local" });
     // The next writer must not land on this one's piece.
     window.history.replaceState(null, "", "/");
   };
@@ -305,14 +319,14 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
     activeSeason: menuSeason,
     activeFilter,
     counts,
+    loaded: library.items !== null,
     onSearch: () => setSearchOpen(true),
     onWrite: newPiece,
     onAll: () => openAll(),
     onPictures: openPictures,
     onSeason: (key: string) => openAll(key),
     onFilter: (status: PieceStatus) => openAll(null, status),
-    onProfile: openProfile,
-    onSignOut: signOut
+    onProfile: openProfile
   };
 
   const onMenu = () => {
@@ -355,6 +369,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
         open={view.target.open}
         onWrite={newPiece}
         pieceId={view.target.id}
+        note={note}
         userId={userId}
         wide={wide}
         season={pieceSeason(view.target.id)}
@@ -435,6 +450,8 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
               setPanelOpen(false);
             }}
             onOpenBeside={openBeside}
+            userId={userId}
+            onDeleted={deleted}
           />
         </div>
 
@@ -505,6 +522,8 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
             seasonSet={seasonSet}
             onClose={() => setPos("page")}
             onOpenBeside={openBeside}
+            userId={userId}
+            onDeleted={deleted}
           />
         </div>
         {readerShown && (

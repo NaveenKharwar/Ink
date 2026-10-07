@@ -35,12 +35,14 @@ type Props = {
   panelOpen: boolean;
   onPanelToggle: () => void;
   onMenu: () => void;
+  /** A short sentence about something that just happened ("Piece deleted"), shown in the top bar for a moment. */
+  note: string | null;
 };
 
 const EDITOR_ATTRIBUTES = { "aria-label": "Your writing", spellcheck: "false" };
 
 // The page panel: where the piece lives, the writing itself, and the tool bar.
-export function Page({ pieceId, userId, opened, wide, season, showMenuButton, panelOpen, onPanelToggle, onMenu }: Props) {
+export function Page({ pieceId, userId, opened, wide, season, showMenuButton, panelOpen, onPanelToggle, onMenu, note }: Props) {
   // The piece is a Yjs document: it merges with what other devices write.
   // Loaded before the editor exists, so the editor starts from the piece and adds nothing on top.
   const [ydoc] = useState(() => {
@@ -161,6 +163,7 @@ export function Page({ pieceId, userId, opened, wide, season, showMenuButton, pa
         onPanelToggle={onPanelToggle}
         showMenuButton={showMenuButton}
         onMenu={onMenu}
+        note={note}
       />
       {!wide && toolbar}
       <FadeScroll scrollbar="visible" className={`ink-editor style-${style} ${showCards ? "is-blank" : ""} grow ${wide ? "pb-[110px]" : showCards ? "pb-3" : "pb-12"}`}>

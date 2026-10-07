@@ -1,13 +1,15 @@
 import type { RelatedNote } from "@ink/schemas";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { pieces } from "../lib/api";
-import { KEPT_OUT_BODY, keepOutAction } from "../lib/keepOut";
+import { KEPT_OUT_BODY, MEMORY_LABEL, memoryHint } from "../lib/keepOut";
 import { noteLabel, seasonColorVar } from "../lib/related";
 import { deviceTimeZone, type SeasonSet } from "../lib/seasons";
 import { ChevronIcon, CloseIcon } from "./icons";
+import { DeletePiece } from "./DeletePiece";
 import { RelatedNoteView } from "./RelatedNoteView";
 import { useDismissals, useRelated } from "./useRelated";
 import { FadeScroll } from "../ui/FadeScroll";
+import { MenuDivider, MenuFoot, MenuRow, MenuSwitch } from "../ui/MenuRow";
 import { ScreenLoader } from "../ui/Loader";
 
 const RELATED_SHOWN = 3;
@@ -28,27 +30,24 @@ type Props = {
   reading?: string[];
   /** Reads an older piece beside the page (desktop) or as the next screen (phone). */
   onOpenBeside: (note: RelatedNote) => void;
+  userId: string;
+  /** The writer deleted this piece from the foot of the panel. */
+  onDeleted: () => void;
 };
 
 const focus = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
 // The dotted-underline link ("Show 2 more", "Undo").
-const linkClass = (phone: boolean) =>
-  `relative cursor-pointer border-0 border-b-[1.5px] border-dotted border-accent bg-transparent p-0 text-[14px] text-accent ${phone ? "before:absolute before:-inset-x-3 before:-inset-y-[14px] before:content-['']" : ""} ${focus}`;
-
-// The grey line that keeps a piece out of Ink's memory: quiet until the writer goes looking for it.
-const quietLinkClass = (phone: boolean) =>
-  `relative cursor-pointer border-0 border-b border-dotted border-ink-subtle bg-transparent p-0 text-[12px] leading-5 text-ink-muted hover:border-ink hover:text-ink ${
-    phone ? "before:absolute before:-inset-x-3 before:-inset-y-3 before:content-['']" : ""
-  } ${focus}`;
+const linkClass =
+  `relative cursor-pointer border-0 border-b-[1.5px] border-dotted border-accent bg-transparent p-0 text-[14px] text-accent before:absolute before:-inset-x-3 before:-inset-y-[14px] before:content-[''] ${focus}`;
 
 // "Ink sees this too": older writing beside the piece, as plain notes under heading bars. Related
 // (soft blue: it leads to other writing), Forgotten (old pieces not edited for a long while) and
 // Loose lines (short ones). The panel is the only card; nothing inside it is boxed. A section with
-// nothing close is not shown at all. At the foot, one quiet grey line (always in the same place, no
-// divider) keeps the piece out of Ink's memory or puts it back; a kept-out piece has no notes, and the
-// panel says so.
-export function InkSeesPanel({ phone = false, shown = true, chosen = null, pieceId, exists, seasonSet, reading = [], onClose, onOpenBeside }: Props) {
+// nothing close is not shown at all. Below a divider the foot holds the piece's
+// own options: a switch for whether Ink remembers it, then, set apart, Delete. A kept-out piece has no
+// notes, and the panel says so.
+export function InkSeesPanel({ phone = false, shown = true, chosen = null, pieceId, exists, seasonSet, reading = [], onClose, onOpenBeside, userId, onDeleted }: Props) {
   const found = useRelated(pieceId, exists);
   const dismissals = useDismissals(pieceId);
   const [selected, setSelected] = useState<string | null>(null);
@@ -105,7 +104,6 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
           note={n}
           label={noteLabel(n, seasonSet)}
           color={seasonColorVar(n.createdAt, timeZone, seasonSet)}
-          phone={phone}
           selected={selected === n.id}
           dimmed={selected !== null && selected !== n.id}
           reading={reading.includes(n.id)}
@@ -125,7 +123,7 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
       ) : (
         <p className="m-0 mb-5 py-2.5 text-[13px] leading-5 text-ink-muted">
           Won’t show this here again.{" "}
-          <button type="button" onClick={() => dismissals.restore(n)} className={linkClass(phone)}>
+          <button type="button" onClick={() => dismissals.restore(n)} className={linkClass}>
             Undo
           </button>
         </p>
@@ -140,9 +138,7 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
         type="button"
         onClick={() => setFolded((f) => ({ ...f, [key]: open }))}
         aria-expanded={open}
-        className={`flex w-full cursor-pointer items-center justify-between border-0 border-b border-line px-6 text-left text-[14px] font-semibold text-ink ${
-          phone ? "h-14" : "h-[52px]"
-        } ${first ? "" : "border-t"} ${tint ? "bg-accent-soft" : "bg-transparent"} ${focus}`}
+        className={`flex w-full cursor-pointer items-center justify-between border-0 border-b border-line px-6 text-left text-[14px] font-semibold text-ink h-14 ${first ? "" : "border-t"} ${tint ? "bg-accent-soft" : "bg-transparent"} ${focus}`}
       >
         <span className="flex items-center">
           <span aria-hidden="true" className={`mr-2.5 h-[7px] w-[7px] rounded-full ${tint ? "bg-accent" : "bg-ink-muted opacity-55"}`} />
@@ -168,13 +164,13 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
         phone ? "w-[var(--phone-sheet-width)] border-l border-line" : "w-[var(--sheet-width)] rounded-l-panel border border-r-0 border-line"
       }`}
     >
-      <div className={`flex h-14 shrink-0 items-center justify-between border-b border-line pr-3 ${phone ? "pl-6" : "pl-4"}`}>
+      <div className={`flex h-14 shrink-0 items-center justify-between border-b border-line pr-3 pl-6`}>
         <span className="font-display text-[16px] leading-[22px]">Ink sees this too</span>
         <button
           type="button"
           onClick={onClose}
           aria-label="Close panel"
-          className={`flex cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-ink ${phone ? "h-11 w-11" : "h-[34px] w-[34px]"} ${focus}`}
+          className={`flex cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-ink h-11 w-11 ${focus}`}
         >
           <CloseIcon />
         </button>
@@ -198,7 +194,7 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
                 <div className="px-6 pt-7 pb-8">
                   {shown.map(note)}
                   {more > 0 && (
-                    <button type="button" onClick={() => setShowAll(true)} className={`${linkClass(phone)} mt-1`}>
+                    <button type="button" onClick={() => setShowAll(true)} className={`${linkClass} mt-1`}>
                       Show {more} more
                     </button>
                   )}
@@ -208,14 +204,23 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
           );
         })}
       </FadeScroll>
-      {pieceId && (found.known || keptOut) && (
-        <div aria-live="polite" className={`shrink-0 pb-3 pt-1 ${phone ? "px-6" : "px-4"}`}>
-          <div className="flex min-h-9 items-center">
-            <button type="button" onClick={() => void changeKeepOut()} className={quietLinkClass(phone)}>
-              {keepOutAction(keptOut)}
-            </button>
-          </div>
-        </div>
+      {pieceId && (found.known || keptOut || found.onServer) && (
+        <MenuFoot aria-live="polite" className="px-5 pb-3 pt-2">
+          {/* Settings first (switches, each with one line of what it does), then any actions, and
+              Delete last, set apart. A new option is another row in the right group. */}
+          {(found.known || keptOut) && (
+            <MenuRow tall tone="muted" role="switch" aria-checked={!keptOut} onClick={() => void changeKeepOut()} trailing={<MenuSwitch on={!keptOut} />}>
+              <span className="block text-ink">{MEMORY_LABEL}</span>
+              <span className="block text-[12px] leading-4 text-ink-muted">{memoryHint(keptOut)}</span>
+            </MenuRow>
+          )}
+          {found.onServer && (
+            <>
+              <MenuDivider />
+              <DeletePiece pieceId={pieceId} userId={userId} onDeleted={onDeleted} />
+            </>
+          )}
+        </MenuFoot>
       )}
     </aside>
   );

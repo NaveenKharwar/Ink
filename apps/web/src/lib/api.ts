@@ -75,6 +75,14 @@ export const pieces = {
   setInMemory: async (id: string, include: boolean) => {
     await send(`/api/pieces/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify({ includeInMemory: include }) });
   },
+  // Gone for good, with everything Ink made from it. A piece the server never had counts as deleted.
+  remove: async (id: string) => {
+    try {
+      await send(`/api/pieces/${encodeURIComponent(id)}`, { method: "DELETE" });
+    } catch (err) {
+      if (!(err instanceof ApiError && err.status === 404)) throw err;
+    }
+  },
   // Asks nothing and answers nothing: whether the sign-in is still accepted, before any page is shown.
   session: async () => {
     await send("/api/session");
