@@ -90,18 +90,22 @@ jobs:
           eval "$(supabase status -o env | sed 's/^/export /')"
           count=$(psql "$DB_URL" -tA -c "select count(*) from public.piece_embeddings")
           echo "embeddings: $count"
-          echo "Meaning vectors made while the collection ran: **$count** (the privacy checks only mean something if there were some)." > embeddings.md
+          echo "Meaning vectors made during the run: $count. The privacy checks only mean something if there were some." > embeddings.md
           [ "$count" -ge 3 ]
 
       - name: Write the summary
         if: always()
         run: |
           {
-            node apps/api/ci/summary.mjs bruno-results.json
+            node apps/api/ci/summary.mjs bruno-results.json short
             echo
             cat embeddings.md 2>/dev/null || true
           } > summary.md
-          cat summary.md >> "$GITHUB_STEP_SUMMARY"
+          {
+            node apps/api/ci/summary.mjs bruno-results.json
+            echo
+            cat embeddings.md 2>/dev/null || true
+          } >> "$GITHUB_STEP_SUMMARY"
 
       # One comment per pull request, edited on every run, so the latest result is always right there.
       - name: Post the summary on the pull request
@@ -114,7 +118,7 @@ jobs:
             echo "<!-- api-checks -->"
             cat summary.md
             echo
-            echo "[Full run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID) · commit \`${GITHUB_SHA::7}\`"
+            echo "[Every check]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID) · commit ${GITHUB_SHA::7}"
           } > comment.md
           id=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate -q '.[] | select(.body | startswith("<!-- api-checks -->")) | .id' | head -1)
           if [ -n "$id" ]; then

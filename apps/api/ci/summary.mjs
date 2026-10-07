@@ -1,10 +1,11 @@
-// Turns the Bruno report into a short Markdown summary for the run page: one row per area, then every
-// check in plain words. Usage: node summary.mjs bruno-results.json >> "$GITHUB_STEP_SUMMARY"
+// Turns the Bruno report into Markdown. Short (for the pull request comment): a headline, one row per area,
+// and whatever failed. Full (for the run page): every check in plain words.
+// Usage: node summary.mjs bruno-results.json [short]
 import { existsSync, readFileSync } from "node:fs";
 
 const file = process.argv[2];
 if (!file || !existsSync(file)) {
-  console.log("## API checks\n\nNo report was written, so the collection did not finish. See the log of the run.");
+  console.log("**API checks did not finish.** No report was written; the run page has the log.");
   process.exit(0);
 }
 
@@ -31,26 +32,43 @@ const requests = results.map((r) => {
   return { name, status: r.response?.status, checks: all, ok: all.length > 0 && all.every((c) => c.ok) };
 });
 
+const short = process.argv[3] === "short";
+const area = (name) => (name.includes("/") ? name.split("/")[0] : "Other").replace(/^\d+\s+/, "");
+const leaf = (name) => (name.includes("/") ? name.split("/").slice(1).join("/") : name);
+
 const folders = new Map();
 for (const request of requests) {
-  const folder = request.name.includes("/") ? request.name.split("/")[0] : "Other";
-  const entry = folders.get(folder) ?? [];
+  const entry = folders.get(area(request.name)) ?? [];
   entry.push(request);
-  folders.set(folder, entry);
+  folders.set(area(request.name), entry);
 }
 
 const total = requests.length;
 const good = requests.filter((r) => r.ok).length;
-const lines = [`## API checks: ${good === total && total > 0 ? "all passed" : "FAILED"}`, "", `${good} of ${total} requests passed, against a real local Supabase with two writers.`, ""];
-lines.push("| Area | Passed |", "| --- | --- |");
-for (const [folder, items] of folders) lines.push(`| ${folder} | ${items.filter((r) => r.ok).length} of ${items.length} ${items.every((r) => r.ok) ? "✅" : "❌"} |`);
+const allGood = good === total && total > 0;
+const failures = requests.filter((r) => !r.ok);
+const reason = (item) =>
+  item.checks.filter((c) => !c.ok).map((c) => (c.error ? `${c.text} (${String(c.error).split("\n")[0]})` : c.text)).join("; ") || "no checks ran";
 
-for (const [folder, items] of folders) {
-  lines.push("", `### ${folder}`);
-  for (const item of items) {
-    const short = item.name.includes("/") ? item.name.split("/").slice(1).join("/") : item.name;
-    lines.push(`- ${item.ok ? "✅" : "❌"} **${short}**: ${item.checks.map((c) => `${c.ok ? "" : "✖ "}${c.text}`).join("; ") || "no checks"}`);
-    for (const check of item.checks.filter((c) => !c.ok && c.error)) lines.push(`  - ${String(check.error).split("\n")[0]}`);
+const lines = [
+  allGood
+    ? `**API checks passed.** ${total} of ${total} requests, against a real local database with two writers.`
+    : `**API checks failed.** ${good} of ${total} requests passed.`,
+  "",
+  "| Area | Passed |",
+  "| --- | --- |",
+  ...[...folders].map(([name, items]) => `| ${name} | ${items.filter((r) => r.ok).length} of ${items.length} |`)
+];
+
+if (failures.length > 0) {
+  lines.push("", "Failed:");
+  for (const item of failures) lines.push(`- ${leaf(item.name)}: ${reason(item)}`);
+}
+
+if (!short) {
+  for (const [name, items] of folders) {
+    lines.push("", `### ${name}`);
+    for (const item of items) lines.push(`- ${leaf(item.name)}: ${item.ok ? item.checks.map((c) => c.text).join("; ") : `FAILED, ${reason(item)}`}`);
   }
 }
 if (total === 0) lines.push("", "The report had no requests in it. Report keys: " + Object.keys(runs[0] ?? {}).join(", "));
