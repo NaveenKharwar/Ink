@@ -40,11 +40,8 @@ const focus = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visi
 const linkClass = (phone: boolean) =>
   `relative cursor-pointer border-0 border-b-[1.5px] border-dotted border-accent bg-transparent p-0 text-[14px] text-accent ${phone ? "before:absolute before:-inset-x-3 before:-inset-y-[14px] before:content-['']" : ""} ${focus}`;
 
-// The grey line that keeps a piece out of Ink's memory: quiet until the writer goes looking for it.
-const quietLinkClass = (phone: boolean) =>
-  `relative cursor-pointer border-0 border-b border-dotted border-ink-subtle bg-transparent p-0 text-[12px] leading-5 text-ink-muted hover:border-ink hover:text-ink ${
-    phone ? "before:absolute before:-inset-x-3 before:-inset-y-3 before:content-['']" : ""
-  } ${focus}`;
+// A row in the panel's foot: the full width is the tap area, 44px tall, quiet grey that darkens on hover.
+const footRow = `flex min-h-11 w-full cursor-pointer items-center rounded-md border-0 bg-transparent px-2 text-left text-[14px] leading-5 text-ink-muted hover:text-ink active:text-ink ${focus}`;
 
 // "Ink sees this too": older writing beside the piece, as plain notes under heading bars. Related
 // (soft blue: it leads to other writing), Forgotten (old pieces not edited for a long while) and
@@ -225,16 +222,16 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
         })}
       </FadeScroll>
       {pieceId && (found.known || keptOut || exists) && (
-        <div aria-live="polite" className={`shrink-0 pb-3 pt-1 ${phone ? "px-6" : "px-4"}`}>
-          {keepFailed && <p className="m-0 mb-1 text-[12px] leading-5 text-ink-muted">{KEEP_OUT_FAILED}</p>}
+        <div aria-live="polite" className={`shrink-0 pb-3 ${phone ? "px-5" : "px-3"}`}>
+          <div className="mx-1 h-px bg-line" />
+          <div className="px-2 pb-0.5 pt-3 text-[13px] text-ink-muted">This piece</div>
+          {keepFailed && <p className="m-0 px-2 text-[12px] leading-5 text-ink-muted">{KEEP_OUT_FAILED}</p>}
           {(found.known || keptOut) && (
-            <div className="flex min-h-9 items-center">
-              <button type="button" onClick={() => void changeKeepOut()} className={quietLinkClass(phone)}>
-                {keepOutAction(keptOut)}
-              </button>
-            </div>
+            <button type="button" onClick={() => void changeKeepOut()} className={footRow}>
+              {keepOutAction(keptOut)}
+            </button>
           )}
-          {exists && <DeletePiece pieceId={pieceId} userId={userId} phone={phone} onDeleted={onDeleted} />}
+          {exists && <DeletePiece pieceId={pieceId} userId={userId} row={footRow} onDeleted={onDeleted} />}
         </div>
       )}
     </aside>
