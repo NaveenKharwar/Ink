@@ -31,6 +31,9 @@ jobs:
   api-checks:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
 
@@ -81,18 +84,44 @@ jobs:
         run: npx --yes @usebruno/cli@4.2.1 run --env Local --reporter-json "$GITHUB_WORKSPACE/bruno-results.json"
         working-directory: apps/api/bruno
 
-      - name: Summary of the checks
-        if: always()
-        run: node apps/api/ci/summary.mjs bruno-results.json >> "$GITHUB_STEP_SUMMARY"
-
       - name: The embeddings were really made
+        if: always()
         run: |
           eval "$(supabase status -o env | sed 's/^/export /')"
           count=$(psql "$DB_URL" -tA -c "select count(*) from public.piece_embeddings")
           echo "embeddings: $count"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Meaning vectors made while the collection ran: $count (the privacy checks only mean something if there were some)." >> "$GITHUB_STEP_SUMMARY"
+          echo "Meaning vectors made while the collection ran: **$count** (the privacy checks only mean something if there were some)." > embeddings.md
           [ "$count" -ge 3 ]
+
+      - name: Write the summary
+        if: always()
+        run: |
+          {
+            node apps/api/ci/summary.mjs bruno-results.json
+            echo
+            cat embeddings.md 2>/dev/null || true
+          } > summary.md
+          cat summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      # One comment per pull request, edited on every run, so the latest result is always right there.
+      - name: Post the summary on the pull request
+        if: always() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          {
+            echo "<!-- api-checks -->"
+            cat summary.md
+            echo
+            echo "[Full run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID) · commit \`${GITHUB_SHA::7}\`"
+          } > comment.md
+          id=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate -q '.[] | select(.body | startswith("<!-- api-checks -->")) | .id' | head -1)
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$id" -F body=@comment.md > /dev/null
+          else
+            gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -F body=@comment.md > /dev/null
+          fi
 
       - name: Logs
         if: failure()
