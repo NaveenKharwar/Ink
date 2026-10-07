@@ -19,12 +19,17 @@ script:pre-request {
   // writer's own other piece, so "none of the first writer's" is said about a list that has real notes in it.
   const deadline = Date.now() + 30000;
   while (Date.now() < deadline) {
-    const answer = await bru.sendRequest({
-      method: "GET",
-      url: bru.getEnvVar("baseUrl") + "/api/pieces/" + bru.getVar("secondPieceId") + "/related",
-      headers: { Authorization: "Bearer " + bru.getVar("secondToken") }
-    });
-    if (JSON.stringify(answer.data).includes(bru.getVar("secondOtherPieceId"))) break;
+    let answer = { data: "" };
+    try {
+      answer = await bru.sendRequest({
+        method: "GET",
+        url: bru.getEnvVar("baseUrl") + "/api/pieces/" + bru.interpolate("{{secondPieceId}}") + "/related",
+        headers: { Authorization: "Bearer " + bru.getVar("secondToken") }
+      });
+    } catch (error) {
+      // not there yet, or briefly refused: look again
+    }
+    if (JSON.stringify(answer.data).includes(bru.interpolate("{{secondOtherPieceId}}"))) break;
     await new Promise((resolve) => setTimeout(resolve, 1500));
   }
 }
@@ -34,11 +39,11 @@ assert {
 }
 
 tests {
-  test("their own other piece is listed, so the list is not just empty", () => expect(JSON.stringify(res.body)).to.include(bru.getVar("secondOtherPieceId")));
+  test("their own other piece is listed, so the list is not just empty", () => expect(JSON.stringify(res.body)).to.include(bru.interpolate("{{secondOtherPieceId}}")));
   test("nothing of the first writer's shows up", () => {
     const body = JSON.stringify(res.body);
-    expect(body).to.not.include(bru.getVar("pieceId"));
-    expect(body).to.not.include(bru.getVar("otherPieceId"));
+    [expect(bru.interpolate("{{pieceId}}")).to.have.length(36), expect(body).to.not.include(bru.interpolate("{{pieceId}}"))];
+    [expect(bru.interpolate("{{otherPieceId}}")).to.have.length(36), expect(body).to.not.include(bru.interpolate("{{otherPieceId}}"))];
   });
 }
 

@@ -19,7 +19,7 @@ assert {
 }
 
 tests {
-  test("the other piece is not listed", () => expect(JSON.stringify(res.body)).to.not.include(bru.getVar("otherPieceId")));
+  test("the other piece is not listed", () => [expect(bru.interpolate("{{otherPieceId}}")).to.have.length(36), expect(JSON.stringify(res.body)).to.not.include(bru.interpolate("{{otherPieceId}}"))]);
 }
 
 docs {

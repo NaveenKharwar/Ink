@@ -21,8 +21,8 @@ assert {
 tests {
   test("none of the first writer's pieces", () => {
     const body = JSON.stringify(res.body);
-    expect(body).to.not.include(bru.getVar("pieceId"));
-    expect(body).to.not.include(bru.getVar("otherPieceId"));
+    [expect(bru.interpolate("{{pieceId}}")).to.have.length(36), expect(body).to.not.include(bru.interpolate("{{pieceId}}"))];
+    [expect(bru.interpolate("{{otherPieceId}}")).to.have.length(36), expect(body).to.not.include(bru.interpolate("{{otherPieceId}}"))];
   });
 }
 

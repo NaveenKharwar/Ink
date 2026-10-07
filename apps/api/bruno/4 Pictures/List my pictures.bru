@@ -19,7 +19,7 @@ assert {
 }
 
 tests {
-  test("the picture is listed", () => expect(JSON.stringify(res.body)).to.include(bru.getVar("pictureId")));
+  test("the picture is listed", () => expect(JSON.stringify(res.body)).to.include(bru.interpolate("{{pictureId}}")));
 }
 
 docs {

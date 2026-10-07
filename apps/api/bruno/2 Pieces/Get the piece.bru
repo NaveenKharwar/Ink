@@ -19,7 +19,7 @@ assert {
 }
 
 tests {
-  test("it is the piece asked for", () => expect(JSON.stringify(res.body)).to.include(bru.getVar("pieceId")));
+  test("it is the piece asked for", () => expect(JSON.stringify(res.body)).to.include(bru.interpolate("{{pieceId}}")));
 }
 
 docs {

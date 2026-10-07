@@ -19,7 +19,7 @@ assert {
 }
 
 tests {
-  test("the first writer's picture is not listed", () => expect(JSON.stringify(res.body)).to.not.include(bru.getVar("privatePictureId")));
+  test("the first writer's picture is not listed", () => [expect(bru.interpolate("{{privatePictureId}}")).to.have.length(36), expect(JSON.stringify(res.body)).to.not.include(bru.interpolate("{{privatePictureId}}"))]);
 }
 
 docs {
