@@ -5,6 +5,9 @@ import { buffer } from "../lib/localSave";
 
 type Props = { pieceId: string; userId: string; row: string; onDeleted: () => void };
 
+const answer =
+  "min-h-11 cursor-pointer border-0 bg-transparent px-3 text-[14px] leading-5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-default";
+
 // The last grey line of "Ink sees this too". Tapping it asks once, in the same place; deleting is
 // for good (no trash, no undo), and the words say so.
 export function DeletePiece({ pieceId, userId, row, onDeleted }: Props) {
@@ -34,16 +37,19 @@ export function DeletePiece({ pieceId, userId, row, onDeleted }: Props) {
       </button>
     );
 
+  // The question on the left, its two answers on the right: one row, each answer a 44px tap area.
   return (
-    <div className="flex min-h-11 flex-wrap items-center text-[14px] leading-5 text-ink-muted">
-      <span className="px-2">Delete for good?</span>
-      <button type="button" onClick={() => void remove()} disabled={busy} className={`${row} w-auto text-ink underline`}>
-        Delete
-      </button>
-      <button type="button" onClick={() => setAsking(false)} disabled={busy} className={`${row} w-auto text-ink-muted`}>
-        Keep
-      </button>
-      {failed && <span className="basis-full px-2 text-[12px]">Couldn’t delete that. Try again.</span>}
+    <div className="flex min-h-11 flex-wrap items-center justify-between gap-x-2 px-2 text-[14px] leading-5">
+      <span className="text-ink">Delete for good?</span>
+      <span className="flex items-center">
+        <button type="button" onClick={() => void remove()} disabled={busy} className={`${answer} font-medium text-danger`}>
+          Delete
+        </button>
+        <button type="button" onClick={() => setAsking(false)} disabled={busy} className={`${answer} text-ink-muted`}>
+          Keep
+        </button>
+      </span>
+      {failed && <span className="basis-full pb-2 text-[12px] text-ink-muted">Couldn’t delete that. Try again.</span>}
     </div>
   );
 }
