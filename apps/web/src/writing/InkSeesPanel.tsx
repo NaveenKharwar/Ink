@@ -160,7 +160,7 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
       ref={panel}
       aria-label="Ink sees this too"
       data-tether="panel"
-      className={`box-border flex h-full shrink-0 flex-col overflow-hidden bg-surface ${
+      className={`box-border flex h-full shrink-0 flex-col overflow-hidden bg-sheet ${
         phone ? "w-[var(--phone-sheet-width)] border-l border-line" : "w-[var(--sheet-width)] rounded-l-panel border border-r-0 border-line"
       }`}
     >

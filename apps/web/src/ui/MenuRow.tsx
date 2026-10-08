@@ -59,7 +59,7 @@ export function MenuDivider({ className = "" }: { className?: string }) {
  */
 export function MenuFoot({ children, className = "", ...rest }: { children: ReactNode; className?: string } & React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div {...rest} className={`shrink-0 bg-surface ${className}`}>
+    <div {...rest} className={`shrink-0 bg-sheet ${className}`}>
       <MenuDivider />
       <div className="pt-2">{children}</div>
     </div>
