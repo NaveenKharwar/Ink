@@ -45,7 +45,8 @@ export function applyScheme(choice: SchemeChoice) {
   else document.documentElement.dataset.scheme = choice;
 }
 
-export function useScheme(): [SchemeChoice, (choice: SchemeChoice) => void] {
+/** The choice and a setter. The setter applies the scheme at once and says whether this device could remember it. */
+export function useScheme(): [SchemeChoice, (choice: SchemeChoice) => boolean] {
   const [choice, setChoice] = useState<SchemeChoice>(readScheme);
   useEffect(() => applyScheme(choice), [choice]);
   const set = (next: SchemeChoice) => {
@@ -54,8 +55,10 @@ export function useScheme(): [SchemeChoice, (choice: SchemeChoice) => void] {
       localStorage.removeItem(LEGACY_KEY);
       if (next === "system") localStorage.removeItem(KEY);
       else localStorage.setItem(KEY, next);
+      return true;
     } catch {
       // Not remembered, but still applied for this visit.
+      return false;
     }
   };
   return [choice, set];

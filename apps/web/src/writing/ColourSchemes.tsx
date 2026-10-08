@@ -5,21 +5,20 @@ import { MenuSwitch } from "../ui/MenuRow";
 
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
-// How Ink is coloured on this device: one big preview, then a card for each scheme. The preview
-// shows the card the pointer or the keyboard is on, else the colours in use. Choosing a card
-// colours the whole app at once and offers a quiet Undo that stays until the next change or until
-// the writer leaves. Remembered here, not on the account.
+// How Ink is coloured on this device: one big preview, then a card for each scheme. Choosing a
+// card colours the whole app and the preview at once, says it is saved, and offers a quiet Undo
+// that stays until the next change or until the writer leaves. Remembered here, not on the account.
 export function ColourSchemes() {
   const [choice, setChoice] = useScheme();
   const prefersDark = useMediaQuery("(prefers-color-scheme: dark)");
   const shown: Scheme = choice === "system" ? systemScheme(prefersDark) : choice;
   const [undo, setUndo] = useState<SchemeChoice | null>(null);
-  const [peek, setPeek] = useState<Scheme | null>(null);
+  const [remembered, setRemembered] = useState(true);
 
   const change = (next: SchemeChoice) => {
     if (next === choice) return;
     setUndo(choice);
-    setChoice(next);
+    setRemembered(setChoice(next));
   };
 
   const undoChange = () => {
@@ -33,7 +32,7 @@ export function ColourSchemes() {
       <legend className="p-0">
         <h2 className="m-0 text-[16px] leading-[22px] font-semibold">Colours</h2>
       </legend>
-      <div data-scheme={peek ?? shown} className="mt-3 rounded-xl border border-line bg-surface px-4 py-4 text-ink transition-colors duration-150 motion-reduce:transition-none">
+      <div data-scheme={shown} className="mt-3 rounded-xl border border-line bg-surface px-4 py-4 text-ink">
         <div className="text-[12px] leading-4 text-ink-muted">Monsoon 2026</div>
         <div className="mt-1 font-display text-[22px] leading-[1.25]">Rain on the tin roof</div>
         <p className="mt-2 mb-0 font-display text-[15px] leading-[1.7]">
@@ -55,7 +54,6 @@ export function ColourSchemes() {
             checked={choice === s.value}
             following={choice === "system" && shown === s.value}
             onChoose={() => change(s.value)}
-            onPeek={(on) => setPeek(on ? s.value : null)}
           />
         ))}
       </div>
@@ -76,13 +74,19 @@ export function ColourSchemes() {
         </span>
       </button>
 
-      <p className={`m-0 text-[13px] leading-5 text-ink-muted ${undo !== null ? "mt-1" : ""}`} role="status">
+      <p className={`m-0 flex items-start gap-1.5 text-[13px] leading-[18px] text-ink-muted ${undo !== null ? "mt-2" : ""}`} role="status">
         {undo !== null && (
           <>
-            Applied to the whole app now.{" "}
-            <button type="button" onClick={undoChange} className={`cursor-pointer border-0 bg-transparent p-0 text-ink underline transition-colors duration-150 hover:text-ink/70 motion-reduce:transition-none ${focusRing}`}>
-              Undo
-            </button>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M8 12.5l2.7 2.7L16 9.8" />
+            </svg>
+            <span>
+              {remembered ? "Applied to the whole app and saved on this device." : "Applied to the whole app, but this device can’t remember it."}{" "}
+              <button type="button" onClick={undoChange} className={`cursor-pointer border-0 bg-transparent p-0 text-ink underline transition-colors duration-150 hover:text-ink/70 motion-reduce:transition-none ${focusRing}`}>
+                Undo
+              </button>
+            </span>
           </>
         )}
       </p>
@@ -92,14 +96,10 @@ export function ColourSchemes() {
 
 // One scheme drawn in its own colours (the inner box carries data-scheme), with the app's own
 // colours around it for the label and the ring.
-function SchemeCard({ value, label, checked, following, onChoose, onPeek }: { value: Scheme; label: string; checked: boolean; following: boolean; onChoose: () => void; onPeek: (on: boolean) => void }) {
+function SchemeCard({ value, label, checked, following, onChoose }: { value: Scheme; label: string; checked: boolean; following: boolean; onChoose: () => void }) {
   return (
-    <label
-      className="cursor-pointer text-center"
-      onPointerEnter={(e) => e.pointerType === "mouse" && onPeek(true)}
-      onPointerLeave={(e) => e.pointerType === "mouse" && onPeek(false)}
-    >
-      <input type="radio" name="colours" value={value} checked={checked} onChange={onChoose} onFocus={() => onPeek(true)} onBlur={() => onPeek(false)} className="peer sr-only" />
+    <label className="cursor-pointer text-center">
+      <input type="radio" name="colours" value={value} checked={checked} onChange={onChoose} className="peer sr-only" />
       <span className={`block rounded-lg border-[1.5px] ${following ? "border-dashed border-accent" : "border-ink-subtle"} transition-colors duration-150 peer-checked:border-accent peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent motion-reduce:transition-none`}>
         <span aria-hidden data-scheme={value} className="block rounded-[6px] bg-surface p-2 text-left text-ink">
           <span className="block font-display text-[11px] leading-4">Rain</span>
