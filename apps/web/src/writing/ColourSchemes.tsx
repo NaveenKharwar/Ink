@@ -60,10 +60,7 @@ export function ColourSchemes() {
         onClick={() => change(choice === "system" ? shown : "system")}
         className={`mt-3 flex min-h-11 w-full cursor-pointer items-center justify-between gap-4 rounded-md border-0 bg-transparent p-0 text-left ${focusRing}`}
       >
-        <span>
-          <span className="block font-medium">Follow my device</span>
-          <span className="block text-[13px] leading-[18px] text-ink-muted">Moss in light, Night in dark.</span>
-        </span>
+        <span className="font-medium">Follow my device</span>
         <MenuSwitch on={choice === "system"} />
       </button>
 
