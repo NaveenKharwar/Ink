@@ -69,7 +69,7 @@ export function MenuFoot({ children, className = "", ...rest }: { children: Reac
 /** The switch at the end of a switch row; the row itself carries role="switch". */
 export function MenuSwitch({ on }: { on: boolean }) {
   return (
-    <span aria-hidden className={`relative h-6 w-10 shrink-0 rounded-full transition-colors duration-150 motion-reduce:transition-none ${on ? "bg-accent" : "bg-line-strong"}`}>
+    <span aria-hidden className={`relative h-6 w-10 shrink-0 rounded-full transition-colors duration-150 motion-reduce:transition-none ${on ? "bg-accent" : "bg-ink-subtle"}`}>
       <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-surface transition-[left] duration-150 motion-reduce:transition-none ${on ? "left-[18px]" : "left-0.5"}`} />
     </span>
   );

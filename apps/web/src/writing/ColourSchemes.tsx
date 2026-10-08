@@ -33,7 +33,9 @@ export function ColourSchemes() {
 
   return (
     <fieldset className="m-0 min-w-0 border-0 p-0">
-      <legend className="p-0 text-[14px] leading-5 font-semibold">Colours</legend>
+      <legend className="p-0">
+        <h2 className="m-0 text-[14px] leading-5 font-semibold">Colours</h2>
+      </legend>
       <div className="mt-3 rounded-xl border border-line bg-surface px-4 py-4">
         <div className="text-[12px] leading-4 text-ink-muted">Monsoon 2026</div>
         <div className="mt-1 font-display text-[22px] leading-[1.25]">Rain on the tin roof</div>
@@ -64,7 +66,7 @@ export function ColourSchemes() {
         <MenuSwitch on={choice === "system"} />
       </button>
 
-      <p className="m-0 mt-1 min-h-5 text-[13px] leading-5 text-ink-muted" role="status">
+      <p className={`m-0 text-[13px] leading-5 text-ink-muted ${undo !== null ? "mt-1" : ""}`} role="status">
         {undo !== null && (
           <>
             Applied to the whole app now.{" "}
@@ -84,7 +86,7 @@ function SchemeCard({ value, label, checked, onChoose }: { value: Scheme; label:
   return (
     <label className="cursor-pointer text-center">
       <input type="radio" name="colours" value={value} checked={checked} onChange={onChoose} className="peer sr-only" />
-      <span className="block rounded-lg border-[1.5px] border-line transition-colors duration-150 peer-checked:border-accent peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent motion-reduce:transition-none">
+      <span className="block rounded-lg border-[1.5px] border-ink-subtle transition-colors duration-150 peer-checked:border-accent peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent motion-reduce:transition-none">
         <span data-scheme={value} className="block rounded-[6px] bg-surface p-2 text-left text-ink">
           <span className="block font-display text-[11px] leading-4">Rain</span>
           <span className="mt-1 block h-[3px] rounded-sm bg-ink/25" />

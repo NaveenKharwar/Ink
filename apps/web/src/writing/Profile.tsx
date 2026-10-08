@@ -272,7 +272,9 @@ function Seasons({ initial, onChange }: { initial: SeasonChoice; onChange: (choi
 
   return (
     <fieldset className="m-0 min-w-0 border-0 p-0" aria-describedby="seasons-help">
-      <legend className="p-0 text-[14px] leading-5 font-semibold">Seasons</legend>
+      <legend className="p-0">
+        <h2 className="m-0 text-[14px] leading-5 font-semibold">Seasons</h2>
+      </legend>
       <p id="seasons-help" className="mt-2 mb-0 max-w-[440px] text-ink-muted">
         Ink groups your writing by season. If they look wrong for where you write, choose another.
       </p>
