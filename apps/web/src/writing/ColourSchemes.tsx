@@ -109,8 +109,8 @@ function SchemeCard({ value, label, checked, following, onChoose }: { value: Sch
             {label}
             {following && <span className="sr-only"> (following your device)</span>}
           </span>
-          <span aria-hidden className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-[1.5px] ${checked ? "border-accent bg-accent" : "border-ink-subtle"}`}>
-            {checked && <span className="h-1.5 w-1.5 rounded-full bg-surface" />}
+          <span aria-hidden className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-[1.5px] ${checked || following ? "border-accent bg-accent" : "border-ink-subtle"}`}>
+            {(checked || following) && <span className="h-1.5 w-1.5 rounded-full bg-surface" />}
           </span>
         </span>
       </span>
