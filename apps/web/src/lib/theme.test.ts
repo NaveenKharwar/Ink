@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { schemeFromStored, systemScheme } from "./theme";
+import { SCHEMES, schemeFromStored, systemScheme } from "./theme";
 
 test("a stored scheme is used as it is", () => {
   assert.equal(schemeFromStored("sky", null), "sky");
@@ -20,4 +21,12 @@ test("anything else follows the device", () => {
 test("following the device gives Moss by day and Night in the dark", () => {
   assert.equal(systemScheme(false), "moss");
   assert.equal(systemScheme(true), "night");
+});
+
+test("the stylesheet has a colour block for every scheme and keeps the theme mapping", () => {
+  const css = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+  for (const s of SCHEMES) assert.match(css, new RegExp(`\\[data-scheme="${s.value}"\\]\\s*[,{]`), s.value);
+  assert.match(css, /\[data-scheme="night"\]\s*\{[^}]*--ground: #14120f/);
+  assert.match(css, /@theme inline \{/);
+  assert.equal(css.split("{").length, css.split("}").length);
 });
