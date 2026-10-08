@@ -18,8 +18,8 @@ test("anything else follows the device", () => {
   assert.equal(schemeFromStored("neon", "purple"), "system");
 });
 
-test("following the device gives Moss by day and Night in the dark", () => {
-  assert.equal(systemScheme(false), "moss");
+test("following the device gives Paper in light and Night in dark", () => {
+  assert.equal(systemScheme(false), "paper");
   assert.equal(systemScheme(true), "night");
 });
 

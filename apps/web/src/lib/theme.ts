@@ -7,7 +7,7 @@ export const SCHEMES = [
 ] as const;
 
 export type Scheme = (typeof SCHEMES)[number]["value"];
-/** "system" follows the device: Moss in light, Night in dark. */
+/** "system" follows the device: Paper in light, Night in dark. */
 export type SchemeChoice = Scheme | "system";
 
 const KEY = "ink-scheme";
@@ -28,7 +28,7 @@ export function schemeFromStored(scheme: string | null, legacy: string | null): 
 
 /** What the device shows when the writer follows it. */
 export function systemScheme(prefersDark: boolean): Scheme {
-  return prefersDark ? "night" : "moss";
+  return prefersDark ? "night" : "paper";
 }
 
 // Remembered on this device only; if storage is unavailable Ink simply follows the device.

@@ -61,7 +61,9 @@
   color-scheme: light;
 }
 
-/* Paper is plain white with black ink, the opposite of Night. */
+/* Paper is plain white with black ink, the opposite of Night. It is also what a light device shows
+   when the writer has not picked a scheme. */
+:root:not([data-scheme]),
 [data-scheme="paper"] {
   --ground: #ffffff;
   --surface: #ffffff;
@@ -77,6 +79,7 @@
 }
 
 /* The season colours are deeper on Paper's white ground, so a season's name stays readable. */
+:root:not([data-scheme]),
 [data-scheme="paper"] {
   --season-winter: color-mix(in srgb, #5b7fa6 72%, #000);
   --season-spring: color-mix(in srgb, #c2567e 72%, #000);
