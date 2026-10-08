@@ -23,10 +23,17 @@
   }
 }
 
-/* App colours: follow the system unless the writer picked Light or Dark (data-theme on <html>). */
-:root {
+/* App colours. A scheme is a set of these variables: the whole app follows the device unless the
+   writer picked a scheme (data-scheme on <html>). Any element can carry data-scheme to show one,
+   which the Profile cards use. The light schemes share one base (and the green accent); Paper then
+   changes the greys and the ink, and tints the side sheets light grey. Night is the dark one, with the same green lightened. */
+:root,
+[data-scheme="moss"],
+[data-scheme="paper"] {
   --ground: #efe8dc;
   --surface: #fdfaf3;
+  /* The side sheets (the menu and "Ink sees this too"); the same as the page unless a scheme tints them. */
+  --sheet: var(--surface);
   --line: #e6dccb;
   --ink: #1a1a1a;
   --on-ink: #ffffff;
@@ -56,10 +63,38 @@
   color-scheme: light;
 }
 
+/* Paper is plain white with black ink, the opposite of Night, and keeps Moss's green accent. It is
+   also what a light device shows when the writer has not picked a scheme. */
+:root:not([data-scheme]),
+[data-scheme="paper"] {
+  --ground: #ffffff;
+  --surface: #ffffff;
+  --line: #e4e4e4;
+  --ink: #000000;
+  --ink-muted: #555555;
+  --ink-subtle: #6b6b6b;
+  --sheet: #f6f6f6;
+  --surface-hover: #ebebeb;
+  --line-strong: #cfcfcf;
+  --ad-line: #d6d6d6;
+  --notes-dot: rgba(0, 0, 0, 0.09);
+}
+
+/* The season colours are deeper on Paper's white ground, so a season's name stays readable. */
+:root:not([data-scheme]),
+[data-scheme="paper"] {
+  --season-winter: color-mix(in srgb, #5b7fa6 72%, #000);
+  --season-spring: color-mix(in srgb, #c2567e 72%, #000);
+  --season-summer: color-mix(in srgb, #a96d14 72%, #000);
+  --season-monsoon: color-mix(in srgb, #2f7d6d 72%, #000);
+  --season-autumn: color-mix(in srgb, #c0582b 72%, #000);
+}
+
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root:not([data-scheme]) {
     --ground: #14120f;
     --surface: #1c1a17;
+    --sheet: var(--surface);
     --line: #2a2620;
     --ink: #ededec;
     --on-ink: #121314;
@@ -88,9 +123,10 @@
   }
 }
 
-:root[data-theme="dark"] {
+[data-scheme="night"] {
   --ground: #14120f;
   --surface: #1c1a17;
+  --sheet: var(--surface);
   --line: #2a2620;
   --ink: #ededec;
   --on-ink: #121314;
@@ -121,6 +157,7 @@
 @theme inline {
   --color-ground: var(--ground);
   --color-surface: var(--surface);
+  --color-sheet: var(--sheet);
   --color-line: var(--line);
   --color-ink: var(--ink);
   --color-on-ink: var(--on-ink);

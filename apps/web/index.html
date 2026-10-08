@@ -5,10 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ink</title>
     <script>
-      // Apply the writer's Light/Dark choice before the page paints, so it never flashes.
+      // Apply the writer's colour scheme before the page paints, so it never flashes.
+      // (The earlier Light / Dark choice, ink-theme, becomes Moss / Night.)
       try {
-        var t = localStorage.getItem("ink-theme");
-        if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+        var names = ["moss", "paper", "night"];
+        var s = localStorage.getItem("ink-scheme");
+        var old = localStorage.getItem("ink-theme");
+        if (names.indexOf(s) < 0) s = old === "dark" ? "night" : old === "light" ? "moss" : null;
+        if (s) document.documentElement.dataset.scheme = s;
       } catch (e) {}
     </script>
   </head>

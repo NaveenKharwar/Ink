@@ -81,7 +81,7 @@ export function Sidebar(props: Props) {
   return (
     <nav
       aria-label="Main"
-      className={`box-border flex h-full shrink-0 flex-col overflow-hidden bg-surface px-3 py-4 ${
+      className={`box-border flex h-full shrink-0 flex-col overflow-hidden bg-sheet px-3 py-4 ${
         phone ? "w-[var(--phone-sheet-width)] border-r border-line" : "w-[var(--sheet-width)] rounded-r-panel border border-l-0 border-line"
       }`}
     >
