@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { SCHEMES, systemScheme, useScheme, type Scheme, type SchemeChoice } from "../lib/theme";
 import { useMediaQuery } from "../lib/useMediaQuery";
+import { MenuSwitch } from "../ui/MenuRow";
 
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
@@ -52,10 +53,19 @@ export function ColourSchemes() {
         ))}
       </div>
 
-      <label className="mt-3 flex min-h-11 cursor-pointer items-center gap-3">
-        <input type="checkbox" checked={choice === "system"} onChange={(e) => change(e.target.checked ? "system" : shown)} className={`h-4 w-4 shrink-0 accent-ink ${focusRing}`} />
-        <span className="text-[13px] leading-[18px] text-ink-muted">Follow my device: Moss in light, Night in dark.</span>
-      </label>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={choice === "system"}
+        onClick={() => change(choice === "system" ? shown : "system")}
+        className={`mt-3 flex min-h-11 w-full cursor-pointer items-center justify-between gap-4 rounded-md border-0 bg-transparent p-0 text-left ${focusRing}`}
+      >
+        <span>
+          <span className="block font-medium">Follow my device</span>
+          <span className="block text-[13px] leading-[18px] text-ink-muted">Moss in light, Night in dark.</span>
+        </span>
+        <MenuSwitch on={choice === "system"} />
+      </button>
 
       <p className="m-0 mt-1 min-h-5 text-[13px] leading-5 text-ink-muted" role="status">
         {undo !== null && (
