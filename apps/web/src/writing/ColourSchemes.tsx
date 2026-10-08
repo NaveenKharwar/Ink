@@ -5,9 +5,9 @@ import { MenuSwitch } from "../ui/MenuRow";
 
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
-// How Ink is coloured on this device: one big preview, then a card for each scheme. Choosing a
-// card colours the whole app and the preview at once, says it is saved, and offers a quiet Undo
-// that stays until the next change or until the writer leaves. Remembered here, not on the account.
+// How Ink is coloured on this device: a card for each scheme, each a small page in its own colours.
+// Choosing a card colours the whole app, says it is saved, and offers a quiet Undo that stays until
+// the next change or until the writer leaves. Remembered here, not on the account.
 export function ColourSchemes() {
   const [choice, setChoice] = useScheme();
   const prefersDark = useMediaQuery("(prefers-color-scheme: dark)");
@@ -32,20 +32,7 @@ export function ColourSchemes() {
       <legend className="p-0">
         <h2 className="m-0 text-[16px] leading-[22px] font-semibold">Colours</h2>
       </legend>
-      <div data-scheme={shown} className="mt-3 rounded-xl border border-line bg-surface px-4 py-4 text-ink">
-        <div className="text-[12px] leading-4 text-ink-muted">Monsoon 2026</div>
-        <div className="mt-1 font-display text-[22px] leading-[1.25]">Rain on the tin roof</div>
-        <p className="mt-2 mb-0 font-display text-[15px] leading-[1.7]">
-          The first rain came in sideways and the street smelled of <span className="rounded-[3px] bg-accent-soft px-0.5">wet clay</span>. Maa stood at the window and said
-          nothing.
-        </p>
-        <div className="mt-3 inline-block rounded-lg border border-line bg-ground px-3 py-2">
-          <div className="text-[11px] leading-4 text-ink-muted">Summer 2025</div>
-          <div className="font-display text-[13px] italic">“Dadi’s courtyard, the smell after the first rain.”</div>
-        </div>
-      </div>
-
-      <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(96px,1fr))] gap-x-3 gap-y-4">
+      <div className="mt-3 grid grid-cols-[repeat(auto-fit,minmax(96px,1fr))] gap-x-3 gap-y-4">
         {SCHEMES.map((s) => (
           <SchemeCard
             key={s.value}
