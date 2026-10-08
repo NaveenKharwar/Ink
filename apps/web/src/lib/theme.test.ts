@@ -4,7 +4,7 @@ import { test } from "node:test";
 import { SCHEMES, schemeFromStored, systemScheme } from "./theme";
 
 test("a stored scheme is used as it is", () => {
-  assert.equal(schemeFromStored("sky", null), "sky");
+  assert.equal(schemeFromStored("paper", null), "paper");
   assert.equal(schemeFromStored("night", "light"), "night");
 });
 

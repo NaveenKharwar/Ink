@@ -46,7 +46,7 @@ export function ColourSchemes() {
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(112px,1fr))] gap-x-3 gap-y-4">
+      <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(96px,1fr))] gap-x-3 gap-y-4">
         {SCHEMES.map((s) => (
           <SchemeCard key={s.value} value={s.value} label={s.label} checked={shown === s.value} onChoose={() => change(s.value)} />
         ))}

@@ -8,7 +8,7 @@
       // Apply the writer's colour scheme before the page paints, so it never flashes.
       // (The earlier Light / Dark choice, ink-theme, becomes Moss / Night.)
       try {
-        var names = ["moss", "sky", "paper", "night"];
+        var names = ["moss", "paper", "night"];
         var s = localStorage.getItem("ink-scheme");
         var old = localStorage.getItem("ink-theme");
         if (names.indexOf(s) < 0) s = old === "dark" ? "night" : old === "light" ? "moss" : null;

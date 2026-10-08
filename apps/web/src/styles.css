@@ -25,11 +25,10 @@
 
 /* App colours. A scheme is a set of these variables: the whole app follows the device unless the
    writer picked a scheme (data-scheme on <html>). Any element can carry data-scheme to show one,
-   which the Profile cards use. The light schemes share one base; Sky and Paper then change the
-   greys, the ink and the accent. Night is the dark base. */
+   which the Profile cards use. The light schemes share one base; Paper then changes the greys,
+   the ink and the accent. Night is the dark one. */
 :root,
 [data-scheme="moss"],
-[data-scheme="sky"],
 [data-scheme="paper"] {
   --ground: #efe8dc;
   --surface: #fdfaf3;
@@ -62,20 +61,6 @@
   color-scheme: light;
 }
 
-[data-scheme="sky"] {
-  --ground: #cfdcec;
-  --surface: #eef3fa;
-  --line: #b0c4de;
-  --ink: #12202f;
-  --ink-muted: #4a5d73;
-  --ink-subtle: #5d7088;
-  --accent: #1f5fa8;
-  --danger: #8a3426;
-  --surface-hover: color-mix(in srgb, var(--ground) 45%, var(--surface));
-  --line-strong: color-mix(in srgb, var(--line) 80%, var(--ink));
-  --notes-dot: rgba(18, 32, 47, 0.1);
-}
-
 /* Paper is plain white with black ink, the opposite of Night. */
 [data-scheme="paper"] {
   --ground: #ffffff;
@@ -91,9 +76,7 @@
   --notes-dot: rgba(0, 0, 0, 0.09);
 }
 
-/* The season colours are deeper on the light schemes with a coloured or white ground, so a season's
-   name stays readable. */
-[data-scheme="sky"],
+/* The season colours are deeper on Paper's white ground, so a season's name stays readable. */
 [data-scheme="paper"] {
   --season-winter: color-mix(in srgb, #5b7fa6 72%, #000);
   --season-spring: color-mix(in srgb, #c2567e 72%, #000);

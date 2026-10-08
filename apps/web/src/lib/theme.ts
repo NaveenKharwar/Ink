@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 
 export const SCHEMES = [
   { value: "moss", label: "Moss" },
-  { value: "sky", label: "Sky" },
   { value: "paper", label: "Paper" },
   { value: "night", label: "Night" }
 ] as const;
