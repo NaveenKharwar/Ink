@@ -1,42 +1,39 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { SCHEMES, systemScheme, useScheme, type Scheme, type SchemeChoice } from "../lib/theme";
 import { useMediaQuery } from "../lib/useMediaQuery";
 import { MenuSwitch } from "../ui/MenuRow";
 
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
-// How Ink is coloured on this device: one big preview, then a card for each scheme. Choosing a
-// card colours the whole app at once and offers a quiet Undo. Remembered here, not on the account.
+// How Ink is coloured on this device: one big preview, then a card for each scheme. The preview
+// shows the card the pointer or the keyboard is on, else the colours in use. Choosing a card
+// colours the whole app at once and offers a quiet Undo that stays until the next change or until
+// the writer leaves. Remembered here, not on the account.
 export function ColourSchemes() {
   const [choice, setChoice] = useScheme();
   const prefersDark = useMediaQuery("(prefers-color-scheme: dark)");
   const shown: Scheme = choice === "system" ? systemScheme(prefersDark) : choice;
   const [undo, setUndo] = useState<SchemeChoice | null>(null);
-  const timer = useRef<number | undefined>(undefined);
-
-  useEffect(() => () => window.clearTimeout(timer.current), []);
+  const [peek, setPeek] = useState<Scheme | null>(null);
 
   const change = (next: SchemeChoice) => {
     if (next === choice) return;
     setUndo(choice);
     setChoice(next);
-    window.clearTimeout(timer.current);
-    timer.current = window.setTimeout(() => setUndo(null), 8000);
   };
 
   const undoChange = () => {
     if (undo === null) return;
     setChoice(undo);
     setUndo(null);
-    window.clearTimeout(timer.current);
   };
 
   return (
     <fieldset className="m-0 min-w-0 border-0 p-0">
       <legend className="p-0">
-        <h2 className="m-0 text-[14px] leading-5 font-semibold">Colours</h2>
+        <h2 className="m-0 text-[16px] leading-[22px] font-semibold">Colours</h2>
       </legend>
-      <div className="mt-3 rounded-xl border border-line bg-surface px-4 py-4">
+      <div data-scheme={peek ?? shown} className="mt-3 rounded-xl border border-line bg-surface px-4 py-4 text-ink transition-colors duration-150 motion-reduce:transition-none">
         <div className="text-[12px] leading-4 text-ink-muted">Monsoon 2026</div>
         <div className="mt-1 font-display text-[22px] leading-[1.25]">Rain on the tin roof</div>
         <p className="mt-2 mb-0 font-display text-[15px] leading-[1.7]">
@@ -51,7 +48,15 @@ export function ColourSchemes() {
 
       <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(96px,1fr))] gap-x-3 gap-y-4">
         {SCHEMES.map((s) => (
-          <SchemeCard key={s.value} value={s.value} label={s.label} checked={shown === s.value} onChoose={() => change(s.value)} />
+          <SchemeCard
+            key={s.value}
+            value={s.value}
+            label={s.label}
+            checked={choice === s.value}
+            following={choice === "system" && shown === s.value}
+            onChoose={() => change(s.value)}
+            onPeek={(on) => setPeek(on ? s.value : null)}
+          />
         ))}
       </div>
 
@@ -82,11 +87,15 @@ export function ColourSchemes() {
 
 // One scheme drawn in its own colours (the inner box carries data-scheme), with the app's own
 // colours around it for the label and the ring.
-function SchemeCard({ value, label, checked, onChoose }: { value: Scheme; label: string; checked: boolean; onChoose: () => void }) {
+function SchemeCard({ value, label, checked, following, onChoose, onPeek }: { value: Scheme; label: string; checked: boolean; following: boolean; onChoose: () => void; onPeek: (on: boolean) => void }) {
   return (
-    <label className="cursor-pointer text-center">
-      <input type="radio" name="colours" value={value} checked={checked} onChange={onChoose} className="peer sr-only" />
-      <span className="block rounded-lg border-[1.5px] border-ink-subtle transition-colors duration-150 peer-checked:border-accent peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent motion-reduce:transition-none">
+    <label
+      className="cursor-pointer text-center"
+      onPointerEnter={(e) => e.pointerType === "mouse" && onPeek(true)}
+      onPointerLeave={(e) => e.pointerType === "mouse" && onPeek(false)}
+    >
+      <input type="radio" name="colours" value={value} checked={checked} onChange={onChoose} onFocus={() => onPeek(true)} onBlur={() => onPeek(false)} className="peer sr-only" />
+      <span className={`block rounded-lg border-[1.5px] ${following ? "border-dashed border-accent" : "border-ink-subtle"} transition-colors duration-150 peer-checked:border-accent peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent motion-reduce:transition-none`}>
         <span data-scheme={value} className="block rounded-[6px] bg-surface p-2 text-left text-ink">
           <span className="block font-display text-[11px] leading-4">Rain</span>
           <span className="mt-1 block h-[3px] rounded-sm bg-ink/25" />
@@ -98,7 +107,10 @@ function SchemeCard({ value, label, checked, onChoose }: { value: Scheme; label:
         <i className="flex-1 bg-ground" />
         <i className="flex-1 bg-accent" />
       </span>
-      <span className={`mt-1 block text-[12px] leading-4 ${checked ? "font-medium" : "text-ink-muted"}`}>{label}</span>
+      <span className={`mt-1 block text-[12px] leading-4 ${checked || following ? "font-medium" : "text-ink-muted"}`}>
+        {label}
+        {following && <span className="sr-only"> (following your device)</span>}
+      </span>
     </label>
   );
 }

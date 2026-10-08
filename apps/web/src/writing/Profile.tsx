@@ -82,10 +82,10 @@ export function Profile({ account, items, wide, showMenuButton, onMenu, onBack, 
           <h1 className={`m-0 font-display font-normal leading-[1.2] ${wide ? "text-[30px]" : "text-[26px]"}`}>Profile</h1>
           <PenName initial={account.penName ?? ""} />
           <Section>
-            <Seasons initial={account.seasons} onChange={setSeasons} />
+            <ColourSchemes />
           </Section>
           <Section>
-            <ColourSchemes />
+            <Seasons initial={account.seasons} onChange={setSeasons} />
           </Section>
           <Section>
             <Memory />
@@ -273,7 +273,7 @@ function Seasons({ initial, onChange }: { initial: SeasonChoice; onChange: (choi
   return (
     <fieldset className="m-0 min-w-0 border-0 p-0" aria-describedby="seasons-help">
       <legend className="p-0">
-        <h2 className="m-0 text-[14px] leading-5 font-semibold">Seasons</h2>
+        <h2 className="m-0 text-[16px] leading-[22px] font-semibold">Seasons</h2>
       </legend>
       <p id="seasons-help" className="mt-2 mb-0 max-w-[440px] text-ink-muted">
         Ink groups your writing by season. If they look wrong for where you write, choose another.
@@ -306,12 +306,12 @@ function ChoiceRow({ name, value, label, sub, checked, onChoose }: { name: strin
 function Memory() {
   return (
     <>
-      <h2 className="m-0 text-[14px] leading-5 font-semibold">Memory</h2>
+      <h2 className="m-0 text-[16px] leading-[22px] font-semibold">Memory</h2>
       <p className="mt-2 mb-0 max-w-[440px] text-ink-muted">
         Ink reads what you write so it can bring old lines back and notice what you keep returning to. Each piece gets a private
         set of numbers so Ink can find the ones that are close. Only you can see them. Nothing is shared, and nothing is used
         to train anything.{" "}
-        <a href="/privacy" className={`font-medium text-ink underline underline-offset-2 ${focusRing}`}>
+        <a href="/privacy" className={`touch-44 font-medium text-ink underline underline-offset-2 ${focusRing}`}>
           Privacy
         </a>
       </p>
@@ -386,7 +386,7 @@ function SigningIn({ email, google, hasPassword }: { email: string; google: bool
 
   return (
     <>
-      <h2 className="m-0 text-[14px] leading-5 font-semibold">Signing in</h2>
+      <h2 className="m-0 text-[16px] leading-[22px] font-semibold">Signing in</h2>
       <div className="mt-1.5 truncate font-medium">{email}</div>
       {!has && !google && <p className="mt-1 mb-0 text-ink-muted">You sign in with a code from your email.</p>}
       <ul className="m-0 mt-3 list-none p-0">
@@ -549,7 +549,7 @@ function SignOutButton({ onSignOut }: { onSignOut: () => Promise<void> }) {
   );
 }
 
-const linkButton =`cursor-pointer border-0 bg-transparent p-0 text-[13px] font-medium text-ink underline underline-offset-2 ${focusRing}`;
+const linkButton = `touch-44 cursor-pointer border-0 bg-transparent p-0 text-[13px] font-medium text-ink underline underline-offset-2 ${focusRing}`;
 
 function WayIn({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (
