@@ -32,7 +32,7 @@ export function ColourSchemes() {
       <legend className="p-0">
         <h2 className="m-0 text-[16px] leading-[22px] font-semibold">Colours</h2>
       </legend>
-      <div className="mt-3 grid grid-cols-[repeat(auto-fit,minmax(96px,1fr))] gap-x-3 gap-y-4">
+      <div className="mt-3 grid grid-cols-3 gap-3">
         {SCHEMES.map((s) => (
           <SchemeCard
             key={s.value}
@@ -81,27 +81,38 @@ export function ColourSchemes() {
   );
 }
 
-// One scheme drawn in its own colours (the inner box carries data-scheme), with the app's own
-// colours around it for the label and the ring.
+// One scheme as a miniature of the app in its own colours (the inner box carries data-scheme), with
+// the name and a radio mark under it in the app's colours. One layout for every width: the three
+// cards share the row, so the miniature is about 100px wide on a phone and larger on a desktop.
 function SchemeCard({ value, label, checked, following, onChoose }: { value: Scheme; label: string; checked: boolean; following: boolean; onChoose: () => void }) {
   return (
-    <label className="cursor-pointer text-center">
+    <label className="block cursor-pointer">
       <input type="radio" name="colours" value={value} checked={checked} onChange={onChoose} className="peer sr-only" />
-      <span className={`block rounded-lg border-[1.5px] ${following ? "border-dashed border-accent" : "border-ink-subtle"} transition-colors duration-150 peer-checked:border-accent peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent motion-reduce:transition-none`}>
-        <span aria-hidden data-scheme={value} className="block rounded-[6px] bg-surface p-2 text-left text-ink">
-          <span className="block font-display text-[11px] leading-4">Rain</span>
-          <span className="mt-1 block h-[3px] rounded-sm bg-ink/25" />
-          <span className="mt-1 block h-[3px] w-[70%] rounded-sm bg-ink/25" />
-          <span className="mt-1 block h-[3px] w-[40%] rounded-sm bg-accent" />
+      <span
+        className={`block overflow-hidden rounded-xl border-[1.5px] bg-surface transition-colors duration-150 motion-reduce:transition-none ${following ? "border-dashed border-accent" : "border-ink-subtle"} peer-checked:border-accent peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent`}
+      >
+        <span aria-hidden data-scheme={value} className="flex aspect-[5/3] gap-[5%] bg-ground p-[5%]">
+          <span className="flex w-[17%] flex-col gap-1 rounded-[3px] border border-line bg-surface p-[3%] pt-[8%]">
+            <span className="block h-[3px] rounded-sm bg-ink/35" />
+            <span className="block h-[3px] rounded-sm bg-accent" />
+            <span className="block h-[3px] rounded-sm bg-ink/35" />
+          </span>
+          <span className="flex flex-1 flex-col gap-1 rounded-[3px] border border-line bg-surface p-[7%]">
+            <span className="block h-[4px] w-[55%] rounded-sm bg-ink/70" />
+            <span className="block h-[3px] rounded-sm bg-ink/30" />
+            <span className="block h-[3px] w-[75%] rounded-sm bg-ink/30" />
+            <span className="block h-[3px] w-[40%] rounded-sm bg-accent" />
+          </span>
         </span>
-      </span>
-      <span aria-hidden data-scheme={value} className="mx-auto mt-2 flex h-3.5 w-[52px] overflow-hidden rounded-full border border-line">
-        <i className="flex-1 bg-ground" />
-        <i className="flex-1 bg-accent" />
-      </span>
-      <span className={`mt-1 block text-[12px] leading-4 ${checked || following ? "font-medium" : "text-ink-muted"}`}>
-        {label}
-        {following && <span className="sr-only"> (following your device)</span>}
+        <span className="flex items-center justify-between gap-2 border-t border-line px-2.5 py-2.5">
+          <span className={`text-[13px] leading-[18px] ${checked || following ? "font-medium" : "text-ink-muted"}`}>
+            {label}
+            {following && <span className="sr-only"> (following your device)</span>}
+          </span>
+          <span aria-hidden className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-[1.5px] ${checked ? "border-accent bg-accent" : "border-ink-subtle"}`}>
+            {checked && <span className="h-1.5 w-1.5 rounded-full bg-surface" />}
+          </span>
+        </span>
       </span>
     </label>
   );
