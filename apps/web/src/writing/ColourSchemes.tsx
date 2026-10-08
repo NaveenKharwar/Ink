@@ -68,7 +68,12 @@ export function ColourSchemes() {
         className={`mt-3 flex min-h-11 w-full cursor-pointer items-center justify-between gap-4 rounded-md border-0 bg-transparent p-0 text-left ${focusRing}`}
       >
         <span className="font-medium">Follow my device</span>
-        <MenuSwitch on={choice === "system"} />
+        <span className="flex items-center gap-3">
+          <span aria-hidden className="text-[13px] leading-5 text-ink-muted">
+            {choice === "system" ? "On" : "Off"}
+          </span>
+          <MenuSwitch on={choice === "system"} />
+        </span>
       </button>
 
       <p className={`m-0 text-[13px] leading-5 text-ink-muted ${undo !== null ? "mt-1" : ""}`} role="status">
@@ -96,14 +101,14 @@ function SchemeCard({ value, label, checked, following, onChoose, onPeek }: { va
     >
       <input type="radio" name="colours" value={value} checked={checked} onChange={onChoose} onFocus={() => onPeek(true)} onBlur={() => onPeek(false)} className="peer sr-only" />
       <span className={`block rounded-lg border-[1.5px] ${following ? "border-dashed border-accent" : "border-ink-subtle"} transition-colors duration-150 peer-checked:border-accent peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent motion-reduce:transition-none`}>
-        <span data-scheme={value} className="block rounded-[6px] bg-surface p-2 text-left text-ink">
+        <span aria-hidden data-scheme={value} className="block rounded-[6px] bg-surface p-2 text-left text-ink">
           <span className="block font-display text-[11px] leading-4">Rain</span>
           <span className="mt-1 block h-[3px] rounded-sm bg-ink/25" />
           <span className="mt-1 block h-[3px] w-[70%] rounded-sm bg-ink/25" />
           <span className="mt-1 block h-[3px] w-[40%] rounded-sm bg-accent" />
         </span>
       </span>
-      <span data-scheme={value} className="mx-auto mt-2 flex h-3.5 w-[52px] overflow-hidden rounded-full border border-line">
+      <span aria-hidden data-scheme={value} className="mx-auto mt-2 flex h-3.5 w-[52px] overflow-hidden rounded-full border border-line">
         <i className="flex-1 bg-ground" />
         <i className="flex-1 bg-accent" />
       </span>

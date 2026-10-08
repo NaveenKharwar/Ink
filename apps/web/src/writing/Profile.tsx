@@ -173,7 +173,7 @@ function listOf(names: string[]): string {
 }
 
 function Section({ children }: { children: ReactNode }) {
-  return <section className="mt-7 border-t border-line pt-6">{children}</section>;
+  return <section className="mt-8 border-t border-line pt-5">{children}</section>;
 }
 
 function Note({ children }: { children: ReactNode }) {
@@ -246,7 +246,7 @@ function PenName({ initial }: { initial: string }) {
           timer.current = setTimeout(() => void save(next), 800);
         }}
         onBlur={() => void save(value)}
-        className="mt-2 box-border h-12 w-full rounded-md border border-line-strong bg-surface px-3.5 font-serif text-[18px] text-ink placeholder:text-ink-muted"
+        className={`mt-2 box-border h-12 w-full rounded-md border border-ink-subtle bg-surface px-3.5 font-serif text-[18px] text-ink placeholder:text-ink-muted ${focusRing}`}
       />
       <SaveStatus state={state} />
     </section>
