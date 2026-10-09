@@ -319,7 +319,7 @@ function Memory() {
   );
 }
 
-// Seconds before "Send a new link" appears, as on the sign-in code screen.
+// Seconds before "Send again" appears, as on the sign-in code screen.
 const RESEND_AFTER = 20;
 
 // The ways this writer can get in (not how they signed in this time, which Ink can't tell):
@@ -338,7 +338,7 @@ function SigningIn({ email, google, hasPassword }: { email: string; google: bool
   }, [sent, left]);
 
   // One email per click.
-  const send = async (again: boolean) => {
+  const send = async () => {
     if (sending) return;
     setSending(true);
     setMessage(null);
@@ -347,7 +347,6 @@ function SigningIn({ email, google, hasPassword }: { email: string; google: bool
     if (!result.ok) return setMessage(PASSWORD_TEXT[result.problem]);
     setSent(true);
     setLeft(RESEND_AFTER);
-    if (again) setMessage("New link sent.");
   };
 
   return (
@@ -361,7 +360,7 @@ function SigningIn({ email, google, hasPassword }: { email: string; google: bool
           <WayIn
             action={
               !sent && (
-                <button type="button" onClick={() => void send(false)} className={linkButton}>
+                <button type="button" onClick={() => void send()} className={linkButton}>
                   Change password
                 </button>
               )
@@ -372,42 +371,35 @@ function SigningIn({ email, google, hasPassword }: { email: string; google: bool
         )}
       </ul>
       {!hasPassword && !sent && (
-        <Button onClick={() => void send(false)} busy={sending} className="mt-3">
+        <Button onClick={() => void send()} busy={sending} className="mt-3">
           Add a password
         </Button>
       )}
       {sent && (
         <div className="mt-4">
-          <p className="m-0 max-w-[440px] text-ink-muted">
-            We emailed a link to <span className="font-medium text-ink">{email}</span>. Open it on any device to choose your
-            password. It works for 2 hours, and only once. You’ll be signed out on your other devices after.
+          <p className="m-0 max-w-[440px]">
+            Check your email. We sent a link to <span className="font-medium">{email}</span>.
           </p>
-          <div className="mt-2 text-[13px] leading-[18px] text-ink-muted">
+          <p className="mt-1 mb-0 text-[13px] leading-[18px] text-ink-muted">It works once, for 2 hours, on any device.</p>
+          <div className="mt-3 flex items-center gap-4 text-[13px] leading-[18px] text-ink-muted">
             {left > 0 ? (
-              <>It can take a minute. You can ask for a new link in 0:{String(left).padStart(2, "0")}.</>
+              <span>Send again in 0:{String(left).padStart(2, "0")}</span>
             ) : (
-              <>
-                Didn’t get it? Check your spam folder too.{" "}
-                <button
-                  type="button"
-                  onClick={() => void send(true)}
-                  className={`cursor-pointer border-0 bg-transparent p-0 font-medium text-ink underline ${focusRing}`}
-                >
-                  Send a new link
-                </button>
-              </>
+              <button type="button" onClick={() => void send()} className={`cursor-pointer border-0 bg-transparent p-0 font-medium text-ink underline ${focusRing}`}>
+                Send again
+              </button>
             )}
+            <button
+              type="button"
+              onClick={() => {
+                setSent(false);
+                setMessage(null);
+              }}
+              className={`cursor-pointer border-0 bg-transparent p-0 text-ink/75 hover:text-ink ${focusRing}`}
+            >
+              Close
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              setSent(false);
-              setMessage(null);
-            }}
-            className={`mt-3 h-11 cursor-pointer rounded-md border-0 bg-transparent px-0 text-ink/75 transition-colors duration-150 hover:text-ink motion-reduce:transition-none ${focusRing}`}
-          >
-            Close
-          </button>
         </div>
       )}
       {message && <Note>{message}</Note>}
