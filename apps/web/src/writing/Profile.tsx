@@ -1,6 +1,6 @@
 import type { LibraryItem, PieceLanguage } from "@ink/schemas";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { PEN_NAME_MAX, savePenName, saveSeasons, sendPasswordCode, setPassword, type Account } from "../lib/account";
+import { PEN_NAME_MAX, savePenName, saveSeasons, sendPasswordLink, type Account } from "../lib/account";
 import type { PasswordProblem } from "../lib/password";
 import { deviceTimeZone, resolveSeasonSet, seasonPlace, seasonSetFor, type SeasonChoice, type SeasonSet } from "../lib/seasons";
 import { Button } from "../ui/Button";
@@ -34,7 +34,7 @@ const SEASON_OPTIONS: Array<{ value: SeasonChoice; label: string; sub: string }>
 ];
 
 const PASSWORD_TEXT: Record<PasswordProblem, string> = {
-  "wrong-code": "That code doesn’t match. Check the newest email from Ink and try again.",
+  "link-expired": "That link has expired or was already used. Ask for a new one.",
   same: "That’s already your password. Choose a new one.",
   "rate-limited": "Ink can’t send another email just yet. Try again in a minute.",
   offline: "You seem to be offline. Check your connection and try again.",
@@ -319,83 +319,48 @@ function Memory() {
   );
 }
 
-// Seconds before "Send a new code" appears, as on the sign-in code screen.
+// Seconds before "Send again" appears, as on the sign-in code screen.
 const RESEND_AFTER = 20;
 
 // The ways this writer can get in (not how they signed in this time, which Ink can't tell):
-// Google once linked; a password once set; otherwise the email code. Adding or
-// changing the password happens here, behind an email code.
+// Google once linked; a password once set; otherwise the email code. Adding or changing the
+// password starts with an emailed link that works for 2 hours, once, on any device.
 function SigningIn({ email, google, hasPassword }: { email: string; google: boolean; hasPassword: boolean }) {
-  const [has, setHas] = useState(hasPassword);
-  const [form, setForm] = useState(false);
-  const [changed, setChanged] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [code, setCode] = useState("");
-  const [codeFocused, setCodeFocused] = useState(false);
+  const [sent, setSent] = useState(false);
   const [left, setLeft] = useState(RESEND_AFTER);
-  const [pw, setPw] = useState("");
-  const [shown, setShown] = useState(false);
-  const [busy, setBusy] = useState(false);
   const [sending, setSending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [wrongCode, setWrongCode] = useState(false);
-  const long = pw.length >= 8;
 
   useEffect(() => {
-    if (!form || left <= 0) return;
+    if (!sent || left <= 0) return;
     const t = setTimeout(() => setLeft((n) => n - 1), 1000);
     return () => clearTimeout(t);
-  }, [form, left]);
+  }, [sent, left]);
 
-  // One email per click: the code goes out when the writer opens the form (or asks again).
-  const send = async (again: boolean) => {
+  // One email per click.
+  const send = async () => {
     if (sending) return;
     setSending(true);
-    const result = await sendPasswordCode();
-    setSending(false);
-    setCode("");
-    setWrongCode(false);
-    if (!result.ok) return setMessage(PASSWORD_TEXT[result.problem]);
-    setLeft(RESEND_AFTER);
-    setMessage(again ? "New code sent. Only the newest code works." : null);
-  };
-  const open = () => {
-    setForm(true);
-    setPw("");
     setMessage(null);
-    void send(false);
+    const result = await sendPasswordLink(email);
+    setSending(false);
+    if (!result.ok) return setMessage(PASSWORD_TEXT[result.problem]);
+    setSent(true);
+    setLeft(RESEND_AFTER);
   };
-  const save = async () => {
-    if (code.length < 6) return setMessage("Enter all 6 digits from the email.");
-    if (!long) return setMessage("Make it at least 8 characters.");
-    setBusy(true);
-    const result = await setPassword(pw, code);
-    setBusy(false);
-    if (!result.ok) {
-      setWrongCode(result.problem === "wrong-code");
-      return setMessage(PASSWORD_TEXT[result.problem]);
-    }
-    setChanged(has);
-    setSaved(true);
-    setHas(true);
-    setForm(false);
-    setPw("");
-    setCode("");
-  };
-  const active = Math.min(code.length, 5);
 
   return (
     <>
       <h2 className="m-0 text-[16px] leading-[22px] font-semibold">Signing in</h2>
       <div className="mt-1.5 truncate font-medium">{email}</div>
-      {!has && !google && <p className="mt-1 mb-0 text-ink-muted">You sign in with a code from your email.</p>}
+      {!hasPassword && !google && <p className="mt-1 mb-0 text-ink-muted">You sign in with a code from your email.</p>}
       <ul className="m-0 mt-3 list-none p-0">
         {google && <WayIn>Google</WayIn>}
-        {has && (
+        {hasPassword && (
           <WayIn
             action={
-              !form && (
-                <button type="button" onClick={open} className={linkButton}>
+              !sent && (
+                <button type="button" onClick={() => void send()} className={linkButton}>
                   Change password
                 </button>
               )
@@ -405,131 +370,39 @@ function SigningIn({ email, google, hasPassword }: { email: string; google: bool
           </WayIn>
         )}
       </ul>
-      {!has && !form && (
-        <Button onClick={open} className="mt-3">
+      {!hasPassword && !sent && (
+        <Button onClick={() => void send()} busy={sending} className="mt-3">
           Add a password
         </Button>
       )}
-      {saved && !form && (
-        <p className="mt-2 mb-0 text-[13px] leading-[18px] text-ink-muted">
-          {changed ? "Password changed." : "Password added."} You’re signed out on your other devices.
-        </p>
-      )}
-      {form && (
-        <form
-          className="mt-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void save();
-          }}
-        >
-          <p className="mt-2 mb-0 max-w-[440px] text-ink-muted">
-            {sending ? "Sending a code to " : "We sent a 6-digit code to "}
-            <span className="font-medium text-ink">{email}</span>.
+      {sent && (
+        <div className="mt-4">
+          <p className="m-0 max-w-[440px]">
+            Check your email. We sent a link to <span className="font-medium">{email}</span>.
           </p>
-          <label htmlFor="password-code" className="mt-3 block font-medium">
-            Code
-          </label>
-          {/* One real numeric field, drawn as six cells (as on the sign-in code screen). */}
-          <div className="relative mt-1.5 h-12 max-w-[320px]">
-            <div aria-hidden="true" className="grid h-12 grid-cols-6 gap-1.5">
-              {Array.from({ length: 6 }, (_, i) => (
-                <div
-                  key={i}
-                  className={`box-border flex items-center justify-center rounded-md bg-surface text-[20px] font-medium ${
-                    wrongCode
-                      ? "border-[1.5px] border-ink"
-                      : codeFocused && i === active
-                        ? "border-2 border-accent"
-                        : "border border-line-strong"
-                  }`}
-                >
-                  {code[i] ?? ""}
-                </div>
-              ))}
-            </div>
-            <input
-              id="password-code"
-              type="text"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              autoFocus
-              maxLength={6}
-              value={code}
-              aria-invalid={wrongCode || undefined}
-              onChange={(e) => {
-                setCode(e.target.value.replace(/\D/g, "").slice(0, 6));
-                setWrongCode(false);
-                setMessage(null);
-              }}
-              onFocus={() => setCodeFocused(true)}
-              onBlur={() => setCodeFocused(false)}
-              className="absolute inset-0 h-full w-full cursor-text border-0 p-0 text-[16px] opacity-0"
-            />
-          </div>
-          <div className="mt-2 text-[13px] leading-[18px] text-ink-muted">
+          <p className="mt-1 mb-0 text-[13px] leading-[18px] text-ink-muted">It works once, for 2 hours, on any device.</p>
+          <div className="mt-3 flex items-center gap-4 text-[13px] leading-[18px] text-ink-muted">
             {left > 0 ? (
-              <>It can take a minute. You can ask for a new code in 0:{String(left).padStart(2, "0")}.</>
+              <span>Send again in 0:{String(left).padStart(2, "0")}</span>
             ) : (
-              <>
-                Didn’t get it? Check your spam folder too.{" "}
-                <button
-                  type="button"
-                  onClick={() => void send(true)}
-                  className={`cursor-pointer border-0 bg-transparent p-0 font-medium text-ink underline ${focusRing}`}
-                >
-                  Send a new code
-                </button>
-              </>
+              <button type="button" onClick={() => void send()} className={`cursor-pointer border-0 bg-transparent p-0 font-medium text-ink underline ${focusRing}`}>
+                Send again
+              </button>
             )}
-          </div>
-          <label htmlFor="new-password" className="mt-5 block font-medium">
-            {has ? "New password" : "Password"}
-          </label>
-          <div className="relative mt-1.5">
-            <input
-              id="new-password"
-              type={shown ? "text" : "password"}
-              autoComplete="new-password"
-              value={pw}
-              onChange={(e) => {
-                setPw(e.target.value);
+            <button
+              type="button"
+              onClick={() => {
+                setSent(false);
                 setMessage(null);
               }}
-              aria-describedby="new-password-rule"
-              className="box-border h-12 w-full rounded-md border border-line-strong bg-surface pr-16 pl-3.5 text-[16px] text-ink"
-            />
-            <button
-              type="button"
-              onClick={() => setShown(!shown)}
-              aria-pressed={shown}
-              className={`touch-44 absolute top-1.5 right-1.5 h-9 cursor-pointer rounded-md border-0 bg-transparent px-2.5 text-[13px] text-ink ${focusRing}`}
+              className={`cursor-pointer border-0 bg-transparent p-0 text-ink/75 hover:text-ink ${focusRing}`}
             >
-              {shown ? "Hide" : "Show"}
+              Close
             </button>
           </div>
-          <div id="new-password-rule" className={`mt-2 flex items-center gap-1.5 text-[13px] leading-[18px] ${long ? "text-ink" : "text-ink-muted"}`}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="9" />
-              <path d="M8 12.5l2.7 2.7L16 9.8" strokeOpacity={long ? 1 : 0} />
-            </svg>
-            At least 8 characters
-          </div>
-          <div className="mt-4 flex gap-2">
-            <Button type="submit" look="main" busy={busy}>
-              Save password
-            </Button>
-            <button
-              type="button"
-              onClick={() => setForm(false)}
-              className={`h-11 cursor-pointer rounded-md border-0 bg-transparent px-3.5 text-ink/75 transition-colors duration-150 hover:text-ink motion-reduce:transition-none ${focusRing}`}
-            >
-              Cancel
-            </button>
-          </div>
-          {message && <Note>{message}</Note>}
-        </form>
+        </div>
       )}
+      {message && <Note>{message}</Note>}
     </>
   );
 }

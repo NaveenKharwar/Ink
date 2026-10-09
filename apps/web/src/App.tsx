@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import { SetPasswordPage } from "./auth/SetPasswordPage";
 import { SignIn } from "./auth/SignIn";
 import { useSession } from "./auth/useSession";
 import { accountOf } from "./lib/account";
 import { pieces } from "./lib/api";
 import { supabase } from "./lib/supabase";
+import { SET_PASSWORD } from "./lib/passwordLink";
 import { clearTrouble, currentTrouble, useTrouble } from "./lib/trouble";
 import { BrokenScreen } from "./ui/BrokenScreen";
 import { ScreenLoader } from "./ui/Loader";
@@ -14,6 +16,8 @@ import { WritingScreen } from "./writing/WritingScreen";
 export function App() {
   // The privacy page is public: no sign-in needed to read it.
   if (window.location.pathname === "/privacy") return <PrivacyPage />;
+  // The link in the password email lands here, on any device.
+  if (window.location.pathname === SET_PASSWORD) return <SetPasswordPage />;
   return <SignedInOrNot />;
 }
 

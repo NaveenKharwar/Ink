@@ -1,5 +1,6 @@
 import type { User } from "@supabase/supabase-js";
 import { passwordProblemOf, type PasswordProblem } from "./password";
+import { SET_PASSWORD } from "./passwordLink";
 import type { SeasonChoice } from "./seasons";
 import { supabase } from "./supabase";
 
@@ -57,18 +58,24 @@ export async function saveSeasons(choice: SeasonChoice): Promise<boolean> {
 
 type PasswordResult = { ok: true } | { ok: false; problem: PasswordProblem };
 
-// Adding or changing a password needs a 6-digit code from the writer's email first, so someone
-// at an unattended signed-in device can't take the account over.
-export async function sendPasswordCode(): Promise<PasswordResult> {
-  const { error } = await supabase.auth.reauthenticate();
+// Adding or changing a password starts with an email: a link that works for 2 hours and only once, and opens on
+// any device. The link opens /set-password (auth/SetPasswordPage), which asks for the new password there.
+export async function sendPasswordLink(email: string): Promise<PasswordResult> {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}${SET_PASSWORD}` });
+  return error ? { ok: false, problem: passwordProblemOf(error) } : { ok: true };
+}
+
+// Opening the link signs this device in with a short-lived session that is only good for choosing the password.
+export async function openPasswordLink(tokenHash: string): Promise<PasswordResult> {
+  const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: "recovery" });
   return error ? { ok: false, problem: passwordProblemOf(error) } : { ok: true };
 }
 
 // Supabase keeps only a hash. has_password is our own note so Profile can say "Password added.";
 // Supabase itself doesn't tell the app whether an account has a password. Other devices are
 // signed out afterwards: if someone else was in, they're out.
-export async function setPassword(password: string, code: string): Promise<PasswordResult> {
-  const { error } = await supabase.auth.updateUser({ password, nonce: code, data: { has_password: true } });
+export async function setPassword(password: string): Promise<PasswordResult> {
+  const { error } = await supabase.auth.updateUser({ password, data: { has_password: true } });
   if (error) return { ok: false, problem: passwordProblemOf(error) };
   await supabase.auth.signOut({ scope: "others" });
   return { ok: true };

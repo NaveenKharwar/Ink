@@ -91,8 +91,8 @@ export function PrivacyPage() {
           served by Ink itself, not by Google or anyone else.
         </li>
         <li>
-          <strong>An email service</strong> sends your 6-digit sign-in codes. [Which one, once Ink has its own
-          domain.]
+          <strong>An email service</strong> (Resend) sends your 6-digit sign-in codes and your password links, from an
+          address on Ink’s own domain.
         </li>
         <li>
           <strong>Hosting</strong> for the app and its server. [Names and regions, once Ink is deployed.]
