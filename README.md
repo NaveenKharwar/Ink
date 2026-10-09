@@ -9,17 +9,17 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/desktop-framed.webp" alt="Ink open on a piece, with older related pieces listed beside it" width="860">
+  <img src="docs/images/desktop-edge.webp" alt="Ink open on a piece, with older related pieces listed beside it" width="860">
 </p>
 
 Ink is a private place to write that remembers. It shows you the old poem that echoes today's line, the piece you forgot you started, and the idea you keep returning to. It never touches your sentences. It only gives your own words back at the right moment.
 
 <p align="center">
-  <img src="docs/images/poem-related-framed.webp" alt="Related pieces beside the page" width="230">
+  <img src="docs/images/poem-related-edge.webp" alt="Related pieces beside the page" width="230">
   &nbsp;
-  <img src="docs/images/seasons-framed.webp" alt="All writing, grouped by season" width="230">
+  <img src="docs/images/seasons-edge.webp" alt="All writing, grouped by season" width="230">
   &nbsp;
-  <img src="docs/images/blank-page-framed.webp" alt="A blank page with a choice of style" width="230">
+  <img src="docs/images/blank-page-edge.webp" alt="A blank page with a choice of style" width="230">
 </p>
 
 ## Why Ink
