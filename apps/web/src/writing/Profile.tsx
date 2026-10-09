@@ -10,6 +10,7 @@ import { SeasonPainting } from "./SeasonPainting";
 import { SideColumn } from "./SideColumn";
 import { Signature } from "./Signature";
 import { FadeScroll } from "../ui/FadeScroll";
+import { PRIVACY_URL } from "../lib/site";
 
 type Props = {
   account: Account;
@@ -311,7 +312,7 @@ function Memory() {
         Ink reads what you write so it can bring old lines back and notice what you keep returning to. Each piece gets a private
         set of numbers so Ink can find the ones that are close. Only you can see them. Nothing is shared, and nothing is used
         to train anything.{" "}
-        <a href="/privacy" className={`touch-44 font-medium text-ink underline underline-offset-2 ${focusRing}`}>
+        <a href={PRIVACY_URL} className={`touch-44 font-medium text-ink underline underline-offset-2 ${focusRing}`}>
           Privacy
         </a>
       </p>

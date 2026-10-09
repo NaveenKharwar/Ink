@@ -545,11 +545,6 @@ body {
   .season-roll-out-up, .season-roll-out-down { display: none; }
 }
 
-/* Plain pages (privacy): the browser's own default look, undoing the reset. */
-.plain,
-.plain * { all: revert; }
-.plain { display: block; margin: 8px; font-family: serif; color: CanvasText; background: Canvas; }
-
 /* Scroll boxes (ui/FadeScroll): the edge fades where more is hiding; the bar follows
    data-scrollbar. The thumb is Chromium and Safari only; Firefox keeps its own bar. */
 .fade-scroll {
