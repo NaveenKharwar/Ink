@@ -20,18 +20,18 @@ Code: `apps/api/src/pieces/fold.ts`, `apps/api/src/pieces/repo.ts`, `apps/api/sr
 - Matching runs in PostgreSQL with PGroonga. Typed text is escaped, so nothing the writer types is read as query syntax.
 - At most 20 results (`SEARCH_LIMIT`), best match first. The dialog shows the first 4 (`WORDS_SHOWN`) and a "Show N more" link for the rest, so the meaning group below always stays on screen. Each result's meta line gives its season, and its style only when it is not a Poem, for example "Winter 2025" for a poem and "Winter 2025 · Story" for a story (a piece without a style is a Poem). The result shows the piece's first line and, when the words are on a later line, that line too, with the found words marked.
 
-### Spelling: exact for English, loose for the rest
+### Spelling: exact or loose
 
-How a piece is matched depends on the language the writer chose for it.
+How a piece is matched depends on the language label kept on the piece. The label is internal; the interface does not present it as a feature.
 
-| Piece is labelled | Matching |
+| Piece label | Matching |
 | --- | --- |
-| English | **Exact words** only. |
-| Hindi, Hinglish, mixed, or not labelled yet | Exact words **and** a loose copy (below). |
+| Exact spelling | **Exact words** only. |
+| Loose spelling, mixed, or not labelled yet | Exact words **and** a loose copy (below). |
 
-The loose copy exists because Hindi written in Latin letters has no standard spelling. It folds common variants together: `aa`/`a`, `ee`/`i`, `oo`/`u`, `ph`/`f`, `w`/`v`, `z`/`j`, `sh`/`s`, and doubled letters. Devanagari is also stored in Latin letters, so typing "baarish" or "barish" finds both बारिश and Hinglish pieces. Hindi is evened out as well, so चाँद and चांद match.
+The loose copy exists because words written in Latin letters for languages with other scripts have no standard spelling. It folds common variants together: `aa`/`a`, `ee`/`i`, `oo`/`u`, `ph`/`f`, `w`/`v`, `z`/`j`, `sh`/`s`, and doubled letters. Text in other scripts is also stored in Latin letters, so a typed spelling finds both the original script and the Latin spelling, and marks that vary in the original script are evened out.
 
-English pieces skip the loose copy on purpose. Folding `w` into `v` would make "new" match "never".
+Pieces with exact spelling skip the loose copy on purpose. Folding `w` into `v` would make "new" match "never".
 
 ### Typos
 
@@ -69,7 +69,7 @@ The cutoff is a guess from one archive of about 60 pieces, so it will be retuned
 
 ### Which pieces are left out
 
-- Pieces labelled Hinglish. The model cannot read Hindi in Latin letters, so those are found by their words only.
+- Pieces written in Latin letters for a language that has its own script. The model cannot read them, so those are found by their words only.
 - Pieces under 4 words (`MIN_WORDS`). A few random letters can score closer to a short query than real writing does.
 - Pieces kept out of memory.
 - Pieces whose vector has not been made yet.
@@ -83,8 +83,8 @@ Each writer may search 120 times a minute and open the panel (Related or Noticed
 
 - Typos are forgiven only when the exact words find nothing, and only for pieces among the 1,000 most recently edited.
 - One-word and category queries are weak ("vehicle" does not reliably find a scooter piece).
-- A translation is not found by words, and by meaning only when the model is confident: "book" does not reliably find a piece about किताब.
-- Hinglish is found by words only.
+- A translation is not found by words, and by meaning only when the model is confident.
+- Text in Latin letters for a language with its own script is found by words only.
 - Meaning is judged on a whole piece at once, so one relevant line in a long piece gets diluted.
 
 ## Planned

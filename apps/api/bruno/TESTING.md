@@ -20,7 +20,7 @@ It proves that a writer cannot read, change, delete, search or list another writ
 
 Checked outside CI:
 
-- How good the real embedder's answers are (floors, ranking, Hinglish). CI uses a stand-in.
+- How good the real embedder's answers are (floors, ranking, mixed scripts). CI uses a stand-in.
 - The hosted Supabase: real token lifetimes and signing keys, connection pooling, storage settings. CI uses the local stack, and the API runs in development mode there.
 - The embedder's own security checks (private address, shared secret, size cap).
 - The web app. This collection only covers the API.
