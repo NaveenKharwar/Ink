@@ -1,23 +1,56 @@
-# Ink
+<h1 align="center">Ink</h1>
 
-> A private memory for your writing.
+<p align="center"><strong>Everything you have written, within reach.</strong></p>
 
-Ink is a writing workspace that remembers everything you write. It quietly brings back forgotten pieces, connects fragments that belong together, and notices patterns across your work over time.
+<p align="center">
+  <a href="https://withink.app">Website</a> ·
+  <a href="https://withink.app/#join">Join the waitlist</a> ·
+  <a href="https://withink.app/privacy">Privacy</a>
+</p>
 
-It is made for writers first: poems, stories, letters and notes, in any language. Writing stays private. Ink never critiques, rewrites or generates text, and it has no streaks or dashboards.
+<p align="center">
+  <img src="docs/images/desktop.webp" alt="Ink open on a piece, with older related pieces listed beside it" width="860">
+</p>
 
-## What it does
+Ink is a private place to write that remembers. It shows you the old poem that echoes today's line, the piece you forgot you started, and the idea you keep returning to. It never touches your sentences. It only gives your own words back at the right moment.
 
-- **Write.** A calm editor that saves on the device first and syncs in the background. Pieces have a style (Poem, Story and others), a season, and an optional cover picture.
-- **Related.** Next to a piece, Ink shows older pieces that are close in meaning, ones that were forgotten, and loose lines that have no home yet.
-- **Search.** Cmd+K finds pieces by their words (with typo tolerance) and by meaning.
-- **Noticed.** One quiet remark under All writing, such as an old line that returns, built from fixed sentence patterns and never generated.
-- **Private by default.** Every request is scoped to the signed-in writer. A piece can be kept out of Ink's memory, and a piece can be deleted for good.
-- **Colours.** Moss, Paper and Night, or follow the device.
+<p align="center">
+  <img src="docs/images/poem-related.webp" alt="Related pieces beside the page" width="230">
+  &nbsp;
+  <img src="docs/images/seasons.webp" alt="All writing, grouped by season" width="230">
+  &nbsp;
+  <img src="docs/images/blank-page.webp" alt="A blank page with a choice of style" width="230">
+</p>
 
-## How the memory works
+## Why Ink
 
-Ink turns each piece into a meaning vector with an open model ([BGE-M3](https://huggingface.co/BAAI/bge-m3)) running on a private embedder service. A piece is embedded in the background after it has been quiet for a while, never on a keystroke. Related and meaning search then compare vectors inside the writer's own pieces. Only open models are used. See [docs/search.md](./docs/search.md) for the settings behind search.
+Writing piles up in notes apps, drafts, chat threads and phone memos. A line arrives, you save it somewhere, and months later you cannot find it, or you forget you ever wrote it.
+
+Ink keeps the writing in one place and does the remembering for you. You write. Ink reads what you have already written and quietly connects it.
+
+## What you get
+
+- **Old pieces that meet new ones.** Beside what you are writing, Ink shows older pieces close in meaning, pieces you have not opened in months, and loose lines that have no home yet.
+- **Search that finds what you meant.** Cmd+K finds a piece by the words you remember, forgives typos, and also finds pieces about the same thing in different words.
+- **A quiet remark now and then.** Under All writing, Ink notes when an old line returns or when you keep writing about the same thing. The sentences are fixed patterns, never generated.
+- **A calm page.** Poems, stories, letters and notes, in any language, with a style, a season and an optional cover picture. It saves on your device first and syncs in the background.
+- **Writing that stays yours.** Every request is scoped to you. Keep any piece out of Ink's memory, or delete it for good. Ink has no streaks, no dashboards, and no critique.
+
+## How it works
+
+1. **You write.** The page saves as you go.
+2. **Ink remembers.** Once a piece has been quiet for a while, a private service turns it into a meaning vector with an open model ([BGE-M3](https://huggingface.co/BAAI/bge-m3)). Nothing runs on a keystroke.
+3. **Ink connects.** Related writing and search compare vectors inside your own pieces and nobody else's. Only open models are used. The settings behind search are in [docs/search.md](./docs/search.md).
+
+## Join the waitlist
+
+Ink is opening to its first writers soon. Leave your address and Ink writes to you when hosted plans open.
+
+**[Join the waitlist at withink.app](https://withink.app/#join)**
+
+---
+
+## For developers
 
 ## Repository layout
 
