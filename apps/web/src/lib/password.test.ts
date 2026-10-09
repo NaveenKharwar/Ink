@@ -2,9 +2,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { passwordProblemOf } from "./password.ts";
 
-test("a wrong, expired or missing email code reads as a wrong code", () => {
-  assert.equal(passwordProblemOf({ code: "reauthentication_not_valid", status: 400 }), "wrong-code");
-  assert.equal(passwordProblemOf({ code: "reauthentication_needed", status: 400 }), "wrong-code");
+test("a used or old link reads as an expired link", () => {
+  assert.equal(passwordProblemOf({ code: "otp_expired", status: 403 }), "link-expired");
 });
 
 test("other password problems", () => {
