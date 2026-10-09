@@ -4,18 +4,21 @@ import { SignIn } from "./auth/SignIn";
 import { useSession } from "./auth/useSession";
 import { accountOf } from "./lib/account";
 import { pieces } from "./lib/api";
+import { PRIVACY_URL } from "./lib/site";
 import { supabase } from "./lib/supabase";
 import { SET_PASSWORD } from "./lib/passwordLink";
 import { clearTrouble, currentTrouble, useTrouble } from "./lib/trouble";
 import { BrokenScreen } from "./ui/BrokenScreen";
 import { ScreenLoader } from "./ui/Loader";
-import { PrivacyPage } from "./privacy/PrivacyPage";
 import { WritingScreen } from "./writing/WritingScreen";
 
 // Signing in lands in a blank new piece.
 export function App() {
-  // The privacy page is public: no sign-in needed to read it.
-  if (window.location.pathname === "/privacy") return <PrivacyPage />;
+  // The privacy page is on the website; an old /privacy link goes there.
+  if (window.location.pathname === "/privacy") {
+    window.location.replace(PRIVACY_URL);
+    return null;
+  }
   // The link in the password email lands here, on any device.
   if (window.location.pathname === SET_PASSWORD) return <SetPasswordPage />;
   return <SignedInOrNot />;

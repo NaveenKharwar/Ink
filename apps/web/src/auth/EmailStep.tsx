@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { continueWithGoogle, looksLikeEmail, sendCode, type AuthProblem } from "./actions";
 import { GoogleMark, Label, MainButton, Message, TextField } from "./parts";
 import { problemText } from "./problems";
+import { PRIVACY_URL } from "../lib/site";
 
 type Props = {
   email: string;
@@ -84,7 +85,7 @@ export function EmailStep({ email, onEmailChange, onCodeSent }: Props) {
 
       <p className="mt-[18px] mb-0 text-center text-[13px] leading-[18px] text-auth-muted">
         Your writing is private. Only you can read it.{" "}
-        <a href="/privacy" className="text-auth-ink underline underline-offset-2">
+        <a href={PRIVACY_URL} className="text-auth-ink underline underline-offset-2">
           Privacy
         </a>
       </p>
