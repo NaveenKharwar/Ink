@@ -71,7 +71,7 @@
   --line: #e8d3a8;
   --line-strong: #dcc08a;
   --surface-hover: #fbf0da;
-  --accent: #c2703a;
+  --accent: #a85a24;
   --stanza: color-mix(in srgb, var(--accent) 45%, var(--surface));
 }
 
