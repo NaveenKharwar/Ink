@@ -6,12 +6,13 @@
     <title>Ink</title>
     <script>
       // Apply the writer's colour scheme before the page paints, so it never flashes.
-      // (The earlier Light / Dark choice, ink-theme, becomes Moss / Night.)
+      // (A stored moss, or ink-theme light, reads as Saffron; ink-theme dark reads as Night.)
       try {
-        var names = ["moss", "paper", "night"];
+        var names = ["saffron", "paper", "night"];
         var s = localStorage.getItem("ink-scheme");
         var old = localStorage.getItem("ink-theme");
-        if (names.indexOf(s) < 0) s = old === "dark" ? "night" : old === "light" ? "moss" : null;
+        if (s === "moss") s = "saffron";
+        if (names.indexOf(s) < 0) s = old === "dark" ? "night" : old === "light" ? "saffron" : null;
         if (s) document.documentElement.dataset.scheme = s;
       } catch (e) {}
     </script>

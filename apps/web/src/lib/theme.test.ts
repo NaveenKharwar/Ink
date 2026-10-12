@@ -8,9 +8,13 @@ test("a stored scheme is used as it is", () => {
   assert.equal(schemeFromStored("night", "light"), "night");
 });
 
-test("the earlier Light and Dark choices become Moss and Night", () => {
-  assert.equal(schemeFromStored(null, "light"), "moss");
+test("the earlier Light and Dark choices become Saffron and Night", () => {
+  assert.equal(schemeFromStored(null, "light"), "saffron");
   assert.equal(schemeFromStored(null, "dark"), "night");
+});
+
+test("a stored Moss is Saffron", () => {
+  assert.equal(schemeFromStored("moss", null), "saffron");
 });
 
 test("anything else follows the device", () => {
