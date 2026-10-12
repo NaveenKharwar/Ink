@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 
 export const SCHEMES = [
-  { value: "saffron", label: "Saffron" },
   { value: "paper", label: "Paper" },
-  { value: "night", label: "Night" }
+  { value: "night", label: "Night" },
+  { value: "saffron", label: "Saffron" }
 ] as const;
 
 export type Scheme = (typeof SCHEMES)[number]["value"];
-/** "system" follows the device: Paper in light, Night in dark. */
+/** "system" follows the device: Paper in light, Night in dark. Saffron is an extra, picked on purpose. */
 export type SchemeChoice = Scheme | "system";
 
 const KEY = "ink-scheme";
@@ -25,7 +25,7 @@ export function schemeFromStored(scheme: string | null, legacy: string | null): 
   if (isScheme(scheme)) return scheme;
   if (scheme && RENAMED[scheme]) return RENAMED[scheme];
   if (legacy === "dark") return "night";
-  if (legacy === "light") return "saffron";
+  if (legacy === "light") return "paper";
   return "system";
 }
 
