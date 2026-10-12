@@ -152,7 +152,7 @@ function StyleStage({ selected, onSelect, onPick }: Pick<Props, "selected" | "on
           );
         })}
       </div>
-      <div className="mt-3 grid grid-cols-3">
+      <div className="mt-8 grid grid-cols-3">
         {STYLES.map((s) => {
           const on = s.value === selected;
           return (
