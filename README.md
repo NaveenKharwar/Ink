@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/images/ink-logo.png" alt="" width="96">
+</p>
+
 <h1 align="center">Ink</h1>
 
 <p align="center"><strong>Everything you have written, within reach.</strong></p>
