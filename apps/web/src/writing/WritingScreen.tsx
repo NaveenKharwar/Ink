@@ -398,7 +398,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
     const panelShown = shell.panelVisible && view.kind === "piece";
     const reading = shell.layout.reading;
     return (
-      <div className="fixed inset-0 bg-ground">
+      <div className="fixed inset-0">
         <div
           className="absolute inset-0 flex justify-center"
           style={reading ? { paddingLeft: reading.left, paddingRight: reading.right } : undefined}
@@ -425,7 +425,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
         </div>
         <div
           inert={!menuVisible}
-          className={`fixed top-3 bottom-3 left-0 z-30 flex rounded-r-panel shadow-[8px_0_24px_rgba(0,0,0,0.08)] ${SLIDE} ${
+          className={`fixed top-10 bottom-10 left-0 z-30 flex rounded-r-panel shadow-[8px_0_24px_rgba(0,0,0,0.08)] ${SLIDE} ${
             menuVisible ? "translate-x-0 opacity-100" : "pointer-events-none -translate-x-[calc(var(--sheet-width)+12px)] opacity-0"
           }`}
         >
@@ -433,7 +433,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
         </div>
         <div
           inert={!panelShown}
-          className={`fixed top-3 right-0 bottom-3 z-30 flex rounded-l-panel shadow-[-8px_0_24px_rgba(0,0,0,0.08)] ${SLIDE} ${
+          className={`fixed top-10 right-0 bottom-10 z-30 flex rounded-l-panel shadow-[-8px_0_24px_rgba(0,0,0,0.08)] ${SLIDE} ${
             panelShown ? "translate-x-0 opacity-100" : "pointer-events-none translate-x-[calc(var(--sheet-width)+12px)] opacity-0"
           }`}
         >

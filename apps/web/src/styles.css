@@ -25,10 +25,11 @@
 
 /* App colours. A scheme is a set of these variables: the whole app follows the device unless the
    writer picked a scheme (data-scheme on <html>). Any element can carry data-scheme to show one,
-   which the Profile cards use. The light schemes share one base (and the green accent); Paper then
-   changes the greys and the ink, and tints the side sheets light grey. Night is the dark one, with the same green lightened. */
+   which the Profile cards use. The light schemes share one base (and the green accent); Saffron then
+   warms the ground and takes an orange accent, and Paper changes the greys and the ink and tints the side
+   sheets light grey. Night is the dark one, with the same green lightened. */
 :root,
-[data-scheme="moss"],
+[data-scheme="saffron"],
 [data-scheme="paper"] {
   --ground: #efe8dc;
   --surface: #fdfaf3;
@@ -63,7 +64,18 @@
   color-scheme: light;
 }
 
-/* Paper is plain white with black ink, the opposite of Night, and keeps Moss's green accent. It is
+/* Saffron is a warm gold ground with a soft orange accent. */
+[data-scheme="saffron"] {
+  --ground: #f4e2bd;
+  --surface: #fffaf0;
+  --line: #e8d3a8;
+  --line-strong: #dcc08a;
+  --surface-hover: #fbf0da;
+  --accent: #a85a24;
+  --stanza: color-mix(in srgb, var(--accent) 45%, var(--surface));
+}
+
+/* Paper is plain white with black ink, the opposite of Night, and keeps the green accent. It is
    also what a light device shows when the writer has not picked a scheme. */
 :root:not([data-scheme]),
 [data-scheme="paper"] {
@@ -612,4 +624,42 @@ body {
 .quiet-note { animation: quiet-note 4.5s ease-in-out forwards; }
 @media (prefers-reduced-motion: reduce) {
   .quiet-note { animation: none; }
+}
+
+/* A fine paper grain on the ground. The sheets and the paper are opaque, so it only shows around them. Saffron
+   grains in warm brown, Paper in grey, Night in light. */
+:root {
+  --grain: #59472e;
+  --grain-strength: 0.22;
+}
+[data-scheme="paper"] {
+  --grain: #000;
+  --grain-strength: 0.15;
+}
+[data-scheme="night"] {
+  --grain: #fff;
+  --grain-strength: 0.2;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-scheme]) {
+    --grain: #000;
+    --grain-strength: 0.15;
+  }
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-scheme]) {
+    --grain: #fff;
+    --grain-strength: 0.2;
+  }
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--grain);
+  opacity: var(--grain-strength);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.6 -0.3'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.6 -0.3'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
 }

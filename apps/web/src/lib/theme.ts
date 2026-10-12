@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 export const SCHEMES = [
-  { value: "moss", label: "Moss" },
+  { value: "saffron", label: "Saffron" },
   { value: "paper", label: "Paper" },
   { value: "night", label: "Night" }
 ] as const;
@@ -13,6 +13,8 @@ export type SchemeChoice = Scheme | "system";
 const KEY = "ink-scheme";
 // The earlier Light / Dark choice, still read so a writer keeps what they picked.
 const LEGACY_KEY = "ink-theme";
+// A stored "moss" is read as Saffron.
+const RENAMED: Record<string, Scheme> = { moss: "saffron" };
 
 function isScheme(value: unknown): value is Scheme {
   return SCHEMES.some((s) => s.value === value);
@@ -21,8 +23,9 @@ function isScheme(value: unknown): value is Scheme {
 /** The stored words turned into a choice: the scheme if it is one, else the earlier Light / Dark, else the device. */
 export function schemeFromStored(scheme: string | null, legacy: string | null): SchemeChoice {
   if (isScheme(scheme)) return scheme;
+  if (scheme && RENAMED[scheme]) return RENAMED[scheme];
   if (legacy === "dark") return "night";
-  if (legacy === "light") return "moss";
+  if (legacy === "light") return "saffron";
   return "system";
 }
 

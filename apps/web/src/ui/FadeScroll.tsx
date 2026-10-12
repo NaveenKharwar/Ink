@@ -2,7 +2,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type HTML
 
 // How the box shows that it scrolls:
 //   hidden    no bar (lists, panels)
-//   visible   the Moss thumb always (the long reading pages)
+//   visible   the accent thumb always (the long reading pages)
 //   scrolling the thumb only while the page is being scrolled (Profile)
 export type ScrollbarMode = "hidden" | "visible" | "scrolling";
 
