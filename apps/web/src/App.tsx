@@ -7,6 +7,7 @@ import { pieces } from "./lib/api";
 import { PRIVACY_URL } from "./lib/site";
 import { supabase } from "./lib/supabase";
 import { SET_PASSWORD } from "./lib/passwordLink";
+import { useDocumentTitle } from "./lib/useDocumentTitle";
 import { clearTrouble, currentTrouble, useTrouble } from "./lib/trouble";
 import { BrokenScreen } from "./ui/BrokenScreen";
 import { ScreenLoader } from "./ui/Loader";
@@ -26,6 +27,7 @@ export function App() {
 
 function SignedInOrNot() {
   const session = useSession();
+  useDocumentTitle(session ? "Ink" : "Sign in");
   const trouble = useTrouble();
   // Trying again starts the writing screen fresh, so everything asks the server again.
   const [attempt, setAttempt] = useState(0);
