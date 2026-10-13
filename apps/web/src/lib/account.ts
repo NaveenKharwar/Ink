@@ -12,7 +12,7 @@ export type Account = {
   seasons: SeasonChoice;
   hasPassword: boolean;
   via: "google" | "code";
-  // How many visits have shown the thread to "Ink sees this too" (it stops after TETHER_VISITS).
+  // How many visits have shown the thread to Echoes (it stops after TETHER_VISITS).
   tetherVisits: number;
 };
 
@@ -34,7 +34,7 @@ export function accountOf(user: User): Account {
 
 export const PEN_NAME_MAX = 60;
 
-// The thread to "Ink sees this too" is shown on a writer's first visits only, then never again.
+// The thread to Echoes is shown on a writer's first visits only, then never again.
 // Counted on the account, so phone and desktop share the count.
 export const TETHER_VISITS = 3;
 

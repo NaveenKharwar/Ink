@@ -26,7 +26,7 @@ export type Related = RelatedResponse & {
 };
 
 /**
- * What "Ink sees this too" shows beside a piece. Looks when the piece opens and a few seconds
+ * What Echoes shows beside a piece. Looks when the piece opens and a few seconds
  * after each save. A piece that is not on the server yet (`exists` is false) is not asked about
  * until its first save.
  */

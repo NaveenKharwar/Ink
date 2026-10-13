@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 // Desktop only: a quiet column on the ground to the right of the paper, in the same slot as the
-// "Ink sees this too" sheet (one gap beside the paper to the window edge, as wide as a sheet, see
+// Echoes sheet (one gap beside the paper to the window edge, as wide as a sheet, see
 // styles.css), with the sheets' 40px breathing room at the top and bottom. Not a sheet: no border or shadow.
 export function SideColumn({ children }: { children: ReactNode }) {
   return (

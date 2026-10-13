@@ -17,7 +17,7 @@ const LOOKS_PER_MINUTE = 60;
 export function registerRelatedRoutes(app: FastifyInstance, repo: RelatedRepo) {
   const looks = perWriterLimit(LOOKS_PER_MINUTE, 60_000);
 
-  // What "Ink sees this too" shows beside a piece. Only the writer's own pieces, ever.
+  // What Echoes shows beside a piece. Only the writer's own pieces, ever.
   app.get("/api/pieces/:id/related", async (request, reply) => {
     const params = idParams.safeParse(request.params);
     if (!params.success) return notFound(reply);

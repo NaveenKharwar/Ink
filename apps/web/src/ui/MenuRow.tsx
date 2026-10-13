@@ -28,7 +28,7 @@ type Props = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children"> & {
   inline?: boolean;
 };
 
-// The one row of every menu: the left menu, the foot of "Ink sees this too". Every row is at least
+// The one row of every menu: the left menu, the foot of Echoes. Every row is at least
 // 44px tall (a thumb) at every width, with one padding and one way to show the open one, so rows
 // that do the same job always look the same.
 export function MenuRow({ icon, trailing, selected = false, tone = "ink", tall = false, indent = false, field = false, inline = false, className = "", children, ...rest }: Props) {

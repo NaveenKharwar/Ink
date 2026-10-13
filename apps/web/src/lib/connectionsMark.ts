@@ -1,4 +1,4 @@
-// The mark for "Ink sees this too": three ink dots joined by threads, still. When the writer hovers, the
+// The mark for Echoes: three ink dots joined by threads, still. When the writer hovers, the
 // dots come alive and drift a little while the threads strengthen; when they press, the threads gather into
 // a small tripod and the mark turns to the accent. Its shape in each state, and how to move between two of
 // them. Pure numbers, so it is tested without a screen. Coordinates are on a 24-point grid.

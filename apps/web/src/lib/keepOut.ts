@@ -1,4 +1,4 @@
-// The switch at the foot of "Ink sees this too": whether Ink looks at this piece. On means Ink
+// The switch at the foot of Echoes: whether Ink looks at this piece. On means Ink
 // remembers it; off keeps it out. The hint says what the state means, so there is no bare "Undo".
 
 /** The panel's body for a piece kept out: what happened and what it means. */

@@ -3,13 +3,13 @@ import type { MarkState } from "../lib/connectionsMark";
 import { ConnectionsMark } from "./ConnectionsMark";
 
 type Props = {
-  /** "Ink sees this too" is open: the mark stays where it is, in the accent with a softly filled triangle. */
+  /** Echoes is open: the mark stays where it is, in the accent with a softly filled triangle. */
   open: boolean;
   /** Opens the panel, or closes it when it is open. */
   onToggle: () => void;
 };
 
-// The button for "Ink sees this too": the connections mark, which hovers, turns to the accent with a softly filled
+// The button for Echoes: the connections mark, which hovers, turns to the accent with a softly filled
 // triangle when pressed and stays that way while the panel is open. It never moves or hides: the panel only
 // has its own close button. Hover is for a mouse only (a finger has no hover).
 export function ConnectionsButton({ open, onToggle }: Props) {
@@ -21,7 +21,7 @@ export function ConnectionsButton({ open, onToggle }: Props) {
     <span className="relative">
       <button
         type="button"
-        aria-label="Show what Ink sees"
+        aria-label="Show echoes"
         aria-pressed={open}
         data-tether="mark"
         className="relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"

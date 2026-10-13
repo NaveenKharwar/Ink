@@ -149,7 +149,7 @@ export function SearchDialog({ wide, recent, seasonSet, onOpen, onClose }: Props
 
   const optionId = (i: number) => `${listId}-${i}`;
 
-  // The name of a group, the same bar as the sections of Ink sees this too: soft accent for meaning, plain for words.
+  // The name of a group, the same bar as the sections of Echoes: soft accent for meaning, plain for words.
   const label = (title: string, tint: boolean, first: boolean) => (
     <li
       role="presentation"

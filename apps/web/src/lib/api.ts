@@ -89,7 +89,7 @@ export const pieces = {
   },
   library: () => request<LibraryResponse>("/api/library"),
   get: (id: string) => request<Piece>(`/api/pieces/${encodeURIComponent(id)}`),
-  // What "Ink sees this too" shows beside a piece. "Not related" hides a piece beside this one for good.
+  // What Echoes shows beside a piece. "Not related" hides a piece beside this one for good.
   related: (id: string, signal?: AbortSignal) => request<RelatedResponse>(`/api/pieces/${encodeURIComponent(id)}/related`, { signal }),
   dismiss: async (id: string, otherId: string) => {
     await send(`/api/pieces/${encodeURIComponent(id)}/related/${encodeURIComponent(otherId)}/dismissed`, { method: "PUT" });
