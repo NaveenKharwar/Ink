@@ -41,13 +41,13 @@ const focus = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visi
 const linkClass =
   `relative cursor-pointer border-0 border-b-[1.5px] border-dotted border-accent bg-transparent p-0 text-[14px] text-accent before:absolute before:-inset-x-3 before:-inset-y-[14px] before:content-[''] ${focus}`;
 
-// "Ink sees this too": older writing beside the piece, as plain notes under heading bars. Related
+// Echoes: older writing beside the piece, as plain notes under heading bars. Related
 // (soft blue: it leads to other writing), Forgotten (old pieces not edited for a long while) and
 // Loose lines (short ones). The panel is the only card; nothing inside it is boxed. A section with
 // nothing close is not shown at all. Below a divider the foot holds the piece's
 // own options: a switch for whether Ink remembers it, then, set apart, Delete. A kept-out piece has no
 // notes, and the panel says so.
-export function InkSeesPanel({ phone = false, shown = true, chosen = null, pieceId, exists, seasonSet, reading = [], onClose, onOpenBeside, userId, onDeleted }: Props) {
+export function EchoesPanel({ phone = false, shown = true, chosen = null, pieceId, exists, seasonSet, reading = [], onClose, onOpenBeside, userId, onDeleted }: Props) {
   const found = useRelated(pieceId, exists);
   const dismissals = useDismissals(pieceId);
   const [selected, setSelected] = useState<string | null>(null);
@@ -158,14 +158,14 @@ export function InkSeesPanel({ phone = false, shown = true, chosen = null, piece
   return (
     <aside
       ref={panel}
-      aria-label="Ink sees this too"
+      aria-label="Echoes"
       data-tether="panel"
       className={`box-border flex h-full shrink-0 flex-col overflow-hidden bg-sheet ${
         phone ? "w-[var(--phone-sheet-width)] border-l border-line" : "w-[var(--sheet-width)] rounded-l-panel border border-r-0 border-line"
       }`}
     >
       <div className={`flex h-14 shrink-0 items-center justify-between border-b border-line pr-3 pl-6`}>
-        <span className="font-display text-[16px] leading-[22px]">Ink sees this too</span>
+        <span className="font-display text-[16px] leading-[22px]">Echoes</span>
         <button
           type="button"
           onClick={onClose}

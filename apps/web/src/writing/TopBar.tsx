@@ -31,7 +31,7 @@ type Props = {
   style: PieceStyle | null;
   onStyle: (style: PieceStyle) => void;
   save: SaveState;
-  /** "Ink sees this too" is open (the mark stays put, joined). */
+  /** Echoes is open (the mark stays put, joined). */
   panelOpen: boolean;
   /** Opens the panel, or closes it if it is open. */
   onPanelToggle: () => void;

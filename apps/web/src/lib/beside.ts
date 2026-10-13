@@ -1,7 +1,7 @@
 // Reading an older piece beside the page (desktop, from the app's one breakpoint upwards).
 //
 // This is the one place that decides how the desktop screen is shared while a piece is being
-// read: the page, the reading paper ("lite paper"), the menu and "Ink sees this too". Nothing is
+// read: the page, the reading paper ("lite paper"), the menu and Echoes. Nothing is
 // stored: the answer follows from the window's width and three facts, so resizing the window,
 // opening the panel or closing the last tab always gives a consistent screen.
 //
@@ -23,7 +23,7 @@ export const sheetWidth = (viewport: number) => Math.round(Math.min(SHEET_MAX, M
 /** A side sheet and its gap: the room a paper keeps clear on a side that has one. */
 export const sheetRoom = (viewport: number) => sheetWidth(viewport) + SHEET_GAP;
 export const READER_GAP = 24;
-/** Below this window width, while reading, the menu and "Ink sees this too" both step aside, so the page and the reading paper keep room for their words. */
+/** Below this window width, while reading, the menu and Echoes both step aside, so the page and the reading paper keep room for their words. */
 export const PANEL_ASIDE_BELOW = 1280;
 /** A paper narrower than this gets smaller side margins, so its words keep as much width as possible. */
 export const NARROW_PAPER = 620;
@@ -41,7 +41,7 @@ export type DesktopLayoutInput = {
   viewport: number;
   /** The writer's choice: the menu is open when there is room for it. */
   menuPreferred: boolean;
-  /** "Ink sees this too" is open on the right. */
+  /** Echoes is open on the right. */
   panelOpen: boolean;
   /** At least one older piece is open beside the page. */
   reading: boolean;
@@ -55,7 +55,7 @@ export type DesktopLayout = {
   menuVisible: boolean;
   /** The menu is wanted but has stepped aside for the reading paper. */
   menuSteppedAside: boolean;
-  /** "Ink sees this too" is on screen. */
+  /** Echoes is on screen. */
   panelVisible: boolean;
   /** The panel is wanted but has stepped aside for the reading paper (narrow windows only). */
   panelSteppedAside: boolean;

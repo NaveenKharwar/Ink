@@ -6,7 +6,7 @@ import { MenuRow } from "../ui/MenuRow";
 
 type Props = { pieceId: string; userId: string; onDeleted: () => void };
 
-// The last grey line of "Ink sees this too". Tapping it asks once, in the same place; deleting is
+// The last grey line of Echoes. Tapping it asks once, in the same place; deleting is
 // for good (no trash, no undo), and the words say so.
 export function DeletePiece({ pieceId, userId, onDeleted }: Props) {
   const [asking, setAsking] = useState(false);

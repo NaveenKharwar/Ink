@@ -33,7 +33,7 @@
 [data-scheme="paper"] {
   --ground: #efe8dc;
   --surface: #fdfaf3;
-  /* The side sheets (the menu and "Ink sees this too"); the same as the page unless a scheme tints them. */
+  /* The side sheets (the menu and Echoes); the same as the page unless a scheme tints them. */
   --sheet: var(--surface);
   --line: #e6dccb;
   --ink: #1a1a1a;
@@ -218,7 +218,7 @@
   /* The old line in the Noticed remark: a quiet italic that is not the writing face. */
   --font-remark: "Source Serif 4 Variable", "Noto Serif Devanagari", Georgia, serif;
   /* Handwriting: a Hindi pen name (the stroke-drawn signature font has Latin letters only) and the
-     note on the thread to "Ink sees this too". */
+     note on the thread to Echoes. */
   --font-hand: "Kalam", cursive;
 
   --radius-sm: 5px;

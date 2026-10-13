@@ -10,7 +10,7 @@ import { useViewportWidth } from "../lib/useViewportWidth";
 import { useWide } from "../lib/layout";
 import { AllWriting } from "./AllWriting";
 import { BesidePaper } from "./BesidePaper";
-import { InkSeesPanel } from "./InkSeesPanel";
+import { EchoesPanel } from "./EchoesPanel";
 import { PicturesPage } from "./PicturesPage";
 import { PieceView } from "./PieceView";
 import { Profile } from "./Profile";
@@ -84,7 +84,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
   // Desktop or phone, from the app's one breakpoint (lib/layout.ts).
   const wide = useWide();
   const [view, setView] = useState<View>(viewFromAddress);
-  // Desktop: the menu stays as the writer left it (until ☰). Ink sees this too opens on every
+  // Desktop: the menu stays as the writer left it (until ☰). Echoes opens on every
   // load, so writers always meet it; × hides it for this visit only.
   const [menuOpen, setMenuOpen] = useRememberedOpen("ink-menu-open", false);
   const [panelOpen, setPanelOpen] = useState(true);
@@ -110,7 +110,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
   const menuVisible = wide ? shell.menuVisible : menuOpen;
   const swipeStart = useRef<number | null>(null);
   const library = useLibrary();
-  // On a writer's first visits, a thread invites them to "Ink sees this too" (then never again).
+  // On a writer's first visits, a thread invites them to Echoes (then never again).
   // In development, `?tether` in the address shows it anyway, without counting a visit.
   const [tether, setTether] = useState<TetherState | "gone">(() =>
     account.tetherVisits < TETHER_VISITS || tetherForced ? "hang" : "gone"
@@ -437,7 +437,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
             panelShown ? "translate-x-0 opacity-100" : "pointer-events-none translate-x-[calc(var(--sheet-width)+12px)] opacity-0"
           }`}
         >
-          <InkSeesPanel
+          <EchoesPanel
             key={openPieceId ?? "none"}
             shown={panelShown}
             chosen={panelShown && !shell.layout.reading ? lastRead : null}
@@ -513,7 +513,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
           )}
         </main>
         <div inert={pos !== "panel"} className="h-full">
-          <InkSeesPanel
+          <EchoesPanel
             key={openPieceId ?? "none"}
             phone
             shown={pos === "panel"}
