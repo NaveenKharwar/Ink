@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { openPasswordLink, setPassword } from "../lib/account";
 import type { PasswordProblem } from "../lib/password";
+import { useDocumentTitle } from "../lib/useDocumentTitle";
 import { readPasswordLink } from "../lib/passwordLink";
 import { Heading, Eyebrow, Label, MainButton, Message, TextField } from "./parts";
 
@@ -17,6 +18,7 @@ const TEXT: Record<PasswordProblem, string> = {
 // Where the link in the password email lands, on any device. The link is only used when the writer presses
 // Continue, so a mail scanner that opens it cannot use it up. It works for 2 hours and once.
 export function SetPasswordPage() {
+  useDocumentTitle("Set password");
   // Read once, then taken out of the address bar.
   const [tokenHash] = useState(() => readPasswordLink(window.location.search));
   useEffect(() => {

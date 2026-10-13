@@ -8,6 +8,7 @@ import { supabase } from "../lib/supabase";
 import { NARROW_PAPER, READER_GAP, sheetRoom } from "../lib/beside";
 import { useViewportWidth } from "../lib/useViewportWidth";
 import { useWide } from "../lib/layout";
+import { useDocumentTitle } from "../lib/useDocumentTitle";
 import { AllWriting } from "./AllWriting";
 import { BesidePaper } from "./BesidePaper";
 import { EchoesPanel } from "./EchoesPanel";
@@ -84,6 +85,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
   // Desktop or phone, from the app's one breakpoint (lib/layout.ts).
   const wide = useWide();
   const [view, setView] = useState<View>(viewFromAddress);
+  useDocumentTitle({ piece: "Writing", all: "All writing", pictures: "Pictures", profile: "Profile" }[view.kind]);
   // Desktop: the menu stays as the writer left it (until ☰). Echoes opens on every
   // load, so writers always meet it; × hides it for this visit only.
   const [menuOpen, setMenuOpen] = useRememberedOpen("ink-menu-open", false);
