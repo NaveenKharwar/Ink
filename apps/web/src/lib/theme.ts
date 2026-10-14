@@ -46,9 +46,18 @@ export function readScheme(): SchemeChoice {
 export function applyScheme(choice: SchemeChoice) {
   if (choice === "system") delete document.documentElement.dataset.scheme;
   else document.documentElement.dataset.scheme = choice;
+  // Safari keeps the old ground in the side column's layer until a repaint, so the switch asks for one.
+  repaint();
   // The browser's bar follows the ground colour of the chosen scheme.
   const ground = getComputedStyle(document.documentElement).getPropertyValue("--ground").trim();
   if (ground) document.querySelector('meta[name="theme-color"]')?.setAttribute("content", ground);
+}
+
+function repaint() {
+  const root = document.documentElement;
+  root.style.transform = "translateZ(0)";
+  void root.offsetHeight;
+  root.style.transform = "";
 }
 
 /** The choice and a setter. The setter applies the scheme at once and says whether this device could remember it. */
