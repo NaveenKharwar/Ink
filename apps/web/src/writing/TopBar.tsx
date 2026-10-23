@@ -19,6 +19,8 @@ const SAVE_LONG = {
 type Props = {
   wide: boolean;
   season: string;
+  /** When the piece was written and last edited; shown beside the name on desktop (phone shows it in Echoes). */
+  dates: string | null;
   /** The writer's title, if they gave one. */
   title: string | null;
   /** The piece's opening line, shown while it has no title. */
@@ -48,6 +50,7 @@ const iconButton =
 export function TopBar({
   wide,
   season,
+  dates,
   title,
   firstLine,
   onRename,
@@ -86,6 +89,7 @@ export function TopBar({
         ) : (
           <PieceName title={title} firstLine={firstLine} onRename={onRename} />
         )}
+        {wide && !note && dates && <span className="min-w-0 truncate pl-1 text-[13px] text-ink-muted">{dates}</span>}
       </div>
       <div className="flex shrink-0 items-center gap-2 text-[13px] text-ink-muted">
         {wide && save !== "idle" && (

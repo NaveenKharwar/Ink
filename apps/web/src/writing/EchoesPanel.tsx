@@ -18,6 +18,8 @@ type Props = {
   phone?: boolean;
   /** The piece being written; none on screens that are not a piece. */
   pieceId: string | null;
+  /** When the piece was written and last edited, shown at the foot on phone (desktop has it in the top bar). */
+  dates?: string | null;
   /** The piece is already on the server (opened, not a new blank page). */
   exists: boolean;
   seasonSet: SeasonSet;
@@ -47,7 +49,7 @@ const linkClass =
 // nothing close is not shown at all. Below a divider the foot holds the piece's
 // own options: a switch for whether Ink remembers it, then, set apart, Delete. A kept-out piece has no
 // notes, and the panel says so.
-export function EchoesPanel({ phone = false, shown = true, chosen = null, pieceId, exists, seasonSet, reading = [], onClose, onOpenBeside, userId, onDeleted }: Props) {
+export function EchoesPanel({ phone = false, shown = true, chosen = null, pieceId, dates = null, exists, seasonSet, reading = [], onClose, onOpenBeside, userId, onDeleted }: Props) {
   const found = useRelated(pieceId, exists);
   const dismissals = useDismissals(pieceId);
   const [selected, setSelected] = useState<string | null>(null);
@@ -206,6 +208,7 @@ export function EchoesPanel({ phone = false, shown = true, chosen = null, pieceI
       </FadeScroll>
       {pieceId && (found.known || keptOut || found.onServer) && (
         <MenuFoot aria-live="polite" className="px-5 pb-3 pt-2">
+          {phone && dates && <p className="m-0 px-3 pb-1 pt-2 text-[12px] leading-4 text-ink-muted">{dates}</p>}
           {/* Settings first (switches, each with one line of what it does), then any actions, and
               Delete last, set apart. A new option is another row in the right group. */}
           {(found.known || keptOut) && (
