@@ -51,7 +51,8 @@ jobs:
   # (database, sign-in, storage), the real API, and a stand-in embedder. Fails the PR if one writer
   # can reach another's writing, or a bad token gets in.
   api-checks:
-    runs-on: ubuntu-latest
+    # A fixed Ubuntu: the browser tests need one Playwright supports (it does not support 26.04 yet).
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     permissions:
       contents: read
