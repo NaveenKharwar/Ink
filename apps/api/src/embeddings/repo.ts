@@ -12,6 +12,8 @@ export interface EmbeddingsRepo {
   touch(pieceId: string): Promise<void>;
   /** Pieces that should have a vector but have none, or were edited after theirs was made. Newest first. */
   findStale(limit: number): Promise<string[]>;
+  /** Every piece that should have a vector, newest first. */
+  findAll(): Promise<string[]>;
 }
 
 export function pgEmbeddingsRepo(db: pg.Pool): EmbeddingsRepo {
@@ -40,6 +42,12 @@ export function pgEmbeddingsRepo(db: pg.Pool): EmbeddingsRepo {
     },
     async touch(pieceId) {
       await db.query("update piece_embeddings set embedded_at = now() where piece_id = $1", [pieceId]);
+    },
+    async findAll() {
+      const { rows } = await db.query<{ id: string }>(
+        "select id from pieces where include_in_memory and btrim(text) <> '' order by updated_at desc"
+      );
+      return rows.map((r) => r.id);
     },
     async findStale(limit) {
       // The 2 minute margin keeps a piece that was just embedded from counting as stale.
