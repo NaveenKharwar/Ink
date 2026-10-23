@@ -47,7 +47,7 @@ jobs:
       - run: pnpm test
       - run: pnpm build
 
-  # The Bruno privacy and token checks: two writers against a real local Supabase
+  # The database tests and the Bruno privacy and token checks: two writers against a real local Supabase
   # (database, sign-in, storage), the real API, and a stand-in embedder. Fails the PR if one writer
   # can reach another's writing, or a bad token gets in.
   api-checks:
@@ -84,6 +84,11 @@ jobs:
 
       - name: Apply the migrations and create two writers
         run: apps/api/ci/prepare.sh
+
+      # The real repository code against this database (every migration, pgvector, pgroonga):
+      # each test makes its own throwaway writers and deletes them.
+      - name: Database tests
+        run: pnpm --filter @ink/api test:db
 
       - name: Make an expired token
         run: |
