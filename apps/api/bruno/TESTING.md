@@ -8,9 +8,10 @@ The `api-checks` job in `.github/workflows/ci.yml`:
 
 1. Starts a local Supabase (database, sign-in and storage) with the Supabase CLI.
 2. Runs `apps/api/ci/prepare.sh`: applies every migration in order and creates two confirmed writers with throwaway passwords.
-3. Makes an expired token (`apps/api/ci/mint-expired-token.mjs`), starts a stand-in embedder (`apps/api/ci/fake-embedder.ts`: same words, same vector) and the real API.
-4. Runs this whole collection with the Bruno CLI. A request fails the job when its `assert` or `tests` block fails.
-5. Checks that meaning vectors were really made, then posts one short comment on the PR (edited on every run). The full list of checks is on the run page.
+3. Runs the database tests (`pnpm --filter @ink/api test:db`, `apps/api/src/db-tests`): the real repository code against this database, each test with its own throwaway writers. They check at the database level that one writer never reaches another's pieces, search results, Echoes, meaning search, pictures or sign-in sessions, that a deleted piece stays deleted, and that a vector can only be saved under its piece's writer.
+4. Makes an expired token (`apps/api/ci/mint-expired-token.mjs`), starts a stand-in embedder (`apps/api/ci/fake-embedder.ts`: same words, same vector) and the real API.
+5. Runs this whole collection with the Bruno CLI. A request fails the job when its `assert` or `tests` block fails.
+6. Checks that meaning vectors were really made, then posts one short comment on the PR (edited on every run). The full list of checks is on the run page.
 
 If a check fails, the job keeps the API log and the Bruno report as a download (artifact `api-check-logs`, 7 days).
 
@@ -109,3 +110,9 @@ If you want a clean start, put a fresh id (run `uuidgen` in a terminal) into the
 ## What to run, and when
 
 CI runs everything on each PR against a real database, including the second-user and broken-token checks. On your Mac, run folders to look at an answer yourself, and to check what CI cannot: how good the real embedder's answers are (floors, ranking). CI uses a stand-in that only needs shared words.
+
+## Browser tests
+
+After the Bruno collection, the same job builds the web app against the local Supabase, serves it (`vite preview`, port 4173, `/api` sent to the API) and runs the Playwright tests in `apps/web/e2e` in Chromium. They sign in through the real screens as the second writer (email, then "Use your password instead"), so the job keeps Supabase's test mail server running. Every test fails on a Content-Security-Policy block or an uncaught page error. They cover the sign-in page and the colour scheme script under the policy, signing in, writing and deleting a piece, and adding and deleting a picture.
+
+To run them on your own machine against a running preview and API: `pnpm --filter @ink/web e2e`. Without `E2E_EMAIL` and `E2E_PASSWORD` (a throwaway writer) only the signed-out tests run. On failure, CI keeps the Playwright report and traces in the `api-check-logs` artifact.
