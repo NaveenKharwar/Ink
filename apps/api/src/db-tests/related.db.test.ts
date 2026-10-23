@@ -65,8 +65,11 @@ test("Forgotten only records the writer's own pieces as shown", async () => {
 
 test("search by meaning returns only the writer's own close pieces", async () => {
   const [asha, ravi] = [await writer(), await writer()];
-  const mine = await piece(asha, [["Rain all night on the old tin roof"]]);
-  const theirs = await piece(ravi, [["Rain all night on the old tin roof here too"]]);
+  // The app always sets a language; meaning search leaves Hinglish pieces to the words.
+  const mine = await piece(asha, [["Rain all night on the old tin roof"]], { language: "en" });
+  const theirs = await piece(ravi, [["Rain all night on the old tin roof here too"]], { language: "en" });
+  const hinglish = await piece(asha, [["Raat bhar tin ki chhat par baarish"]], { language: "hi-Latn" });
+  await save(hinglish, asha, vector(7));
   await save(mine, asha, vector(7));
   await save(theirs, ravi, vector(7));
   const found = await pgMeaningRepo(db).closeTo(asha, vector(7), [], 0.53, 5);
