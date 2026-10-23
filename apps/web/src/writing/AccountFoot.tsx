@@ -115,6 +115,12 @@ function DeleteWindow({ email, items, wide, timeZone, set, onClose }: { email: s
   const since = oldest ? seasonPlace(new Date(oldest), timeZone, set) : null;
   const pieces = items?.length ?? 0;
   const pictures = pictureList.items?.length ?? 0;
+  // Only what is really there: an empty account gets one plain sentence, not a list.
+  const lost = [
+    ...(pieces > 0 ? [count(pieces, "piece", "pieces")] : []),
+    ...(pictures > 0 ? [count(pictures, "picture", "pictures")] : []),
+    ...(pieces > 1 ? ["what Echoes found between them"] : [])
+  ];
 
   if (send.kind === "sent")
     return (
@@ -134,20 +140,26 @@ function DeleteWindow({ email, items, wide, timeZone, set, onClose }: { email: s
   return (
     <Dialog title="Delete your account?" wide={wide} onClose={onClose} className="w-[460px] h-auto">
       <div className="px-[var(--page-gutter)] pt-5 pb-6 text-[14px] leading-[21px] wide:px-6">
-        <p className="m-0">
-          {since ? (
-            <>
-              You’ve been writing here since <span className="font-medium">{`${since.name} ${since.year}`}</span>. Deleting takes, on every device:
-            </>
-          ) : (
-            "Deleting takes, on every device:"
-          )}
-        </p>
-        <ul className="m-0 mt-2 list-disc pl-5 marker:text-ink-subtle">
-          <li>{pieces > 0 ? count(pieces, "piece", "pieces") : "your account"}</li>
-          {pictures > 0 && <li>{count(pictures, "picture", "pictures")}</li>}
-          {pieces > 1 && <li>what Echoes found between them</li>}
-        </ul>
+        {lost.length > 0 ? (
+          <>
+            <p className="m-0">
+              {since ? (
+                <>
+                  You’ve been writing here since <span className="font-medium">{`${since.name} ${since.year}`}</span>. Deleting takes, on every device:
+                </>
+              ) : (
+                "Deleting takes, on every device:"
+              )}
+            </p>
+            <ul className="m-0 mt-2 list-disc pl-5 marker:text-ink-subtle">
+              {lost.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <p className="m-0">Nothing is written here yet. Deleting removes your account, on every device.</p>
+        )}
         <p className="mt-3 mb-0 text-ink-muted">This can’t be undone.</p>
         {send.kind === "failed" && <p className="mt-3 mb-0 text-[13px] leading-[18px]">{send.message}</p>}
         <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2">
