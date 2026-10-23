@@ -17,12 +17,14 @@ const LINE: Record<number, number> = { 15: 24, 17: 27, 18: 28, 26: 34, 30: 38 };
 export const escape = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 /**
- * The logo and the Lora wordmark at the top of every email, as one picture: email apps don't load
- * Lora. It lives on the website; its alt text keeps "Ink" readable when pictures are off.
+ * The logo and the Lora wordmark at the top left of every email, in line with the text below it, as one
+ * picture: email apps don't load Lora. The picture has 6px of room on its left, so its row starts at 26px
+ * and the logo lines up with the text at 32px. It lives on the website; its alt text keeps "Ink" readable
+ * when pictures are off.
  */
 export const WORDMARK = "https://withink.app/email/wordmark.png";
 export const header = () =>
-  `<tr><td align="center" style="padding:32px 24px 8px 24px;${SANS}font-size:26px;line-height:30px;font-weight:700;color:${INK};"><img src="${WORDMARK}" width="108" height="48" alt="Ink" style="display:block;margin:0 auto;width:108px;height:48px;border:0;"></td></tr>`;
+  `<tr><td align="left" style="padding:32px 32px 8px 26px;${SANS}font-size:26px;line-height:30px;font-weight:700;color:${INK};"><img src="${WORDMARK}" width="108" height="48" alt="Ink" style="display:block;width:108px;height:48px;border:0;"></td></tr>`;
 
 /** The big line under the wordmark. */
 export const title = (html: string, size: 26 | 30 = 26) =>
