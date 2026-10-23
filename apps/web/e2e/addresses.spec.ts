@@ -95,7 +95,7 @@ test("the open picture is in the address (/pictures?id=<id>): Back closes it, a 
   await page.goto(`/pictures?id=${id}`);
   await expect(page.getByRole("dialog", { name: "Picture" })).toBeVisible();
   // Opened from the address, closing has no step to take back: the address just drops the picture.
-  await page.getByRole("button", { name: "Close" }).click();
+  await page.getByRole("dialog", { name: "Picture" }).getByRole("button", { name: "Close", exact: true }).click();
   await expect(page).toHaveURL(/\/pictures$/);
 
   await page.goto("/pictures?id=00000000-0000-4000-8000-000000000000");
