@@ -1,0 +1,8 @@
+# The same packages as requirements.in, for the CI checks on Linux: torch is the CPU-only build of
+# the same version (CI has no GPU). requirements-ci.txt is made from this with hashes.
+sentence-transformers==6.1.0
+torch==2.14.0+cpu
+transformers==5.17.0
+tokenizers==0.23.2
+huggingface-hub==1.33.0
+safetensors==0.8.0
