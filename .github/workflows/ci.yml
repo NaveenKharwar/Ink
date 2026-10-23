@@ -156,6 +156,13 @@ jobs:
               curl -sf http://localhost:4173/all | grep -q '<div id="root"' || { echo "/all did not get the app"; exit 1; }
               code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:4173/api/pieces)
               [ "$code" = 401 ] || { echo "/api/pieces answered $code, expected 401"; exit 1; }
+              # A missing built file is a 404, never the app page.
+              code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:4173/assets/missing.js)
+              [ "$code" = 404 ] || { echo "/assets/missing.js answered $code, expected 404"; exit 1; }
+              # The app page always asks for the latest version; built files are kept for a year.
+              curl -sI http://localhost:4173/ | grep -qi '^cache-control: no-cache' || { echo "/ has no Cache-Control: no-cache"; exit 1; }
+              asset=$(curl -s http://localhost:4173/ | grep -o '/assets/[^"]*\.js' | head -1)
+              curl -sI "http://localhost:4173$asset" | grep -qi '^cache-control: public, max-age=31536000, immutable' || { echo "$asset is not cached for a year"; exit 1; }
               exit 0
             fi
             sleep 1
