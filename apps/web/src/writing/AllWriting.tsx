@@ -1,8 +1,9 @@
-import type { LibraryItem, PieceLanguage } from "@ink/schemas";
-import { useEffect, useRef, useState } from "react";
+import type { LibraryItem, PieceLanguage, PieceStyle } from "@ink/schemas";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ScreenLoader } from "../ui/Loader";
 import { prefersReducedMotion } from "../lib/motion";
 import type { SeasonGroup, SeasonSet } from "../lib/seasons";
+import { STYLE_PLURAL, styleCounts, withStyle } from "../lib/styleFilter";
 import { AdSlot } from "./AdSlot";
 import { FadeScroll } from "../ui/FadeScroll";
 import { CloseIcon, MenuIcon } from "./icons";
@@ -31,8 +32,14 @@ type Props = {
 
 // All writing: every piece, grouped by the season it was written in, newest first.
 // Each row is the writer's own first lines, not a title.
-export function AllWriting({ wide, showMenuButton, onMenu, seasonSet, groups, narrowedTo, onClearNarrowing, onOpen }: Props) {
+export function AllWriting({ wide, showMenuButton, onMenu, seasonSet, groups: all, narrowedTo, onClearNarrowing, onOpen }: Props) {
   const noticed = useNoticed();
+  // The list can be narrowed further to one writing style, with three quiet words under the title.
+  // A style the list holds none of is not offered; one that disappears (another season chosen) lets go.
+  const [style, setStyle] = useState<PieceStyle | null>(null);
+  const counts = useMemo(() => styleCounts(all?.flatMap((g) => g.items) ?? []), [all]);
+  const activeStyle = style && counts.some((c) => c.style === style) ? style : null;
+  const groups = useMemo(() => (all ? withStyle(all, activeStyle) : null), [all, activeStyle]);
   const total = groups?.reduce((n, g) => n + g.items.length, 0) ?? 0;
 
   // Desktop: a column beside the paper lists the seasons and marks the one being read.
@@ -53,8 +60,10 @@ export function AllWriting({ wide, showMenuButton, onMenu, seasonSet, groups, na
           const section = sections.current.get(g.key);
           if (section && section.getBoundingClientRect().top <= top) current = g.key;
         }
-        // At the very end, the last season is the one being read even if it's short.
-        if (el.scrollTop + el.clientHeight >= el.scrollHeight - 2) current = groups[groups.length - 1]!.key;
+        // Scrolled to the very end, the last season is the one being read even if it's short. A list
+        // that fits on the screen doesn't scroll: it is read from its first season.
+        const scrolls = el.scrollHeight > el.clientHeight + 2;
+        if (scrolls && el.scrollTop + el.clientHeight >= el.scrollHeight - 2) current = groups[groups.length - 1]!.key;
         setReading(current);
       });
     };
@@ -80,6 +89,12 @@ export function AllWriting({ wide, showMenuButton, onMenu, seasonSet, groups, na
       top < list.scrollTop + 8 ? top - 40 : bottom > list.scrollTop + list.clientHeight - 8 ? bottom - list.clientHeight + 40 : null;
     if (to !== null) list.scrollTo({ top: Math.max(0, to), behavior: reduce ? "auto" : "smooth" });
   }, [reading]);
+  // The season being read, or the list's first one when that season isn't in it (another style chosen).
+  const readingNow = groups?.length ? (reading && groups.some((g) => g.key === reading) ? reading : groups[0]!.key) : null;
+  // A new style starts the list from its top.
+  useEffect(() => {
+    scroller.current?.scrollTo({ top: 0 });
+  }, [activeStyle]);
   const jumpTo = (key: string) => {
     const reduce = prefersReducedMotion();
     sections.current.get(key)?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
@@ -116,8 +131,34 @@ export function AllWriting({ wide, showMenuButton, onMenu, seasonSet, groups, na
               {total} {total === 1 ? "piece" : "pieces"}
             </div>
           )}
-          {/* Only on the whole list: narrowed to a season or a filter, the list starts under the title. */}
-          {!narrowedTo && groups && total > 0 && noticed && <Noticed noticed={noticed} seasonSet={seasonSet} />}
+          {/* Only when the list holds more than one style: All, then each style it holds with its count. */}
+          {all && counts.length > 1 && (
+            <div role="group" aria-label="Writing style" className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[13px] leading-5">
+              {[{ style: null, label: "All", count: null }, ...counts.map((c) => ({ style: c.style, label: STYLE_PLURAL[c.style], count: c.count }))].map((option) => {
+                const on = option.style === activeStyle;
+                return (
+                  <button
+                    key={option.label}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => {
+                      // The list starts again from its top, so it is read from its first season.
+                      setStyle(option.style);
+                      setReading(null);
+                    }}
+                    className={`touch-44 cursor-pointer border-0 bg-transparent p-0 transition-colors duration-150 motion-reduce:transition-none ${
+                      on ? "font-medium text-ink" : "text-ink-muted hover:text-ink"
+                    } ${focusRing}`}
+                  >
+                    {option.label}
+                    {option.count !== null && <span className="ml-1.5 font-normal text-ink-muted">{option.count}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          {/* Only on the whole list: narrowed to a season, a filter or a style, the list starts under the title. */}
+          {!narrowedTo && !activeStyle && groups && total > 0 && noticed && <Noticed noticed={noticed} seasonSet={seasonSet} />}
           {narrowedTo && (
             <div className="mt-4 flex">
               <button
@@ -140,7 +181,13 @@ export function AllWriting({ wide, showMenuButton, onMenu, seasonSet, groups, na
           {groups && groups.length > 0 && (
             <>
               {groups[0]!.divider && <div className="mt-7 text-center text-[12px] text-ink-muted">{groups[0]!.divider}</div>}
-              <RollingSeason groups={groups} reading={reading ?? groups[0]!.key} first={!groups[0]!.divider} />
+              {/* Keyed by the style, so choosing one shows its first season at once instead of rolling to it. */}
+              <RollingSeason
+                key={activeStyle ?? "all"}
+                groups={groups}
+                reading={readingNow!}
+                first={!groups[0]!.divider}
+              />
             </>
           )}
           {groups?.map((group, i) => (
@@ -198,7 +245,7 @@ export function AllWriting({ wide, showMenuButton, onMenu, seasonSet, groups, na
       {wide && (
         <SideColumn>
           {groups && groups.length > 0 && (
-            <SeasonPainting reading={reading ?? groups[0]!.key} />
+            <SeasonPainting reading={readingNow!} />
           )}
           {groups && groups.length > 0 && (
             <nav aria-label="Seasons on this page" className="mt-6 flex min-h-0 flex-col">
@@ -207,7 +254,7 @@ export function AllWriting({ wide, showMenuButton, onMenu, seasonSet, groups, na
               <FadeScroll ref={seasonList} className="relative -mx-1 min-h-0 px-1">
                 <ul className="m-0 list-none border-l border-line p-0">
                   {groups.map((g) => {
-                    const active = g.key === reading;
+                    const active = g.key === readingNow;
                     return (
                       <li key={g.key}>
                         {g.divider && <div className="pt-2.5 pb-1 pl-4 text-[12px] leading-4 text-ink-muted">{g.divider}</div>}
