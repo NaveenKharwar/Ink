@@ -9,7 +9,10 @@ test("a writer writes a piece, it saves, and they delete it for good", async ({ 
   await expect(page.getByText("Saved", { exact: true })).toBeVisible({ timeout: 15_000 });
   const id = page.url().split("/p/")[1]!;
 
-  await page.getByRole("button", { name: "Show echoes" }).click();
+  // On a wide screen Echoes may already be open (it is remembered); the mark's pressed state says which.
+  const mark = page.getByRole("button", { name: "Show echoes" });
+  if ((await mark.getAttribute("aria-pressed")) !== "true") await mark.click();
+  await expect(mark).toHaveAttribute("aria-pressed", "true");
   await page.getByText("Delete this piece").click();
   await page.getByRole("button", { name: "Delete", exact: true }).click();
   await expect(page.getByText("Piece deleted")).toBeVisible();

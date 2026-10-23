@@ -6,8 +6,10 @@ const SAMPLE = fileURLToPath(new URL("../../api/bruno/4 Pictures/sample.jpg", im
 test("a writer adds a picture, sees it on the Pictures page and deletes it", async ({ page }) => {
   await signIn(page);
   await page.goto("/pictures");
-  const count = async () => Number((await page.getByText(/\d+ pictures? ·/).textContent())?.match(/\d+/)?.[0] ?? 0);
-  await expect(page.getByText(/\d+ pictures? ·/)).toBeVisible();
+  // "0 pictures", or "4 pictures · 1.3 MB" once there are some.
+  const summary = page.getByText(/^\d+ pictures?\b/);
+  const count = async () => Number((await summary.textContent())?.match(/^\d+/)?.[0] ?? -1);
+  await expect(summary).toBeVisible();
   const before = await count();
 
   await page.goto("/");
