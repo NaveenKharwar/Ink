@@ -3,16 +3,25 @@
 // The address holds only random ids, season names, "draft" or "finished" and style names, never any writing.
 import type { PieceStatus, PieceStyle } from "@ink/schemas";
 
-export type Route = { kind: "new" } | { kind: "piece"; id: string } | { kind: "missing" } | { kind: "all" } | { kind: "pictures" } | { kind: "profile" };
+// Any other address is `unknown`: a mistyped address shows "This page isn't here".
+export type Route =
+  | { kind: "new" }
+  | { kind: "piece"; id: string }
+  | { kind: "missing" }
+  | { kind: "all" }
+  | { kind: "pictures" }
+  | { kind: "profile" }
+  | { kind: "unknown" };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function parseRoute(pathname: string): Route {
+  if (pathname === "/" || pathname === "/index.html") return { kind: "new" };
   if (/^\/all\/?$/.test(pathname)) return { kind: "all" };
   if (/^\/pictures\/?$/.test(pathname)) return { kind: "pictures" };
   if (/^\/profile\/?$/.test(pathname)) return { kind: "profile" };
   const match = /^\/p\/([^/]+)\/?$/.exec(pathname);
-  if (!match) return { kind: "new" };
+  if (!match) return { kind: "unknown" };
   return UUID.test(match[1]!) ? { kind: "piece", id: match[1]!.toLowerCase() } : { kind: "missing" };
 }
 

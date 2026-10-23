@@ -146,3 +146,32 @@ test("open search is in the address as ?search, never the words typed: Back clos
   await expect(dialog).toBeHidden();
   await expect(page).toHaveURL(/\/all\?style=notes$/);
 });
+
+test("a mistyped address says the page isn't here and offers a new piece", async ({ page }) => {
+  await signIn(page);
+
+  for (const path of ["/alll", "/profil/x"]) {
+    await page.goto(path);
+    await expect(page.getByText("This page isn't here.")).toBeVisible();
+    await expect(page).toHaveTitle("Not here, Ink");
+    // The address stays as typed until the writer moves on.
+    expect(new URL(page.url()).pathname).toBe(path);
+  }
+
+  await page.getByRole("button", { name: "Write something new" }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.locator(".ProseMirror")).toBeVisible();
+
+  // A piece address with no real id, or an id no piece of this writer has, says the piece isn't
+  // here: with no Echoes (nothing to delete) and nothing marked in the menu.
+  for (const path of ["/p/not-an-id", `/p/${crypto.randomUUID()}`]) {
+    await page.goto(path);
+    await expect(page.getByText("This piece isn't here.")).toBeVisible();
+    await expect(page).toHaveTitle("Not here, Ink");
+    await expect(page.getByRole("button", { name: "Delete this piece" })).toHaveCount(0);
+    const menu = page.getByRole("button", { name: "Open menu" });
+    if (await menu.isVisible()) await menu.click();
+    await expect(page.getByRole("button", { name: /^All writing/ })).toBeVisible();
+    await expect(page.locator('[aria-current="page"]')).toHaveCount(0);
+  }
+});
