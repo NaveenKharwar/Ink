@@ -204,3 +204,41 @@ test("uploads are limited per writer per minute", async () => {
   assert.equal(codes.at(-1), 429);
   assert.equal((await app.inject({ method: "PUT", url: `/api/pictures/${randomUUID()}`, headers: as(RAVI), payload: JPEG })).statusCode, 204);
 });
+
+test("when the file can't be deleted, nothing changes and the picture can be deleted again", async () => {
+  const id = randomUUID();
+  const piece = randomUUID();
+  const uses = new Map([[`${ASHA}/${id}`, [{ id: piece, title: null, text: "Rain on the tin roof" }]]]);
+  const store = memoryPictureStore();
+  let storageDown = true;
+  const flaky = {
+    ...store,
+    delete: async (userId: string, pictureId: string) => {
+      if (storageDown) throw new Error("Storage could not delete the picture (503)");
+      await store.delete(userId, pictureId);
+    }
+  };
+  const app = await buildApp({ repo: noPieces, related: memoryRelatedRepo(noPieces), pictures: { store: flaky, repo: memoryPicturesRepo(uses) }, verify });
+  const as = (userId: string) => ({ authorization: `Bearer token-${userId}`, "content-type": "image/jpeg" });
+  await app.inject({ method: "PUT", url: `/api/pictures/${id}`, headers: as(ASHA), payload: JPEG });
+
+  const failed = await app.inject({ method: "DELETE", url: `/api/pictures/${id}`, headers: as(ASHA) });
+  assert.equal(failed.statusCode, 500);
+  // Still listed, still readable, still used: nothing was kept from the failed delete.
+  assert.deepEqual((await app.inject({ method: "GET", url: "/api/pictures", headers: as(ASHA) })).json().items.map((p: { id: string }) => p.id), [id]);
+  assert.equal((await app.inject({ method: "GET", url: `/api/pictures/${id}`, headers: as(ASHA) })).statusCode, 200);
+  assert.equal((await app.inject({ method: "GET", url: `/api/pictures/${id}/uses`, headers: as(ASHA) })).json().items.length, 1);
+
+  storageDown = false;
+  assert.equal((await app.inject({ method: "DELETE", url: `/api/pictures/${id}`, headers: as(ASHA) })).statusCode, 204);
+  assert.equal((await app.inject({ method: "GET", url: `/api/pictures/${id}`, headers: as(ASHA) })).statusCode, 404);
+  assert.deepEqual((await app.inject({ method: "GET", url: "/api/pictures", headers: as(ASHA) })).json().items, []);
+});
+
+test("another writer's delete never touches the files", async () => {
+  const { app, as } = await setup();
+  const id = randomUUID();
+  await app.inject({ method: "PUT", url: `/api/pictures/${id}`, headers: as(ASHA), payload: JPEG });
+  assert.equal((await app.inject({ method: "DELETE", url: `/api/pictures/${id}`, headers: as(RAVI) })).statusCode, 404);
+  assert.deepEqual((await app.inject({ method: "GET", url: `/api/pictures/${id}`, headers: as(ASHA) })).rawPayload, JPEG);
+});

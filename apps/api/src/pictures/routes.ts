@@ -88,13 +88,13 @@ export function registerPictureRoutes(app: FastifyInstance, store: PictureStore,
     return response;
   });
 
-  // Deleting takes the picture out of every piece that uses it, then removes the file itself.
+  // Deleting takes the picture out of every piece that uses it and removes the file itself, all or
+  // nothing: when the file can't be removed, the picture stays listed and the writer can try again.
   app.delete("/api/pictures/:id", async (request, reply) => {
     const params = idParams.safeParse(request.params);
     if (!params.success) return notFound(reply);
-    const found = await repo.remove(request.userId, params.data.id);
+    const found = await repo.remove(request.userId, params.data.id, () => store.delete(request.userId, params.data.id));
     if (!found) return notFound(reply);
-    await store.delete(request.userId, params.data.id);
     return reply.code(204).send();
   });
 
