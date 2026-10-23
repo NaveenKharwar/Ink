@@ -124,8 +124,28 @@ jobs:
           done
           echo "The web app did not start"; cat web.out.log; exit 1
 
+      # The tests run headless, so they only need Chromium's headless shell. It is kept between runs,
+      # one copy per Playwright version, so a slow download can't hold up the run; the system
+      # libraries it needs are installed every time.
+      - name: Find the Playwright version
+        id: playwright
+        working-directory: apps/web
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Restore Chromium
+        id: chromium
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: chromium-shell-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
       - name: Install Chromium
-        run: pnpm --filter @ink/web exec playwright install --with-deps chromium
+        if: steps.chromium.outputs.cache-hit != 'true'
+        run: pnpm --filter @ink/web exec playwright install --with-deps --only-shell chromium
+
+      - name: Install Chromium's system libraries
+        if: steps.chromium.outputs.cache-hit == 'true'
+        run: pnpm --filter @ink/web exec playwright install-deps chromium
 
       - name: Browser tests
         env:
