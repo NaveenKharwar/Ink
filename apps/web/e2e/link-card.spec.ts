@@ -3,10 +3,16 @@ import { expect, signIn, test } from "./watch";
 // The link card opens a link only for web pages and email; any other address is plain words.
 test("the link card follows web and mail links, and shows any other address as plain words", async ({ page }) => {
   await signIn(page);
-  await page.getByRole("group", { name: "How do you want to write?" }).getByText("Notes", { exact: true }).click();
+  // A narrow page shows one painting with three small windows under it (a window chooses the
+  // style); a wide one shows three cards side by side (a card chooses and starts the piece).
+  const styles = page.getByRole("group", { name: "How do you want to write?" });
+  const window = styles.locator("button[aria-pressed]").filter({ hasText: "Notes" });
+  if (await window.count()) await window.click();
+  else await styles.getByRole("button", { name: /^Notes/ }).click();
   await page.locator(".ProseMirror").click();
   await page.keyboard.type("Link test web mail script");
   await expect(page).toHaveURL(/\/p\/[0-9a-f-]{36}$/);
+  await expect(page.getByRole("button", { name: "Writing style: Notes" })).toBeVisible();
 
   // A web address, the way a writer adds one: select the word, the tool bar's Link, type, Enter.
   const select = (word: string) =>
