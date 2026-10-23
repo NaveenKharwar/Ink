@@ -54,3 +54,34 @@ test("a long search lets other work run while it reads", async () => {
   assert.ok(took > 100, `the search should take a while here (took ${took.toFixed(0)} ms)`);
   assert.ok(longestWait < 60, `other work waited ${longestWait.toFixed(0)} ms`);
 });
+
+test("remembering pairs and pausing find the same pieces in the same order as scoring each piece alone", async () => {
+  // Made-up words in Latin and Devanagari, some pieces with titles, some long.
+  const syllables = ["ka", "ri", "mo", "sel", "ten", "dar", "vu", "lin", "op", "nor", "bel", "sun", "चा", "नी", "रा"];
+  let seed = 11;
+  const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+  const word = () => Array.from({ length: 2 + Math.floor(rnd() * 3) }, () => syllables[Math.floor(rnd() * syllables.length)]).join("");
+  const text = (words: number) => Array.from({ length: words }, () => word() + (rnd() < 0.1 ? "\n" : " ")).join("");
+  const pieces = Array.from({ length: 300 }, (_, i) => ({ title: rnd() < 0.3 ? word() : null, text: text(i % 10 === 0 ? 1500 : 120) }));
+  const typo = (w: string) => { const a = [...w]; a[Math.floor(rnd() * a.length)] = "x"; return a.join(""); };
+
+  // The way the search worked before: every piece scored on its own, nothing remembered.
+  const alone = (words: ReturnType<typeof searchWords>) =>
+    pieces
+      .map((piece, order) => ({ piece, order, score: nearScore(piece.title ? `${piece.title}\n${piece.text}` : piece.text, words) }))
+      .filter((s): s is { piece: (typeof pieces)[number]; order: number; score: number } => s.score !== null)
+      .sort((a, b) => a.score - b.score || a.order - b.order)
+      .slice(0, 20)
+      .map((s) => s.piece);
+
+  let found = 0;
+  for (let q = 0; q < 60; q++) {
+    const from = pieces[Math.floor(rnd() * pieces.length)]!.text.split(/\s+/).filter((w) => [...w].length >= 4);
+    const words = searchWords(Array.from({ length: 1 + Math.floor(rnd() * 3) }, () => typo(from[Math.floor(rnd() * from.length)] ?? "zzzz")).join(" "));
+    if (words.even.every((w) => allowedTypos([...w].length) === 0)) continue;
+    const expected = alone(words);
+    assert.deepEqual(await nearest(pieces, words, 20), expected);
+    if (expected.length) found += 1;
+  }
+  assert.ok(found > 20, `most searches should find something (${found})`);
+});
