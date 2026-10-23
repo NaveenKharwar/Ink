@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 const LINES = [
-  "Write in Hindi, English, or somewhere between.",
+  "Write in whatever language your words come in.",
   "Ink remembers what you wrote last monsoon.",
   "It quietly finds the pieces that belong together.",
   "An old line can still answer a new one.",
