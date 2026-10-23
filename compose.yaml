@@ -29,7 +29,7 @@ services:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
-    env_file: .env
+    env_file: ${INK_ENV_FILE:-.env}
     environment:
       PORT: "3001"
       DATABASE_SSL_CA: /certs/database-ca.crt
