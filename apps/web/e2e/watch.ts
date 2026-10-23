@@ -28,10 +28,17 @@ export async function signIn(page: Page) {
     if (process.env.E2E_REQUIRE_SIGN_IN) throw new Error("E2E_EMAIL and E2E_PASSWORD are not set");
     test.skip(true, "Set E2E_EMAIL and E2E_PASSWORD (a throwaway writer) to run the signed-in tests");
   }
+  // The page's clock runs as usual, but can be moved on.
+  await page.clock.install();
   await page.goto("/");
   await page.getByPlaceholder("the.one.who.writes@example.com").fill(email!);
   await page.getByRole("button", { name: "Start writing" }).click();
-  await page.getByRole("button", { name: "Use your password instead" }).click();
+  // "Use your password instead" shows once the 20-second wait for a new code is over. Skip the wait
+  // a second at a time: each tick of the countdown sets the next one only after the page redraws.
+  await expect(page.getByText("You can ask for a new code in")).toBeVisible();
+  const usePassword = page.getByRole("button", { name: "Use your password instead" });
+  for (let s = 0; s < 30 && !(await usePassword.isVisible()); s++) await page.clock.runFor(1_000);
+  await usePassword.click();
   await page.locator("#auth-password").fill(password!);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).toHaveTitle(/Writing, Ink/, { timeout: 20_000 });
