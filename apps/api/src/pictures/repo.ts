@@ -14,8 +14,12 @@ export interface PicturesRepo {
   list(userId: string): Promise<PictureSummary[]>;
   /** The writer's pieces that use the picture (cover or text), newest first. */
   uses(userId: string, id: string): Promise<PictureUse[]>;
-  /** Takes the picture out of every piece that uses it and forgets it. False if it wasn't the writer's. */
-  remove(userId: string, id: string): Promise<boolean>;
+  /**
+   * Takes the picture out of every piece that uses it and forgets it. False if it wasn't the writer's.
+   * `deleteFiles` runs before anything is kept: if it fails, nothing changes and the picture is still
+   * listed, so the writer can try again. A file is never left behind without its picture.
+   */
+  remove(userId: string, id: string, deleteFiles: () => Promise<void>): Promise<boolean>;
 }
 
 export const PICTURE_LIST_LIMIT = 2000;
@@ -60,7 +64,7 @@ export function pgPicturesRepo(db: pg.Pool): PicturesRepo {
       return rows;
     },
 
-    async remove(userId, id) {
+    async remove(userId, id, deleteFiles) {
       const client = await db.connect();
       try {
         await client.query("begin");
@@ -90,8 +94,13 @@ export function pgPicturesRepo(db: pg.Pool): PicturesRepo {
           );
         }
         const deleted = await client.query("delete from pictures where user_id = $1 and id = $2", [userId, id]);
+        if ((deleted.rowCount ?? 0) === 0 && rows.length === 0) {
+          await client.query("rollback");
+          return false;
+        }
+        await deleteFiles();
         await client.query("commit");
-        return (deleted.rowCount ?? 0) > 0 || rows.length > 0;
+        return true;
       } catch (err) {
         await client.query("rollback").catch(() => undefined);
         throw err;
@@ -125,11 +134,13 @@ export function memoryPicturesRepo(uses = new Map<string, PictureUse[]>()): Pict
     async uses(userId, id) {
       return uses.get(`${userId}/${id}`) ?? [];
     },
-    async remove(userId, id) {
+    async remove(userId, id, deleteFiles) {
       const key = `${userId}/${id}`;
-      const found = rows.delete(key) || uses.has(key);
+      if (!rows.has(key) && !uses.has(key)) return false;
+      await deleteFiles();
+      rows.delete(key);
       uses.delete(key);
-      return found;
+      return true;
     }
   };
 }

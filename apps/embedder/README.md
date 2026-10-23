@@ -24,14 +24,24 @@ curl -s localhost:8001/health
 curl -s localhost:8001/embed -d '{"texts":["a quiet morning"]}' | head -c 120
 ```
 
-The part splitting has its own tests (they use the model's tokenizer):
+## Tests
+
+`test_parts.py` checks the part splitting with the model's own tokenizer. `test_model.py` checks the
+embedder with the real model through its own HTTP route: vector size and length, same text same
+vector, close meanings closer, bad requests and a wrong secret refused, a text that fits gets the
+vector the model gives it whole, and the end of a long piece counts.
 
 ```bash
-python -m unittest test_parts
+python -m unittest discover -v -p "test_*.py"
 ```
 
-After the way vectors are made changes, make every piece's vector again with the API's command
-(it needs `EMBEDDER_URL` and logs piece ids only):
+CI runs every `test_*.py` here when a pull request changes the embedder (`.github/workflows/embedder.yml`).
+It installs `requirements-ci.txt`: the same versions with hashes, torch as its CPU-only build for Linux.
+When `requirements.txt` changes, remake `requirements-ci.txt` too (the command is at its top).
+
+## After the way vectors are made changes
+
+Make every piece's vector again with the API's command (it needs `EMBEDDER_URL` and logs piece ids only):
 
 ```bash
 pnpm --filter @ink/api embed:rebuild
