@@ -106,3 +106,43 @@ test("the open picture is in the address (/pictures?id=<id>): Back closes it, a 
   const res = await page.request.delete(`/api/pictures/${id}`, { headers: { Authorization: `Bearer ${await token(page)}` } });
   expect(res.status()).toBe(204);
 });
+
+test("open search is in the address as ?search, never the words typed: Back closes it, a piece from it replaces it", async ({ page }) => {
+  await signIn(page);
+  const word = `searchaddress${Date.now()}`;
+  const id = await write(page, "Notes", `A search address note ${word}`);
+
+  await page.goto("/all?style=notes");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  const dialog = page.getByRole("dialog", { name: "Search your writing" });
+
+  // Opening adds one step; typing never reaches the address.
+  await page.keyboard.press("ControlOrMeta+k");
+  await expect(dialog).toBeVisible();
+  await expect(page).toHaveURL(/\/all\?style=notes&search$/);
+  await dialog.getByRole("combobox", { name: "Search" }).fill(word);
+  await expect(dialog.getByRole("option").first()).toContainText(word);
+  expect(page.url()).not.toContain(word);
+
+  // Back closes search and keeps the list as it was.
+  await page.goBack();
+  await expect(dialog).toBeHidden();
+  await expect(page).toHaveURL(/\/all\?style=notes$/);
+
+  // A piece opened from search takes the search step's place: Back returns to the list without search.
+  await page.keyboard.press("ControlOrMeta+k");
+  await dialog.getByRole("combobox", { name: "Search" }).fill(word);
+  await dialog.getByRole("option").first().click();
+  await expect(page).toHaveURL(new RegExp(`/p/${id}$`));
+  await page.goBack();
+  await expect(page).toHaveURL(/\/all\?style=notes$/);
+  await expect(dialog).toBeHidden();
+
+  // A refresh with ?search opens an empty search; closing it takes ?search out of the address.
+  await page.goto("/all?style=notes&search");
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("combobox", { name: "Search" })).toHaveValue("");
+  await dialog.getByRole("button", { name: "Close search" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page).toHaveURL(/\/all\?style=notes$/);
+});

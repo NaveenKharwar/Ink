@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { allAddress, parseAllQuery, parsePictureQuery, parseRoute, pictureAddress, pieceAddress } from "./route";
+import { allAddress, parseAllQuery, parsePictureQuery, parseRoute, pictureAddress, pieceAddress, searchIsOpen, withSearch } from "./route";
 
 const ID = "3f0c7a52-8b1e-4d2a-9c3e-5a6b7c8d9e01";
 
@@ -70,3 +70,16 @@ test("one open picture is in the Pictures address as ?id=", () => {
   assert.equal(parsePictureQuery("?id=not-an-id"), null);
   assert.equal(parsePictureQuery(""), null);
 });
+
+test("search open is one word in the address, never what was typed", () => {
+  assert.equal(withSearch("", true), "?search");
+  assert.equal(withSearch("?style=notes", true), "?style=notes&search");
+  assert.equal(withSearch("?style=notes&search", true), "?style=notes&search");
+  assert.equal(withSearch("?style=notes&search", false), "?style=notes");
+  assert.equal(withSearch("?search", false), "");
+  assert.equal(searchIsOpen("?filter=draft&search"), true);
+  assert.equal(searchIsOpen("?filter=draft"), false);
+  // The rest of the address still reads the same with search open.
+  assert.deepEqual(parseAllQuery("?style=notes&search"), { season: null, filter: null, style: "notes" });
+});
+

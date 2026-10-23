@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import type { PieceStatus, PieceStyle, RelatedNote } from "@ink/schemas";
 import { TETHER_VISITS, countTetherVisit, type Account } from "../lib/account";
 import { sync } from "../lib/localSave";
-import { allAddress, PICTURES, PROFILE, parseAllQuery, parseRoute, pieceAddress } from "../lib/route";
+import { allAddress, PICTURES, PROFILE, parseAllQuery, parseRoute, pieceAddress, searchIsOpen, withSearch } from "../lib/route";
 import { deviceTimeZone, groupBySeason, resolveSeasonSet, seasonText } from "../lib/seasons";
 import { supabase } from "../lib/supabase";
 import { NARROW_PAPER, READER_GAP, sheetRoom } from "../lib/beside";
@@ -94,7 +94,22 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
   // load, so writers always meet it; × hides it for this visit only.
   const [menuOpen, setMenuOpen] = useRememberedOpen("ink-menu-open", false);
   const [panelOpen, setPanelOpen] = useState(true);
-  const [searchOpen, setSearchOpen] = useState(false);
+  // Search open is in the address (`search`, never the words): opening it adds a history step, so
+  // Back, Escape or × closes it; a refresh or a link opens it again, empty.
+  const [searchOpen, setSearchOpen] = useState(() => searchIsOpen(window.location.search));
+  const openSearch = useCallback(() => {
+    if (!searchIsOpen(window.location.search)) {
+      window.history.pushState({ inkSearch: true }, "", window.location.pathname + withSearch(window.location.search, true));
+    }
+    setSearchOpen(true);
+  }, []);
+  const closeSearch = () => {
+    if ((window.history.state as { inkSearch?: boolean } | null)?.inkSearch) window.history.back();
+    else {
+      window.history.replaceState(null, "", window.location.pathname + withSearch(window.location.search, false));
+      setSearchOpen(false);
+    }
+  };
   const [pos, setPos] = useState<PhonePos>("page");
   // The piece being written; the desktop layout and the older pieces being read belong to it.
   const openPieceId = view.kind === "piece" ? view.target.id : null;
@@ -125,6 +140,8 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
   // Moving to another screen adds a step to the history; narrowing All writing again replaces the
   // step, so Back leaves the list instead of undoing each choice.
   const go = (address: string, next: View, replace = false) => {
+    // Leaving from the search it opened takes that step's place, so Back returns to the page searched from.
+    if ((window.history.state as { inkSearch?: boolean } | null)?.inkSearch) replace = true;
     if (window.location.pathname + window.location.search !== address) {
       if (replace) window.history.replaceState(null, "", address);
       else window.history.pushState(null, "", address);
@@ -187,7 +204,10 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
 
   // Back and forward move between pieces and All writing.
   useEffect(() => {
-    const onPop = () => setView(viewFromAddress());
+    const onPop = () => {
+      setView(viewFromAddress());
+      setSearchOpen(searchIsOpen(window.location.search));
+    };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
@@ -264,12 +284,12 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
         shell.toggleMenu();
       } else if (mod && e.key.toLowerCase() === "k") {
         e.preventDefault();
-        setSearchOpen(true);
+        openSearch();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [wide, shell.toggleMenu]);
+  }, [wide, shell.toggleMenu, openSearch]);
 
   // Seasons follow the device's time zone unless the writer chose a set in Profile.
   const timeZone = deviceTimeZone();
@@ -337,7 +357,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
     activeFilter,
     counts,
     loaded: library.items !== null,
-    onSearch: () => setSearchOpen(true),
+    onSearch: openSearch,
     onWrite: newPiece,
     onAll: () => openAll(),
     onPictures: openPictures,
@@ -407,7 +427,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
     );
 
   const search = searchOpen && (
-    <SearchDialog wide={wide} recent={recent} seasonSet={seasonSet} onOpen={openPiece} onClose={() => setSearchOpen(false)} />
+    <SearchDialog wide={wide} recent={recent} seasonSet={seasonSet} onOpen={openPiece} onClose={closeSearch} />
   );
 
   // Phone: the part of the screen actually showing (the keyboard can cover the rest).

@@ -63,3 +63,16 @@ export function parsePictureQuery(search: string): string | null {
 }
 
 export const pictureAddress = (id: string) => `${PICTURES}?id=${id}`;
+
+// Search open over any page: `search` is added to that page's address (no words, ever: what the
+// writer types stays out of the address, history and logs), so a phone's Back closes it.
+export const searchIsOpen = (search: string) => new URLSearchParams(search).has("search");
+
+export function withSearch(search: string, open: boolean): string {
+  const params = new URLSearchParams(search);
+  params.delete("search");
+  const rest = params.toString();
+  if (!open) return rest ? `?${rest}` : "";
+  return rest ? `?${rest}&search` : "?search";
+}
+
