@@ -2,7 +2,7 @@ import type { PictureSummary, PictureUsesResponse } from "@ink/schemas";
 import { useEffect, useState, type DragEvent } from "react";
 import { pictures as picturesApi } from "../lib/api";
 import { addPicture, choosePicture, forgetPicture, formatBytes, ON_PICTURES_PAGE, PictureError, PICTURE_MESSAGES, usePicture, usePictureList } from "../lib/pictures";
-import { parsePictureQuery, pictureAddress, PICTURES } from "../lib/route";
+import { parseRoute, pictureAddress, PICTURES } from "../lib/route";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { Loader, ScreenLoader } from "../ui/Loader";
@@ -29,17 +29,23 @@ type Props = {
  */
 export function PicturesPage({ wide, showMenuButton, onMenu, seasonOf, onOpenPiece }: Props) {
   const list = usePictureList();
-  // The open picture is in the address (`?picture=<id>`): opening one adds a step to the history,
+  // The open picture is in the address (`/pictures/<id>`): opening one adds a step to the history,
   // so Back closes it, and a refresh or a link opens it again.
-  const [openId, setOpenId] = useState<string | null>(() => parsePictureQuery(window.location.search));
+  const pictureInAddress = () => {
+    const route = parseRoute(window.location.pathname);
+    return route.kind === "pictures" ? route.picture : null;
+  };
+  const [openId, setOpenId] = useState<string | null>(pictureInAddress);
   useEffect(() => {
-    const onPop = () => setOpenId(parsePictureQuery(window.location.search));
+    const onPop = () => setOpenId(pictureInAddress());
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
   const open: PictureSummary | null = (openId && list.items?.find((p) => p.id === openId)) || null;
   // A picture that isn't the writer's (deleted, or never theirs) leaves the grid as it is.
   useEffect(() => {
+    // `/pictures/<not an id>` is the grid: the address says so too.
+    if (!openId && /^\/pictures\/[^/]+/.test(window.location.pathname)) window.history.replaceState(null, "", PICTURES);
     if (openId && list.items && !list.items.some((p) => p.id === openId)) {
       window.history.replaceState(null, "", PICTURES);
       setOpenId(null);

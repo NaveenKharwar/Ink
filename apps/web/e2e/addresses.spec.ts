@@ -57,6 +57,13 @@ test("All writing keeps its narrowing in the address through refresh and Back", 
   await expect(page).toHaveURL(/\/all\?filter=draft&style=notes$/);
   await expect(page.getByRole("group", { name: "Writing style" }).getByRole("button", { name: /^Notes/ })).toHaveAttribute("aria-pressed", "true");
 
+  // A list with one style still shows its words, and a chosen style it doesn't hold leaves the address.
+  await page.getByRole("group", { name: "Writing style" }).getByRole("button", { name: /^Poems/ }).click();
+  await expect(page).toHaveURL(/\/all\?filter=draft&style=poem$/);
+  await page.goto(`/all?season=2020-winter&style=notes`);
+  await expect(page).toHaveURL(/\/all\?season=2020-winter$/);
+  await page.goBack();
+
   // Choosing again replaced the step: Back leaves All writing instead of undoing each choice.
   await page.goBack();
   await expect(page).not.toHaveURL(/\/all/);
@@ -67,7 +74,7 @@ test("All writing keeps its narrowing in the address through refresh and Back", 
   }
 });
 
-test("the open picture is in the address: Back closes it, a refresh opens it, an unknown one shows the grid", async ({ page }) => {
+test("the open picture is in the address (/pictures/<id>): Back closes it, a refresh opens it, an unknown one shows the grid", async ({ page }) => {
   await signIn(page);
   await page.goto("/pictures");
   await expect(page.getByText(/^\d+ pictures?\b/)).toBeVisible();
@@ -78,20 +85,20 @@ test("the open picture is in the address: Back closes it, a refresh opens it, an
   const id = (await uploaded).url().match(/pictures\/([0-9a-f-]{36})/)![1]!;
 
   await page.getByRole("button", { name: "Open picture" }).first().click();
-  await expect(page).toHaveURL(new RegExp(`/pictures\\?picture=${id}$`));
+  await expect(page).toHaveURL(new RegExp(`/pictures/${id}$`));
   await expect(page.getByRole("dialog", { name: "Picture" })).toBeVisible();
 
   await page.goBack();
   await expect(page).toHaveURL(/\/pictures$/);
   await expect(page.getByRole("dialog")).toHaveCount(0);
 
-  await page.goto(`/pictures?picture=${id}`);
+  await page.goto(`/pictures/${id}`);
   await expect(page.getByRole("dialog", { name: "Picture" })).toBeVisible();
   // Opened from the address, closing has no step to take back: the address just drops the picture.
   await page.getByRole("button", { name: "Close" }).click();
   await expect(page).toHaveURL(/\/pictures$/);
 
-  await page.goto("/pictures?picture=00000000-0000-4000-8000-000000000000");
+  await page.goto("/pictures/00000000-0000-4000-8000-000000000000");
   await expect(page.getByText(/^\d+ pictures?\b/)).toBeVisible();
   await expect(page).toHaveURL(/\/pictures$/);
   await expect(page.getByRole("dialog")).toHaveCount(0);

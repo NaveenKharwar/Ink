@@ -1,15 +1,24 @@
 // Where the writer is: a blank page at `/`, one piece at `/p/<id>`, All writing at `/all`,
-// their Pictures at `/pictures`, or their Profile at `/profile`.
+// their Pictures at `/pictures` (one picture open at `/pictures/<id>`), or their Profile at `/profile`.
 // The address holds only random ids, season names, "draft" or "finished" and style names, never any writing.
 import type { PieceStatus, PieceStyle } from "@ink/schemas";
 
-export type Route = { kind: "new" } | { kind: "piece"; id: string } | { kind: "missing" } | { kind: "all" } | { kind: "pictures" } | { kind: "profile" };
+export type Route =
+  | { kind: "new" }
+  | { kind: "piece"; id: string }
+  | { kind: "missing" }
+  | { kind: "all" }
+  | { kind: "pictures"; picture: string | null }
+  | { kind: "profile" };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function parseRoute(pathname: string): Route {
   if (/^\/all\/?$/.test(pathname)) return { kind: "all" };
-  if (/^\/pictures\/?$/.test(pathname)) return { kind: "pictures" };
+  if (/^\/pictures\/?$/.test(pathname)) return { kind: "pictures", picture: null };
+  // One picture open over the grid; anything that isn't an id is just the grid.
+  const picture = /^\/pictures\/([^/]+)\/?$/.exec(pathname);
+  if (picture) return { kind: "pictures", picture: UUID.test(picture[1]!) ? picture[1]!.toLowerCase() : null };
   if (/^\/profile\/?$/.test(pathname)) return { kind: "profile" };
   const match = /^\/p\/([^/]+)\/?$/.exec(pathname);
   if (!match) return { kind: "new" };
@@ -56,10 +65,5 @@ export function allAddress({ season = null, filter = null, style = null }: Parti
   return query ? `${ALL_WRITING}?${query}` : ALL_WRITING;
 }
 
-// The picture open on the Pictures page: `/pictures?picture=<id>`.
-export function parsePictureQuery(search: string): string | null {
-  const id = new URLSearchParams(search).get("picture");
-  return id && UUID.test(id) ? id.toLowerCase() : null;
-}
-
-export const pictureAddress = (id: string) => `${PICTURES}?picture=${id}`;
+// One picture open on the Pictures page.
+export const pictureAddress = (id: string) => `${PICTURES}/${id}`;

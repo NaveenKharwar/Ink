@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { allAddress, parseAllQuery, parsePictureQuery, parseRoute, pictureAddress, pieceAddress } from "./route";
+import { allAddress, parseAllQuery, parseRoute, pictureAddress, pieceAddress } from "./route";
 
 const ID = "3f0c7a52-8b1e-4d2a-9c3e-5a6b7c8d9e01";
 
@@ -33,10 +33,15 @@ test("/profile is the writer's Profile", () => {
   assert.deepEqual(parseRoute("/profiles"), { kind: "new" });
 });
 
-test("/pictures is the writer's Pictures", () => {
-  assert.deepEqual(parseRoute("/pictures"), { kind: "pictures" });
-  assert.deepEqual(parseRoute("/pictures/"), { kind: "pictures" });
-  assert.deepEqual(parseRoute("/pictures/x"), { kind: "new" });
+test("/pictures is the writer's Pictures, and /pictures/<id> one picture open over them", () => {
+  assert.deepEqual(parseRoute("/pictures"), { kind: "pictures", picture: null });
+  assert.deepEqual(parseRoute("/pictures/"), { kind: "pictures", picture: null });
+  assert.deepEqual(parseRoute(pictureAddress(ID)), { kind: "pictures", picture: ID });
+  assert.deepEqual(parseRoute(`/pictures/${ID.toUpperCase()}/`), { kind: "pictures", picture: ID });
+  assert.equal(pictureAddress(ID), `/pictures/${ID}`);
+  // Not an id: just the grid.
+  assert.deepEqual(parseRoute("/pictures/x"), { kind: "pictures", picture: null });
+  assert.deepEqual(parseRoute(`/pictures/${ID}/extra`), { kind: "new" });
 });
 
 test("All writing's narrowing is read from the address", () => {
@@ -61,11 +66,4 @@ test("All writing's address holds only what it is narrowed to", () => {
   for (const q of [{ season: "2026-Monsoon", style: "notes" as const }, { filter: "draft" as const }]) {
     assert.deepEqual(parseAllQuery(allAddress(q).replace("/all", "")), { season: null, filter: null, style: null, ...q });
   }
-});
-
-test("the open picture is read from the Pictures address", () => {
-  assert.equal(parsePictureQuery(pictureAddress(ID).replace("/pictures", "")), ID);
-  assert.equal(parsePictureQuery(`?picture=${ID.toUpperCase()}`), ID);
-  assert.equal(parsePictureQuery("?picture=not-an-id"), null);
-  assert.equal(parsePictureQuery(""), null);
 });

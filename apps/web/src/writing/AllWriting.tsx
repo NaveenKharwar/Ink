@@ -37,10 +37,14 @@ type Props = {
 // Each row is the writer's own first lines, not a title.
 export function AllWriting({ wide, showMenuButton, onMenu, seasonSet, groups: all, narrowedTo, onClearNarrowing, style, onStyle, onOpen }: Props) {
   const noticed = useNoticed();
-  // The list can be narrowed further to one writing style, with three quiet words under the title.
-  // A style the list holds none of is not offered; one that disappears (another season chosen) lets go.
+  // The list can be narrowed further to one writing style, with quiet words under the title: All,
+  // then each style this list holds. A chosen style the list holds none of (another season or
+  // Drafts and Finished chosen) lets go, and leaves the address too.
   const counts = useMemo(() => styleCounts(all?.flatMap((g) => g.items) ?? []), [all]);
   const activeStyle = style && counts.some((c) => c.style === style) ? style : null;
+  useEffect(() => {
+    if (all && style && !activeStyle) onStyle(null);
+  }, [all, style, activeStyle, onStyle]);
   const groups = useMemo(() => (all ? withStyle(all, activeStyle) : null), [all, activeStyle]);
   const total = groups?.reduce((n, g) => n + g.items.length, 0) ?? 0;
 
@@ -133,8 +137,8 @@ export function AllWriting({ wide, showMenuButton, onMenu, seasonSet, groups: al
               {total} {total === 1 ? "piece" : "pieces"}
             </div>
           )}
-          {/* Only when the list holds more than one style: All, then each style it holds with its count. */}
-          {all && counts.length > 1 && (
+          {/* All, then each style this list holds with its count (even when it holds only one). */}
+          {all && counts.length > 0 && (
             <div role="group" aria-label="Writing style" className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[13px] leading-5">
               {[{ style: null, label: "All", count: null }, ...counts.map((c) => ({ style: c.style, label: STYLE_PLURAL[c.style], count: c.count }))].map((option) => {
                 const on = option.style === activeStyle;
