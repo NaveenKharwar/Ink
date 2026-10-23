@@ -9,7 +9,7 @@
     "start": "node dist/server.js",
     "search:rebuild": "tsx --env-file=../../.env src/scripts/rebuild-search-text.ts",
     "embed:rebuild": "tsx --env-file=../../.env src/scripts/rebuild-embeddings.ts",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json",
     "test:db": "tsx --test --test-concurrency=1 src/db-tests/*.db.test.ts",
     "lint": "echo \"(lint not configured yet)\"",
     "test": "tsx --test src/pieces/routes.test.ts src/pieces/fold.test.ts src/pieces/typo.test.ts src/pictures/routes.test.ts src/related/routes.test.ts src/rate-limit.test.ts src/auth.test.ts src/embeddings/embeddings.test.ts src/embeddings/embed-piece.test.ts"

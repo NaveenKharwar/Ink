@@ -42,7 +42,7 @@ function memoryRepo(): PiecesRepo {
       if (!row && request.update) {
         const now = tick();
         row = {
-          id, userId, title: null, content: { type: "doc" }, text: "", status: "draft", language: null,
+          id, userId, title: null, content: { type: "doc" }, text: "", status: "draft", language: null, style: null,
           isFragment: false, includeInMemory: true, createdAt: now, updatedAt: now, ydoc: new Uint8Array()
         };
         rows.set(id, row);
@@ -108,9 +108,10 @@ function memoryRepo(): PiecesRepo {
     async update(userId, id, patch) {
       const row = rows.get(id);
       if (!row || row.userId !== userId) return null;
-      const next = { ...row, ...patch, title: patch.title === "" ? null : patch.title === undefined ? row.title : patch.title, updatedAt: row.updatedAt };
-      rows.set(id, next as Row);
-      return strip(next as Row);
+      // Flags only: the title is part of the document and changes by syncing.
+      const next: Row = { ...row, ...patch, updatedAt: row.updatedAt };
+      rows.set(id, next);
+      return strip(next);
     }
   };
 }
@@ -244,7 +245,7 @@ test("two devices that both wrote keep both, nothing is overwritten", async () =
   });
   Y.applyUpdate(phone.ydoc, fromBase64(opened.json().update));
   assert.equal(phone.text(), "The kettle clicks off");
-  let phoneKnown = fromBase64(opened.json().stateVector);
+  let phoneKnown: Uint8Array | null = fromBase64(opened.json().stateVector);
 
   // Both write, the laptop is the forgotten one that saves last.
   phone.write(["from the phone"]);
