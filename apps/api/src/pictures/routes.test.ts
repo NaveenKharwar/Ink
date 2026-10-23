@@ -4,7 +4,7 @@ import { test } from "node:test";
 import { buildApp } from "../app.js";
 import type { VerifyToken } from "../auth.js";
 import type { PiecesRepo } from "../pieces/repo.js";
-import { PICTURE_MAX_BYTES, sniffPicture } from "./routes.js";
+import { PICTURE_MAX_BYTES, PICTURE_SPACE_BYTES, SMALL_MAX_BYTES, sniffPicture } from "./routes.js";
 import { memoryPicturesRepo, type PictureUse } from "./repo.js";
 import { memoryRelatedRepo } from "../related/repo.js";
 import { memoryPictureStore } from "./store.js";
@@ -26,9 +26,10 @@ const WEBP = Buffer.concat([Buffer.from("RIFF"), Buffer.alloc(4), Buffer.from("W
 const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(64)]);
 
 async function setup(uses = new Map<string, PictureUse[]>()) {
-  const app = await buildApp({ repo: noPieces, related: memoryRelatedRepo(noPieces), pictures: { store: memoryPictureStore(), repo: memoryPicturesRepo(uses) }, verify });
+  const pictures = memoryPicturesRepo(uses);
+  const app = await buildApp({ repo: noPieces, related: memoryRelatedRepo(noPieces), pictures: { store: memoryPictureStore(), repo: pictures }, verify });
   const as = (userId: string, type = "image/jpeg") => ({ authorization: `Bearer token-${userId}`, "content-type": type });
-  return { app, as };
+  return { app, as, pictures };
 }
 
 test("pictures are recognised by their bytes, not by what the request claims", () => {
@@ -139,12 +140,15 @@ test("a picture has a small copy for grids and a tiny preview in the list; delet
   const { app, as } = await setup();
   const id = randomUUID();
   const preview = "data:image/webp;base64,UklGRhIAAABXRUJQVlA4TAYAAAAvAAAAAAfQ//73v/+BiOh/AAA=";
-  const small = await app.inject({ method: "PUT", url: `/api/pictures/${id}?size=small`, headers: as(ASHA, "image/webp"), payload: WEBP });
-  assert.equal(small.statusCode, 204);
-  // The small copy alone isn't a picture in the list yet.
-  assert.deepEqual((await app.inject({ method: "GET", url: "/api/pictures", headers: as(ASHA) })).json().items, []);
+  // A small copy comes after its picture: alone it would take space nobody can see or delete.
+  const early = await app.inject({ method: "PUT", url: `/api/pictures/${id}?size=small`, headers: as(ASHA, "image/webp"), payload: WEBP });
+  assert.equal(early.statusCode, 404);
 
   await app.inject({ method: "PUT", url: `/api/pictures/${id}`, headers: { ...as(ASHA), "ink-picture-preview": preview }, payload: JPEG });
+  const small = await app.inject({ method: "PUT", url: `/api/pictures/${id}?size=small`, headers: as(ASHA, "image/webp"), payload: WEBP });
+  assert.equal(small.statusCode, 204);
+  // Another writer can't add a small copy to it.
+  assert.equal((await app.inject({ method: "PUT", url: `/api/pictures/${id}?size=small`, headers: as(RAVI, "image/webp"), payload: WEBP })).statusCode, 404);
   const list = (await app.inject({ method: "GET", url: "/api/pictures", headers: as(ASHA) })).json();
   assert.equal(list.items[0].preview, preview);
   assert.equal(list.totalBytes, JPEG.length);
@@ -166,4 +170,37 @@ test("a preview that isn't a short picture data URL is ignored", async () => {
   await put(randomUUID(), `data:image/webp;base64,${"A".repeat(5000)}`);
   const items = (await app.inject({ method: "GET", url: "/api/pictures", headers: as(ASHA) })).json().items;
   assert.deepEqual(items.map((item: { preview: string | null }) => item.preview), [null, null]);
+});
+
+test("a small copy is never large", async () => {
+  const { app, as } = await setup();
+  const id = randomUUID();
+  await app.inject({ method: "PUT", url: `/api/pictures/${id}`, headers: as(ASHA), payload: JPEG });
+  const big = await app.inject({ method: "PUT", url: `/api/pictures/${id}?size=small`, headers: as(ASHA), payload: Buffer.concat([JPEG, Buffer.alloc(SMALL_MAX_BYTES)]) });
+  assert.equal(big.statusCode, 413);
+});
+
+test("a writer's pictures fit in their space; replacing one counts it once", async () => {
+  const { app, as, pictures } = await setup();
+  const kept = randomUUID();
+  await pictures.add(ASHA, kept, { type: "image/jpeg", bytes: PICTURE_SPACE_BYTES - JPEG.length, preview: null });
+
+  const full = await app.inject({ method: "PUT", url: `/api/pictures/${randomUUID()}`, headers: as(ASHA), payload: JPEG });
+  assert.equal(full.statusCode, 204);
+  const over = await app.inject({ method: "PUT", url: `/api/pictures/${randomUUID()}`, headers: as(ASHA), payload: JPEG });
+  assert.equal(over.statusCode, 413);
+  assert.equal(over.json().error, "picture_space_full");
+  // Another writer's space is their own.
+  assert.equal((await app.inject({ method: "PUT", url: `/api/pictures/${randomUUID()}`, headers: as(RAVI), payload: JPEG })).statusCode, 204);
+});
+
+test("uploads are limited per writer per minute", async () => {
+  const { app, as } = await setup();
+  const codes: number[] = [];
+  for (let i = 0; i < 31; i++) {
+    codes.push((await app.inject({ method: "PUT", url: `/api/pictures/${randomUUID()}`, headers: as(ASHA), payload: JPEG })).statusCode);
+  }
+  assert.equal(codes.filter((c) => c === 204).length, 30);
+  assert.equal(codes.at(-1), 429);
+  assert.equal((await app.inject({ method: "PUT", url: `/api/pictures/${randomUUID()}`, headers: as(RAVI), payload: JPEG })).statusCode, 204);
 });

@@ -1,17 +1,18 @@
 import type { PictureSummary } from "@ink/schemas";
 import { useCallback, useEffect, useState } from "react";
-import { pictures } from "./api";
+import { ApiError, pictures } from "./api";
 import { newId } from "./newId";
 import { fitWithin, PICTURE_MAX_SIDE, PREVIEW_SIDE, SMALL_SIDE } from "./pictureSize";
 
 const QUALITY = 0.85;
 
-export type PictureProblem = "offline" | "not-a-picture" | "failed";
+export type PictureProblem = "offline" | "not-a-picture" | "full" | "failed";
 
 // Plain words, what happened and what to do; never red (see Messages in the design system).
 export const PICTURE_MESSAGES: Record<PictureProblem, string> = {
   offline: "Pictures need a connection. Try again when you're online.",
   "not-a-picture": "Ink can't open this file as a picture. Try a photo or an image.",
+  full: "Your pictures have used all their space. Delete some on the Pictures page to add more.",
   failed: "Ink couldn't add this picture. Try again in a moment."
 };
 
@@ -96,7 +97,7 @@ function load(id: string, size: PictureSize): Promise<string> {
 
 /**
  * Makes a picture ready from a file the writer chose: resized on the device, shown at once,
- * uploaded in the background (the small copy first, then the picture with its preview). `id`
+ * uploaded in the background (the picture with its preview first, then its small copy). `id`
  * can be used straight away; `uploaded` settles when the picture is safely stored (and rejects
  * with a PictureError if it couldn't be).
  */
@@ -107,9 +108,10 @@ export async function addPicture(file: Blob): Promise<{ id: string; uploaded: Pr
   shown.set(key(id, "full"), Promise.resolve(URL.createObjectURL(picture.full)));
   shown.set(key(id, "small"), Promise.resolve(URL.createObjectURL(picture.small)));
   const uploaded = (async () => {
-    await pictures.put(id, picture.small, { size: "small" });
     await pictures.put(id, picture.full, { preview: picture.preview });
-  })().catch(() => {
+    await pictures.put(id, picture.small, { size: "small" });
+  })().catch((err) => {
+    if (err instanceof ApiError && err.code === "picture_space_full") throw new PictureError("full");
     throw new PictureError(navigator.onLine ? "failed" : "offline");
   });
   return { id, uploaded };

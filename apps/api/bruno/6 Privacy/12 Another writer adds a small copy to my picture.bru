@@ -1,0 +1,33 @@
+meta {
+  name: Another writer adds a small copy to my picture
+  type: http
+  seq: 12
+}
+
+put {
+  url: {{baseUrl}}/api/pictures/{{privatePictureId}}?size=small
+  body: file
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{secondToken}}
+}
+
+body:file {
+  file: @file(4 Pictures/sample.jpg) @contentType(image/jpeg)
+}
+
+assert {
+  res.status: eq 404
+}
+
+tests {
+  test("the other writer's small copy is refused", function () {
+    expect(res.getBody().error).to.equal("not_found");
+  });
+}
+
+docs {
+  The second writer sends a small copy for the first writer's picture id. A small copy is only taken for the sender's own picture, so expect 404 and nothing stored.
+}

@@ -1,0 +1,28 @@
+meta {
+  name: Upload its small copy
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{baseUrl}}/api/pictures/{{pictureId}}?size=small
+  body: file
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:file {
+  file: @file(4 Pictures/sample.jpg) @contentType(image/jpeg)
+}
+
+assert {
+  res.status: eq 204
+}
+
+docs {
+  Stores the small copy grids show, for the picture uploaded just before. Expect 204.
+  A small copy is only taken for a picture you already stored (see the Privacy folder for another writer's).
+}
