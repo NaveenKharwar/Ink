@@ -122,7 +122,7 @@ export function registerPieceRoutes(app: FastifyInstance, repo: PiecesRepo, embe
     let rows = words.even.length ? await repo.search(request.userId, words, SEARCH_LIMIT) : [];
     // Nothing holds the words as typed: look again allowing a typo ("moonlihgt" finds "moonlight").
     const typed = rows.length === 0 && words.even.length > 0;
-    if (typed) rows = nearest(await repo.nearPool(request.userId, NEAR_POOL), words, SEARCH_LIMIT);
+    if (typed) rows = await nearest(await repo.nearPool(request.userId, NEAR_POOL), words, SEARCH_LIMIT);
 
     // Without an embedder, or when it can't be reached, the writer just gets the words. The words
     // are quick and meaning is not (it waits for the embedder), so the dialog can ask for each alone:

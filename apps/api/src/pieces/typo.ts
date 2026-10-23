@@ -46,14 +46,22 @@ function mistakes(word: string, token: string): number | null {
   return d <= max ? d : null;
 }
 
+/** Remembers each word and token pair worked out during one search: the same pair meets again in other pieces. */
+export type Seen = Map<string, number | null>;
+
 /** Total mistakes for a piece holding every searched word, or null when one of them is missing. */
-export function nearScore(text: string, words: SearchWords): number | null {
+export function nearScore(text: string, words: SearchWords, seen: Seen = new Map()): number | null {
   const tokens = [...new Set(evenDevanagari(text).match(TOKEN) ?? [])];
   let total = 0;
   for (const word of words.even) {
     let best: number | null = null;
     for (const token of tokens) {
-      const d = mistakes(word, token);
+      const pair = `${word}\u0000${token}`;
+      let d = seen.get(pair);
+      if (d === undefined) {
+        d = mistakes(word, token);
+        seen.set(pair, d);
+      }
       if (d !== null && (best === null || d < best)) best = d;
       if (best === 0) break;
     }
@@ -63,14 +71,28 @@ export function nearScore(text: string, words: SearchWords): number | null {
   return total;
 }
 
-/** The pieces holding every searched word give or take a typo, fewest mistakes first, then as given. */
-export function nearest<T extends { text: string; title?: string | null }>(pieces: T[], words: SearchWords, limit: number): T[] {
+/** How long the search works before it lets other requests run. */
+const SLICE_MS = 10;
+const pause = () => new Promise<void>((resolve) => setImmediate(resolve));
+
+/**
+ * The pieces holding every searched word give or take a typo, fewest mistakes first, then as given.
+ * A large library takes a while to read through, so the search pauses every few milliseconds and
+ * other writers' requests run in between.
+ */
+export async function nearest<T extends { text: string; title?: string | null }>(pieces: T[], words: SearchWords, limit: number): Promise<T[]> {
   if (!words.even.length || words.even.every((w) => allowedTypos([...w].length) === 0)) return [];
   const scored: { piece: T; score: number; order: number }[] = [];
-  pieces.forEach((piece, order) => {
-    const score = nearScore(piece.title ? `${piece.title}\n${piece.text}` : piece.text, words);
+  const seen: Seen = new Map();
+  let sliceStart = performance.now();
+  for (const [order, piece] of pieces.entries()) {
+    const score = nearScore(piece.title ? `${piece.title}\n${piece.text}` : piece.text, words, seen);
     if (score !== null) scored.push({ piece, score, order });
-  });
+    if (performance.now() - sliceStart > SLICE_MS) {
+      await pause();
+      sliceStart = performance.now();
+    }
+  }
   return scored
     .sort((a, b) => a.score - b.score || a.order - b.order)
     .slice(0, limit)
