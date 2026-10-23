@@ -2,6 +2,7 @@ import { getMarkRange, type Editor } from "@tiptap/core";
 import { useEditorState } from "@tiptap/react";
 import { useEffect, useReducer, useState } from "react";
 import { createPortal } from "react-dom";
+import { isFollowable } from "../lib/link";
 import { LinkField } from "./LinkField";
 
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
@@ -13,6 +14,7 @@ const EDGE = 12;
 
 // When the cursor is on a link, a small card appears just under it, as in other editors: the
 // address (opens in a new tab), Edit (change it in place) and Remove (back to plain words).
+// An address that isn't a web page or an email is shown as plain words, never as a link.
 // Clicking a link while writing never jumps away; the card is how you follow it.
 export function LinkCard({ editor }: { editor: Editor }) {
   const state = useEditorState({
@@ -71,14 +73,18 @@ export function LinkCard({ editor }: { editor: Editor }) {
       // Clicking the card keeps the cursor where it is in the writing.
       onMouseDown={(e) => e.preventDefault()}
     >
-      <a
-        href={state.href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`min-w-0 truncate rounded-md px-2 py-1 text-[13px] text-accent underline underline-offset-2 ${focusRing}`}
-      >
-        {state.href.replace(/^https?:\/\//, "")}
-      </a>
+      {isFollowable(state.href) ? (
+        <a
+          href={state.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`min-w-0 truncate rounded-md px-2 py-1 text-[13px] text-accent underline underline-offset-2 ${focusRing}`}
+        >
+          {state.href.replace(/^https?:\/\//, "")}
+        </a>
+      ) : (
+        <span className="min-w-0 truncate px-2 py-1 text-[13px] text-ink-muted">{state.href}</span>
+      )}
       <div aria-hidden="true" className="h-5 w-px shrink-0 bg-line" />
       <button type="button" className={action} onClick={() => setEditing(true)}>
         Edit

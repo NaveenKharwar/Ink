@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { embedPiece } from "./embed-piece.js";
+import { rebuildEmbeddings } from "./rebuild.js";
 import { sweepStale } from "./queue.js";
 import { fakeEmbeddingProvider } from "./fake.js";
 import type { EmbeddableRow, EmbeddingsRepo } from "./repo.js";
@@ -21,6 +22,9 @@ function memoryRepo(pieces: Record<string, Omit<EmbeddableRow, "storedHash">>) {
     async touch() {},
     async findStale() {
       return Object.keys(pieces).filter((id) => !stored.has(id));
+    },
+    async findAll() {
+      return Object.keys(pieces).filter((id) => pieces[id]!.includeInMemory && pieces[id]!.text.trim() !== "");
     }
   };
   return { repo, stored, pieces };
@@ -89,4 +93,26 @@ test("the sweep queues pieces that have no vector, and nothing once they do", as
   await embedPiece(repo, fakeEmbeddingProvider(), "b");
   assert.equal(await sweepStale(repo, async (id) => void queued.push(id)), 0);
   assert.deepEqual(queued, ["a", "b"]);
+});
+
+test("rebuilding makes every vector again, even where the text has not changed", async () => {
+  const { repo, stored } = memoryRepo({ a: piece, b: { ...piece, text: "evening rain" }, out: { ...piece, includeInMemory: false } });
+  await embedPiece(repo, fakeEmbeddingProvider(), "a");
+  let asked = 0;
+  const counting = { model: "fake-2", embed: async (texts: string[]) => { asked += texts.length; return fakeEmbeddingProvider().embed(texts); } };
+  const result = await rebuildEmbeddings(repo, counting);
+  assert.deepEqual(result, { pieces: 2, done: 2, failed: 0 });
+  assert.equal(asked, 2);
+  assert.equal(stored.get("a")?.model, "fake-2");
+  assert.equal(stored.has("out"), false);
+});
+
+test("a piece that fails while rebuilding is counted and the rest go on", async () => {
+  const { repo, stored } = memoryRepo({ a: piece, b: { ...piece, text: "evening rain" } });
+  const lines: string[] = [];
+  const flaky = { model: "fake", embed: async (texts: string[]) => { if (texts[0]!.includes("evening")) throw new Error("Embedder answered 503."); return fakeEmbeddingProvider().embed(texts); } };
+  const result = await rebuildEmbeddings(repo, flaky, (line) => lines.push(line));
+  assert.deepEqual(result, { pieces: 2, done: 1, failed: 1 });
+  assert.ok(stored.has("a"));
+  assert.match(lines[0]!, /^Piece b could not be embedded: Embedder answered 503\.$/);
 });

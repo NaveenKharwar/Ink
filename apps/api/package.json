@@ -8,6 +8,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "search:rebuild": "tsx --env-file=../../.env src/scripts/rebuild-search-text.ts",
+    "embed:rebuild": "tsx --env-file=../../.env src/scripts/rebuild-embeddings.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json",
     "test:db": "tsx --test --test-concurrency=1 src/db-tests/*.db.test.ts",
     "lint": "echo \"(lint not configured yet)\"",

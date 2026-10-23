@@ -73,5 +73,46 @@ class Embedder(unittest.TestCase):
             server.SECRET = saved
 
 
+
+# A story written for these checks: it opens at a lighthouse and only its last part is about bread.
+OPENING = " ".join([
+    "The lighthouse keeper climbed the iron stairs every evening before the sun went down.",
+    "He polished the great lens, checked the wick, and watched the grey water move under the wind.",
+    "Ships passed far out, their lights small and patient, and gulls slept on the rail below him.",
+] * 40)
+ENDING = " ".join([
+    "Years later, in a small town far from the sea, she learned to bake bread before dawn.",
+    "She kneaded the dough on a floured table, let it rise under a cloth, and slid the loaves into the hot oven.",
+    "The smell of fresh bread filled the street, and neighbours came with baskets for the warm crust.",
+] * 14)
+STORY = OPENING + "\n\n" + ENDING
+
+
+class LongPieces(unittest.TestCase):
+    def encode(self, texts):
+        return server.model.encode(texts, normalize_embeddings=True)
+
+    def test_a_text_that_fits_gets_the_vector_the_model_gives_it_whole(self):
+        short = ["The kettle sang while the rain kept on.", "चाय की खुशबू और बारिश की आवाज़"]
+        np.testing.assert_allclose(np.asarray(server.embed(short)), self.encode(short), atol=1e-6)
+
+    def test_the_end_of_a_long_piece_counts(self):
+        parts, counts = server.split_parts(STORY, server.model.tokenizer)
+        self.assertGreater(len(parts), 4)
+        cut_at_512 = self.encode([STORY])[0]  # what the model alone reads: the opening only
+        whole = np.asarray(server.embed([STORY])[0])
+        bread, sea = self.encode(["baking bread at dawn", "a lighthouse keeper watching the sea"])
+        self.assertGreater(float(whole @ bread), float(cut_at_512 @ bread) + 0.05)
+        self.assertGreater(float(whole @ bread), 0.53)  # the search's floor for close in meaning
+        self.assertAlmostEqual(float(whole @ sea), float(cut_at_512 @ sea), delta=0.05)
+        self.assertAlmostEqual(float(np.linalg.norm(whole)), 1.0, places=5)
+
+    def test_a_batch_of_short_and_long_texts_keeps_its_order(self):
+        short = ["Rain on the tin roof.", "Morning fog over the river."]
+        batch = np.asarray(server.embed([short[0], STORY, short[1]]))
+        np.testing.assert_allclose(batch[[0, 2]], np.asarray(server.embed(short)), atol=1e-5)
+        np.testing.assert_allclose(batch[1], np.asarray(server.embed([STORY])[0]), atol=1e-5)
+
+
 if __name__ == "__main__":
     unittest.main()
