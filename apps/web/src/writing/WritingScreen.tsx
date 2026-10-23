@@ -13,6 +13,7 @@ import { AllWriting } from "./AllWriting";
 import { BesidePaper } from "./BesidePaper";
 import { EchoesPanel } from "./EchoesPanel";
 import { PicturesPage } from "./PicturesPage";
+import { NotHere } from "./NotHere";
 import { PieceView } from "./PieceView";
 import { Profile } from "./Profile";
 import { SearchDialog } from "./SearchDialog";
@@ -40,13 +41,15 @@ const PHONE_OFFSET: Record<PhonePos, string> = {
 const typingInPage = () => !!document.activeElement?.closest(".ProseMirror");
 
 // What the address says to show: a blank page, a piece to open, or All writing. A piece that
-// cannot exist (`/p/nonsense`) is shown as not found, like someone else's piece.
+// cannot exist (`/p/nonsense`) is shown as not found, like someone else's piece; any other
+// address the app does not know is "This page isn't here".
 type Target = { id: string; open: boolean };
 type View =
   | { kind: "piece"; target: Target }
   | { kind: "all"; season: string | null; filter: PieceStatus | null; style: PieceStyle | null }
   | { kind: "pictures" }
-  | { kind: "profile" };
+  | { kind: "profile" }
+  | { kind: "unknown" };
 
 const blank = (): View => ({ kind: "piece", target: { id: newId(), open: false } });
 function viewFromAddress(): View {
@@ -56,6 +59,7 @@ function viewFromAddress(): View {
   if (route.kind === "pictures") return { kind: "pictures" };
   if (route.kind === "piece") return { kind: "piece", target: { id: route.id, open: true } };
   if (route.kind === "missing") return { kind: "piece", target: { id: newId(), open: true } };
+  if (route.kind === "unknown") return { kind: "unknown" };
   return blank();
 }
 
@@ -90,7 +94,6 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
   // Desktop or phone, from the app's one breakpoint (lib/layout.ts).
   const wide = useWide();
   const [view, setView] = useState<View>(viewFromAddress);
-  useDocumentTitle({ piece: "Writing", all: "All writing", pictures: "Pictures", profile: "Profile" }[view.kind]);
   // Desktop: the menu stays as the writer left it (until ☰). Echoes opens on every
   // load, so writers always meet it; × hides it for this visit only.
   const [menuOpen, setMenuOpen] = useRememberedOpen("ink-menu-open", false);
@@ -114,6 +117,15 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
   const [pos, setPos] = useState<PhonePos>("page");
   // The piece being written; the desktop layout and the older pieces being read belong to it.
   const openPieceId = view.kind === "piece" ? view.target.id : null;
+  // A piece that isn't here (someone else's, deleted, or a made-up id) has no Echoes, no thread
+  // and no mark in the menu: there is nothing to remember or delete.
+  const [missingId, setMissingId] = useState<string | null>(null);
+  const pieceMissing = openPieceId !== null && openPieceId === missingId;
+  const pieceShown = view.kind === "piece" && !pieceMissing;
+  const echoesPieceId = pieceMissing ? null : openPieceId;
+  useDocumentTitle(
+    pieceMissing ? "Not here" : { piece: "Writing", all: "All writing", pictures: "Pictures", profile: "Profile", unknown: "Not here" }[view.kind]
+  );
   // How the desktop screen is shared (menu, page, reading paper, panel) and which older pieces are
   // being read: all of it in one place, see useDesktopLayout.
   const shell = useDesktopLayout({ menuPreferred: menuOpen, setMenuPreferred: setMenuOpen, panelOpen, pieceId: openPieceId });
@@ -265,7 +277,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [tetherHangs, wide]);
-  const thread = tether !== "gone" && view.kind === "piece" && (
+  const thread = tether !== "gone" && pieceShown && (
     <Tether
       key={wide ? "wide" : "phone"}
       anchor={wide ? "panel" : "mark"}
@@ -349,7 +361,15 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
       : pieceSaved
         ? (groups?.find((g) => g.items.some((i) => i.id === openPieceId))?.key ?? null)
         : null;
-  const menuScreen = view.kind === "piece" ? (pieceSaved === false ? ("write" as const) : ("piece" as const)) : view.kind;
+  // A page that isn't here marks nothing in the menu, like a piece before the library has loaded.
+  const menuScreen =
+    view.kind === "unknown" || pieceMissing
+      ? ("piece" as const)
+      : view.kind === "piece"
+        ? pieceSaved === false
+          ? ("write" as const)
+          : ("piece" as const)
+        : view.kind;
 
   const sidebarProps = {
     name: account.penName ?? account.email,
@@ -391,6 +411,8 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
         seasonOf={(createdAt) => seasonText(new Date(createdAt), new Date(), deviceTimeZone(), seasonSet)}
         onOpenPiece={openPiece}
       />
+    ) : view.kind === "unknown" ? (
+      <NotHere what="page" showMenuButton={!wide || !menuVisible} onMenu={onMenu} onWrite={newPiece} />
     ) : view.kind === "all" ? (
       <AllWriting
         wide={wide}
@@ -409,6 +431,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
         key={view.target.id}
         open={view.target.open}
         onWrite={newPiece}
+        onMissing={setMissingId}
         pieceId={view.target.id}
         note={note}
         userId={userId}
@@ -437,7 +460,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
   const visible = useVisibleArea(!wide);
 
   if (wide) {
-    const panelShown = shell.panelVisible && view.kind === "piece";
+    const panelShown = shell.panelVisible && pieceShown;
     const reading = shell.layout.reading;
     return (
       <div className="fixed inset-0">
@@ -480,11 +503,11 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
           }`}
         >
           <EchoesPanel
-            key={openPieceId ?? "none"}
+            key={echoesPieceId ?? "none"}
             shown={panelShown}
             chosen={panelShown && !shell.layout.reading ? lastRead : null}
-            pieceId={openPieceId}
-            exists={view.kind === "piece" && view.target.open}
+            pieceId={echoesPieceId}
+            exists={pieceShown && view.target.open}
             seasonSet={seasonSet}
             reading={shell.layout.reading ? shell.tabs.map((t) => t.id) : []}
             onClose={() => {
@@ -504,8 +527,9 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
   }
 
   // Phone: menu, page and panel on one track that slides; nothing overlays the page.
-  // All writing and Profile have no panel, so they move between the menu and the page only.
-  const order: PhonePos[] = view.kind === "piece" ? ["menu", "page", "panel"] : ["menu", "page"];
+  // All writing, Profile and a page or piece that isn't here have no panel, so they move between
+  // the menu and the page only.
+  const order: PhonePos[] = pieceShown ? ["menu", "page", "panel"] : ["menu", "page"];
   const readerShown = view.kind === "piece" && tabs.length > 0;
   const onPointerDown = (e: PointerEvent) => {
     swipeStart.current = e.pointerType === "touch" && !typingInPage() && !searchOpen ? e.clientX : null;
@@ -556,12 +580,12 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
         </main>
         <div inert={pos !== "panel"} className="h-full">
           <EchoesPanel
-            key={openPieceId ?? "none"}
+            key={echoesPieceId ?? "none"}
             phone
             shown={pos === "panel"}
-            pieceId={openPieceId}
+            pieceId={echoesPieceId}
             dates={pieceDates}
-            exists={view.kind === "piece" && view.target.open}
+            exists={pieceShown && view.target.open}
             seasonSet={seasonSet}
             onClose={() => setPos("page")}
             onOpenBeside={openBeside}
