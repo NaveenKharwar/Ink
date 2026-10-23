@@ -1,0 +1,27 @@
+# Serves the built web app and passes /api to the API, so both share one address.
+# SITE_ADDRESS is :8080 by default; set it to a domain name and Caddy gets an HTTPS certificate itself.
+{$SITE_ADDRESS}
+
+encode zstd gzip
+
+handle /api/* {
+	reverse_proxy {$API_UPSTREAM}
+}
+
+handle {
+	root * /srv
+	# The app draws every page itself, so an address that is not a file gets index.html.
+	try_files {path} /index.html
+	file_server
+
+	@assets path /assets/*
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+	@page path /index.html
+	header @page Cache-Control "no-cache"
+}
+
+header {
+	X-Content-Type-Options nosniff
+	Referrer-Policy strict-origin-when-cross-origin
+	-Server
+}

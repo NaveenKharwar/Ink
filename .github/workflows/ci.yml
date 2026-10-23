@@ -98,31 +98,69 @@ jobs:
           echo "::add-mask::$token"
           echo "EXPIRED_TOKEN=$token" >> "$GITHUB_ENV"
 
+      # The API and the web app run from their Docker images (the same ones compose.yaml starts),
+      # on the runner's network so they reach the local Supabase and the stand-in embedder.
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build the API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          tags: ink-api:ci
+          load: true
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,scope=api,mode=max
+
+      - name: Build the web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          tags: ink-web:ci
+          load: true
+          build-args: |
+            SUPABASE_URL=${{ env.SUPABASE_URL }}
+            SUPABASE_ANON_KEY=${{ env.SUPABASE_ANON_KEY }}
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,scope=web,mode=max
+
       - name: Start the stand-in embedder and the API
         run: |
           nohup pnpm --filter @ink/api exec tsx ci/fake-embedder.ts > fake-embedder.log 2>&1 &
-          NODE_ENV=development EMBEDDER_URL=http://127.0.0.1:8001 EMBED_QUIET_SECONDS=1 nohup pnpm --filter @ink/api exec tsx src/server.ts > api.out.log 2>&1 &
+          mkdir -p apps/api/logs
+          docker run -d --name api --network host --user "$(id -u):$(id -g)" \
+            -v "$PWD/apps/api/logs:/app/apps/api/logs" \
+            -e NODE_ENV=development -e EMBEDDER_URL=http://127.0.0.1:8001 -e EMBED_QUIET_SECONDS=1 \
+            -e SUPABASE_URL -e SUPABASE_SERVICE_ROLE_KEY -e DATABASE_URL \
+            ink-api:ci
           for i in $(seq 1 60); do
             curl -sf http://localhost:3001/health > /dev/null && exit 0
             sleep 1
           done
-          echo "The API did not start"; cat api.out.log; exit 1
+          echo "The API did not start"; docker logs api; exit 1
 
       - name: Run the Bruno collection
         run: npx --yes @usebruno/cli@4.2.1 run --env Local --reporter-json "$GITHUB_WORKSPACE/bruno-results.json"
         working-directory: apps/api/bruno
 
-      # The browser tests: the built web app (pointed at this local Supabase) in Chromium, signed in
-      # through the real screens as the second writer. A security-policy block or page error fails them.
-      - name: Build and serve the web app
+      # The browser tests: the web image (built against this local Supabase, served by Caddy, /api
+      # passed to the API) in Chromium, signed in through the real screens as the second writer.
+      # A security-policy block or page error fails them.
+      - name: Serve the web app
         run: |
-          pnpm --filter @ink/web build
-          nohup pnpm --filter @ink/web preview --port 4173 --strictPort > web.out.log 2>&1 &
+          docker run -d --name web --network host -e SITE_ADDRESS=:4173 -e API_UPSTREAM=localhost:3001 ink-web:ci
           for i in $(seq 1 30); do
-            curl -sf http://localhost:4173/ > /dev/null && exit 0
+            if curl -sf http://localhost:4173/ > /dev/null; then
+              # An address that is not a file gets the app, and /api reaches the API.
+              curl -sf http://localhost:4173/all | grep -q '<div id="root"' || { echo "/all did not get the app"; exit 1; }
+              code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:4173/api/pieces)
+              [ "$code" = 401 ] || { echo "/api/pieces answered $code, expected 401"; exit 1; }
+              exit 0
+            fi
             sleep 1
           done
-          echo "The web app did not start"; cat web.out.log; exit 1
+          echo "The web app did not start"; docker logs web; exit 1
 
       # The tests run headless, so they only need Chromium's headless shell. It is kept between runs,
       # one copy per Playwright version, so a slow download can't hold up the run; the system
@@ -200,6 +238,8 @@ jobs:
       - name: Logs
         if: failure()
         run: |
+          docker logs api > api.out.log 2>&1 || true
+          docker logs web > web.out.log 2>&1 || true
           echo "--- API"; tail -n 200 api.out.log || true
           echo "--- embedder"; tail -n 50 fake-embedder.log || true
           echo "--- web"; tail -n 50 web.out.log || true

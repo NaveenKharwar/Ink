@@ -60,7 +60,7 @@ Ink is opening to its first writers soon. Leave your address and Ink writes to y
 | `apps/api` | The API (Fastify, Zod, PostgreSQL through Supabase), migrations, and the Bruno privacy checks |
 | `apps/embedder` | The embedder service (Python), see its [README](./apps/embedder/README.md) |
 | `packages/schemas` | Zod schemas shared by the web app and the API |
-| `docs` | The [setup guide](./docs/development.md), and notes on [search](./docs/search.md) and [sign-in emails](./docs/auth-setup.md) |
+| `docs` | The [setup guide](./docs/development.md), [Docker](./docs/docker.md), and notes on [search](./docs/search.md) and [sign-in emails](./docs/auth-setup.md) |
 
 It is a pnpm and Turborepo monorepo.
 
@@ -80,6 +80,12 @@ Fill in `.env` before `pnpm db:migrate`, and start the API and the web app in tw
 
 The full steps are in [docs/development.md](./docs/development.md): where each `.env` value comes from, a local Supabase, the sign-in settings, the optional embedder, and opening Ink on a phone.
 
+To run Ink in containers instead (the web app, the API and the embedder, with a Supabase project), see [docs/docker.md](./docs/docker.md):
+
+```bash
+docker compose up -d
+```
+
 ### Checks
 
 ```bash
@@ -87,7 +93,7 @@ pnpm typecheck
 pnpm test
 ```
 
-Every pull request runs these and more in CI. A job starts a local Supabase and the real API, then runs the database tests, the Bruno collection in `apps/api/bruno` and the browser tests. Bruno signs in as two different writers and checks that neither can read or change the other's data, and that expired, broken and signed-out tokens are refused. The embedder's own tests run with the real model, and a hygiene check reads every file and commit.
+Every pull request runs these and more in CI. A job starts a local Supabase and the API and web app from their Docker images, then runs the database tests, the Bruno collection in `apps/api/bruno` and the browser tests. Bruno signs in as two different writers and checks that neither can read or change the other's data, and that expired, broken and signed-out tokens are refused. The embedder's own tests run with the real model inside its image, and a hygiene check reads every file and commit.
 
 ## Status
 

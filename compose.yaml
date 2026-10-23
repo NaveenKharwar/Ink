@@ -1,0 +1,59 @@
+# Ink in three containers: the web app (with /api passed to the API), the API, and the embedder.
+# The database is a Supabase project. Setup: docs/docker.md.
+#   docker compose up --build
+#   docker compose run --rm api node dist/scripts/migrate.js
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        SUPABASE_URL: ${SUPABASE_URL:?set SUPABASE_URL in .env}
+        SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:?set SUPABASE_ANON_KEY in .env}
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:8080}
+      API_UPSTREAM: api:3001
+    ports:
+      - "${INK_PORT:-8080}:8080"
+      # With SITE_ADDRESS set to a domain name, Caddy serves HTTPS: publish these two in place of the line above.
+      # - "80:80"
+      # - "443:443"
+    volumes:
+      - caddy-data:/data
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    env_file: .env
+    environment:
+      PORT: "3001"
+      DATABASE_SSL_CA: /certs/database-ca.crt
+      EMBEDDER_URL: http://embedder.ink.internal:8001
+      EMBEDDER_PRIVATE_HOSTS: .ink.internal
+    volumes:
+      - ${DATABASE_CA_FILE:-./database-ca.crt}:/certs/database-ca.crt:ro
+    restart: unless-stopped
+
+  embedder:
+    build:
+      context: .
+      dockerfile: apps/embedder/Dockerfile
+    environment:
+      EMBEDDER_SECRET: ${EMBEDDER_SECRET:?set EMBEDDER_SECRET (16+ characters) in .env}
+    volumes:
+      - models:/models
+    networks:
+      default:
+        # The API only calls an embedder under a private name with a dot in it.
+        aliases:
+          - embedder.ink.internal
+    restart: unless-stopped
+
+volumes:
+  models:
+  caddy-data:
