@@ -1,7 +1,7 @@
 import type { PictureListResponse, PictureUsesResponse } from "@ink/schemas";
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { z } from "zod";
-import { perWriterLimit, tooMany } from "../rate-limit.js";
+import { tooMany, type RateLimits } from "../rate-limit.js";
 import type { PicturesRepo } from "./repo.js";
 import type { PictureStore, PictureType } from "./store.js";
 
@@ -12,8 +12,6 @@ export const PICTURE_MAX_BYTES = 5 * 1024 * 1024;
 export const SMALL_MAX_BYTES = 1024 * 1024;
 // All of a writer's pictures together (the small copies are not counted).
 export const PICTURE_SPACE_BYTES = 200 * 1024 * 1024;
-// Adding a picture sends two uploads (the picture, then its small copy).
-const UPLOADS_PER_MINUTE = 30;
 
 const idParams = z.object({ id: z.string().uuid() });
 // `?size=small`: the small copy grids show. Without it, the picture as it is.
@@ -35,9 +33,7 @@ export function sniffPicture(bytes: Buffer): PictureType | null {
 const notFound = (reply: FastifyReply) => reply.code(404).send({ error: "not_found", message: "This picture doesn't exist." });
 const tooLarge = (reply: FastifyReply) => reply.code(413).send({ error: "too_large", message: "This is too large to save." });
 
-export function registerPictureRoutes(app: FastifyInstance, store: PictureStore, repo: PicturesRepo) {
-  const uploads = perWriterLimit(UPLOADS_PER_MINUTE, 60_000);
-
+export function registerPictureRoutes(app: FastifyInstance, store: PictureStore, repo: PicturesRepo, limits: RateLimits) {
   // Pictures arrive as their raw bytes, not JSON.
   app.addContentTypeParser(["image/jpeg", "image/webp"], { parseAs: "buffer", bodyLimit: PICTURE_MAX_BYTES }, (_request, body, done) =>
     done(null, body)
@@ -54,7 +50,7 @@ export function registerPictureRoutes(app: FastifyInstance, store: PictureStore,
     }
     const query = sizeQuery.safeParse(request.query);
     if (!query.success) return notFound(reply);
-    if (!uploads.allow(request.userId)) return tooMany(reply);
+    if (!(await limits.allow(request.userId, "uploads"))) return tooMany(reply);
     const space = await repo.space(request.userId, params.data.id);
     // The small copy is stored next to the picture, so it comes after the picture: a small copy
     // with no picture would take space that is never listed and never deleted.

@@ -5,6 +5,7 @@ import { requireUser, type VerifyToken } from "./auth.js";
 import { registerDocs } from "./docs.js";
 import { registerErrorHandling } from "./errors.js";
 import { loggerOptions, type LogStream } from "./logging.js";
+import { memoryRateLimits, type RateLimits } from "./rate-limit.js";
 import type { PiecesRepo } from "./pieces/repo.js";
 import { registerPieceRoutes } from "./pieces/routes.js";
 import { registerPictureRoutes } from "./pictures/routes.js";
@@ -20,6 +21,8 @@ export type AppDeps = {
   related: RelatedRepo;
   pictures: { store: PictureStore; repo: PicturesRepo };
   verify: VerifyToken;
+  /** Per-writer request limits. Without them, each app keeps its own counts in memory. */
+  limits?: RateLimits;
   embeddings?: EmbeddingQueue;
   /** Search by meaning. Without it, search answers with words only. */
   meaning?: Meaning;
@@ -28,7 +31,7 @@ export type AppDeps = {
   docs?: boolean;
 };
 
-export async function buildApp({ repo, related, pictures, verify, embeddings = noEmbeddingQueue, meaning, logger = false, docs = false }: AppDeps) {
+export async function buildApp({ repo, related, pictures, verify, limits = memoryRateLimits(), embeddings = noEmbeddingQueue, meaning, logger = false, docs = false }: AppDeps) {
   // Every request gets its own id (not a counter that restarts), so one failure can be found across log lines.
   const app = Fastify({ logger: loggerOptions(logger), genReqId: () => randomUUID() });
   app.addHook("onSend", async (request, reply) => void reply.header("x-request-id", request.id));
@@ -43,9 +46,9 @@ export async function buildApp({ repo, related, pictures, verify, embeddings = n
     // Asks nothing and answers nothing: it is the app's way to learn, before it shows the writer's
     // pages, that the sign-in is still accepted. No writer's data is read.
     api.get("/api/session", async (_request, reply) => reply.code(204).send());
-    registerPieceRoutes(api, repo, embeddings, meaning);
-    registerRelatedRoutes(api, related);
-    registerPictureRoutes(api, pictures.store, pictures.repo);
+    registerPieceRoutes(api, repo, embeddings, limits, meaning);
+    registerRelatedRoutes(api, related, limits);
+    registerPictureRoutes(api, pictures.store, pictures.repo, limits);
   });
 
   return app;

@@ -8,6 +8,7 @@ import { loadEnv } from "./env.js";
 import { fileLogStream } from "./logging.js";
 import { pgPiecesRepo } from "./pieces/repo.js";
 import { pgPicturesRepo } from "./pictures/repo.js";
+import { pgRateLimits } from "./rate-limit.js";
 import { pgRelatedRepo } from "./related/repo.js";
 import { pgMeaningRepo } from "./search/meaning.js";
 import { supabasePictureStore } from "./pictures/store.js";
@@ -29,6 +30,7 @@ const app = await buildApp({
   repo: pgPiecesRepo(pool),
   related: pgRelatedRepo(pool),
   pictures: { store: supabasePictureStore(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY), repo: pgPicturesRepo(pool) },
+  limits: pgRateLimits(pool),
   verify: withLiveSession(supabaseTokenVerifier(env.SUPABASE_URL), pgSessionCheck(pool)),
   embeddings,
   meaning,
