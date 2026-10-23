@@ -142,7 +142,9 @@ export const openApiDocument = {
     "/api/pictures/{id}": {
       delete: {
         summary: "Delete one of your pictures",
-        description: "Takes it out of every piece that uses it (as a normal change your devices merge), then deletes the file itself. Can't be undone.",
+        description:
+          "Takes it out of every piece that uses it (as a normal change your devices merge) and deletes the file itself, all or nothing: " +
+          "when the file can't be deleted, nothing changes and the picture is still there to delete again. Can't be undone.",
         parameters: [idParam],
         responses: { "204": { description: "Deleted." }, "404": json(errorBody, "No such picture for you."), ...errors }
       },
