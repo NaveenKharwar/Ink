@@ -13,13 +13,20 @@ test("a writer adds a picture, sees it on the Pictures page and deletes it", asy
   const before = await count();
 
   await page.goto("/");
+  // Listen before choosing the file: the uploads can finish before the crop dialog shows.
+  const uploads: string[] = [];
+  page.on("response", (r) => {
+    if (r.request().method() === "PUT" && r.url().includes("/api/pictures/")) uploads.push(`${r.status()} ${r.url().includes("size=small") ? "small copy" : "picture"}`);
+  });
+  const smallCopy = page.waitForResponse((r) => r.request().method() === "PUT" && /\/api\/pictures\/[0-9a-f-]{36}\?size=small$/.test(r.url()));
   await page.getByRole("button", { name: "Add a cover" }).click();
   const chooser = page.waitForEvent("filechooser");
   await page.getByRole("button", { name: "Upload a picture" }).click();
   await (await chooser).setFiles(SAMPLE);
   await expect(page.getByText("Crop the cover")).toBeVisible();
-  // Uploaded in the background: the picture, then its small copy.
-  await page.waitForResponse((r) => /\/api\/pictures\/[0-9a-f-]{36}\?size=small$/.test(r.url()) && r.request().method() === "PUT");
+  await smallCopy;
+  // Uploaded in the background: the picture first, then its small copy.
+  expect(uploads).toEqual(["204 picture", "204 small copy"]);
   await page.keyboard.press("Escape");
 
   await page.goto("/pictures");
