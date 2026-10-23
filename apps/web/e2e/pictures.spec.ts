@@ -10,6 +10,8 @@ test("a writer adds a picture, sees it on the Pictures page and deletes it", asy
   const summary = page.getByText(/^\d+ pictures?\b/);
   const count = async () => Number((await summary.textContent())?.match(/^\d+/)?.[0] ?? -1);
   await expect(summary).toBeVisible();
+  // The page is the writer's own; it needs no line saying the pictures are private.
+  await expect(page.getByText("Only you can see these.")).toHaveCount(0);
   const before = await count();
 
   await page.goto("/");
