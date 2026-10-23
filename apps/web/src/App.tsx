@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { DeleteAccountPage } from "./auth/DeleteAccountPage";
 import { SetPasswordPage } from "./auth/SetPasswordPage";
 import { SignIn } from "./auth/SignIn";
 import { useSession } from "./auth/useSession";
@@ -6,6 +7,7 @@ import { accountOf } from "./lib/account";
 import { pieces } from "./lib/api";
 import { PRIVACY_URL } from "./lib/site";
 import { supabase } from "./lib/supabase";
+import { DELETE_ACCOUNT } from "./lib/deleteLink";
 import { SET_PASSWORD } from "./lib/passwordLink";
 import { useDocumentTitle } from "./lib/useDocumentTitle";
 import { clearTrouble, currentTrouble, useTrouble } from "./lib/trouble";
@@ -22,6 +24,8 @@ export function App() {
   }
   // The link in the password email lands here, on any device.
   if (window.location.pathname === SET_PASSWORD) return <SetPasswordPage />;
+  // The link in the delete-account email lands here, on any device, signed in or not.
+  if (window.location.pathname === DELETE_ACCOUNT) return <DeleteAccountPage />;
   return <SignedInOrNot />;
 }
 

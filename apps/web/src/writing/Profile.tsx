@@ -4,6 +4,7 @@ import { PEN_NAME_MAX, savePenName, saveSeasons, sendPasswordLink, type Account 
 import type { PasswordProblem } from "../lib/password";
 import { deviceTimeZone, resolveSeasonSet, seasonPlace, seasonSetFor, type SeasonChoice, type SeasonSet } from "../lib/seasons";
 import { Button } from "../ui/Button";
+import { AccountFoot } from "./AccountFoot";
 import { ColourSchemes } from "./ColourSchemes";
 import { MenuIcon } from "./icons";
 import { SeasonPainting } from "./SeasonPainting";
@@ -96,6 +97,7 @@ export function Profile({ account, items, wide, showMenuButton, onMenu, onBack, 
           </Section>
           <Section>
             <SignOutButton onSignOut={onSignOut} />
+            <AccountFoot email={account.email} items={items} wide={wide} timeZone={timeZone} set={set} />
           </Section>
         </div>
       </FadeScroll>

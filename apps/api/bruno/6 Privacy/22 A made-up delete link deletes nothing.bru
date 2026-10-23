@@ -1,0 +1,23 @@
+meta {
+  name: A made-up delete link deletes nothing
+  type: http
+  seq: 22
+}
+
+post {
+  url: {{baseUrl}}/api/account/deletion
+  body: json
+  auth: none
+}
+
+body:json {
+  { "token": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" }
+}
+
+assert {
+  res.status: eq 404
+}
+
+docs {
+  Deleting with a token nobody was sent. Expect 404; the next requests check the writer is still there.
+}

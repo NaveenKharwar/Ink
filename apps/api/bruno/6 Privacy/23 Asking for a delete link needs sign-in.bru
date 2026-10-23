@@ -1,0 +1,19 @@
+meta {
+  name: Asking for a delete link needs sign-in
+  type: http
+  seq: 23
+}
+
+post {
+  url: {{baseUrl}}/api/account/delete-link
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 401
+}
+
+docs {
+  Without a sign-in no delete link is emailed. Expect 401.
+}

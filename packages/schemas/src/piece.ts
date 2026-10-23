@@ -151,3 +151,15 @@ export type SearchResponse = {
   /** Pieces without those words that are close in meaning; never also in `items`, with no matched line. */
   close: SearchResult[];
 };
+
+// "Download all my writing": each piece with its editor document and its cover, a page at a time,
+// so the device can build the download itself.
+export type ExportPiece = Pick<Piece, "id" | "title" | "status" | "style" | "createdAt" | "updatedAt" | "content"> & {
+  cover: string | null;
+};
+export type ExportResponse = { items: ExportPiece[]; nextCursor: string | null };
+
+// The account deletion page: who the link belongs to and how much goes with the account.
+export const deletionTokenInput = z.object({ token: z.string().regex(/^[A-Za-z0-9_-]{43}$/) });
+export type DeletionTokenInput = z.infer<typeof deletionTokenInput>;
+export type PendingDeletionResponse = { email: string; pieces: number; pictures: number };

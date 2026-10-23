@@ -1,0 +1,30 @@
+meta {
+  name: A made-up delete link opens nothing
+  type: http
+  seq: 21
+}
+
+post {
+  url: {{baseUrl}}/api/account/deletion/check
+  body: json
+  auth: none
+}
+
+body:json {
+  { "token": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" }
+}
+
+assert {
+  res.status: eq 404
+}
+
+tests {
+  test("says nothing about any account", () => {
+    expect(res.body.error).to.equal("link_expired");
+    expect(res.body).to.not.have.property("email");
+  });
+}
+
+docs {
+  The page the delete link opens, with a token nobody was sent. Expect 404 and no account details.
+}

@@ -3,7 +3,7 @@ import { openPasswordLink, setPassword } from "../lib/account";
 import type { PasswordProblem } from "../lib/password";
 import { useDocumentTitle } from "../lib/useDocumentTitle";
 import { readPasswordLink } from "../lib/passwordLink";
-import { Heading, Eyebrow, Label, MainButton, Message, TextField } from "./parts";
+import { Heading, Eyebrow, InkHeader, Label, MainButton, Message, TextField } from "./parts";
 
 type Step = "intro" | "form" | "done" | "expired";
 
@@ -57,8 +57,9 @@ export function SetPasswordPage() {
   const toInk = () => window.location.assign("/");
 
   return (
-    <div className="auth flex min-h-dvh flex-col items-center bg-auth-cream px-5 pt-16 pb-16 text-auth-ink">
+    <div className="auth flex min-h-dvh flex-col items-center bg-auth-cream px-5 pt-8 pb-16 text-auth-ink">
       <main className="w-full max-w-[420px]">
+        <InkHeader />
         {step === "intro" && (
           <>
             <Eyebrow>NEW PASSWORD</Eyebrow>

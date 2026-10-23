@@ -1,5 +1,7 @@
 import type {
+  ExportResponse,
   LibraryResponse,
+  PendingDeletionResponse,
   NoticedResponse,
   Piece,
   RelatedResponse,
@@ -122,4 +124,39 @@ export const pictures = {
   remove: async (id: string) => {
     await send(`/api/pictures/${encodeURIComponent(id)}`, { method: "DELETE" });
   }
+};
+
+// "Download all my writing" and deleting the account.
+export const account = {
+  // The writer's pieces with what a download needs, a page at a time (newest first).
+  exportPage: (cursor?: string) => request<ExportResponse>(`/api/export${cursor ? `?${new URLSearchParams({ cursor })}` : ""}`),
+  // Emails the writer a link that opens the page where the account is deleted. Nothing is deleted yet.
+  sendDeleteLink: async () => {
+    await send("/api/account/delete-link", { method: "POST", quiet: true });
+  }
+};
+
+// The page the delete link opens works without signing in: the link's token is the proof. These calls
+// carry no sign-in and never take the screen over; the page says what went wrong itself.
+async function deletionCall(path: string, token: string): Promise<Response> {
+  return fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token }) });
+}
+
+export type DeletionAnswer<T> = { ok: true; value: T } | { ok: false; problem: "link-expired" | "offline" | "unknown" };
+
+async function deletionAnswer<T>(run: () => Promise<Response>, read: (res: Response) => Promise<T>): Promise<DeletionAnswer<T>> {
+  let res: Response;
+  try {
+    res = await run();
+  } catch {
+    return { ok: false, problem: "offline" };
+  }
+  if (res.status === 404) return { ok: false, problem: "link-expired" };
+  if (!res.ok) return { ok: false, problem: "unknown" };
+  return { ok: true, value: await read(res) };
+}
+
+export const deletion = {
+  check: (token: string) => deletionAnswer(() => deletionCall("/api/account/deletion/check", token), (res) => res.json() as Promise<PendingDeletionResponse>),
+  confirm: (token: string) => deletionAnswer(() => deletionCall("/api/account/deletion", token), async () => undefined)
 };

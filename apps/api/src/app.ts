@@ -1,6 +1,9 @@
 import { randomUUID } from "node:crypto";
 import Fastify from "fastify";
+import { registerAccountDeletionRoutes, registerAccountRoutes, type AccountDeps } from "./account/routes.js";
 import { noEmbeddingQueue, type EmbeddingQueue } from "./embeddings/queue.js";
+import type { ExportRepo } from "./export/repo.js";
+import { registerExportRoutes } from "./export/routes.js";
 import { requireUser, type VerifyToken } from "./auth.js";
 import { registerDocs } from "./docs.js";
 import { registerErrorHandling } from "./errors.js";
@@ -29,9 +32,13 @@ export type AppDeps = {
   /** True logs to standard output; a stream collects the lines instead (for tests). */
   logger?: boolean | LogStream;
   docs?: boolean;
+  /** Deleting the account by an emailed link. Without it those routes don't exist. */
+  account?: AccountDeps;
+  /** "Download all my writing". Without it that route doesn't exist. */
+  exports?: ExportRepo;
 };
 
-export async function buildApp({ repo, related, pictures, verify, limits = memoryRateLimits(), embeddings = noEmbeddingQueue, meaning, logger = false, docs = false }: AppDeps) {
+export async function buildApp({ repo, related, pictures, verify, limits = memoryRateLimits(), embeddings = noEmbeddingQueue, meaning, logger = false, docs = false, account, exports }: AppDeps) {
   // Every request gets its own id (not a counter that restarts), so one failure can be found across log lines.
   const app = Fastify({ logger: loggerOptions(logger), genReqId: () => randomUUID() });
   app.addHook("onSend", async (request, reply) => void reply.header("x-request-id", request.id));
@@ -40,6 +47,8 @@ export async function buildApp({ repo, related, pictures, verify, limits = memor
 
   if (docs) await registerDocs(app);
   registerHealthRoutes(app);
+  // The page the delete link opens works without signing in: the link itself is the proof.
+  if (account) registerAccountDeletionRoutes(app, account);
 
   await app.register(async (api) => {
     api.addHook("preHandler", requireUser(verify));
@@ -49,6 +58,8 @@ export async function buildApp({ repo, related, pictures, verify, limits = memor
     registerPieceRoutes(api, repo, embeddings, limits, meaning);
     registerRelatedRoutes(api, related, limits);
     registerPictureRoutes(api, pictures.store, pictures.repo, limits);
+    if (account) registerAccountRoutes(api, account, limits);
+    if (exports) registerExportRoutes(api, exports, limits);
   });
 
   return app;

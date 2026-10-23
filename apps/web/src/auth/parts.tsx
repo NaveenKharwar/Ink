@@ -13,15 +13,16 @@ export function Heading({ children }: { children: ReactNode }) {
 export function MainButton({
   children,
   busy = false,
+  danger = false,
   className = "",
   ...rest
-}: ButtonHTMLAttributes<HTMLButtonElement> & { busy?: boolean }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & { busy?: boolean; danger?: boolean }) {
   return (
     <button
       {...rest}
       disabled={busy || rest.disabled}
       aria-busy={busy || undefined}
-      className={`flex h-12 w-full cursor-pointer items-center justify-center gap-3 rounded-auth-control border-0 bg-auth-ink text-[15px] font-medium text-white hover:bg-black disabled:cursor-default disabled:opacity-80 aria-busy:opacity-100 ${className}`}
+      className={`flex h-12 w-full cursor-pointer items-center justify-center gap-3 rounded-auth-control border-0 ${danger ? "bg-[#9a4a3c] hover:bg-[#843d31]" : "bg-auth-ink hover:bg-black"} text-[15px] font-medium text-white disabled:cursor-default disabled:opacity-80 aria-busy:opacity-100 ${className}`}
     >
       {busy ? (
         <>
@@ -93,5 +94,16 @@ export function GoogleMark() {
       <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2A11.9 11.9 0 0 1 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z" />
       <path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3a12 12 0 0 1-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.7-.4-3.9z" />
     </svg>
+  );
+}
+
+// The top of a page opened from an Ink email (setting a password, deleting the account): the
+// connections mark and the Lora wordmark, so the writer can see at a glance the page is Ink's.
+export function InkHeader() {
+  return (
+    <a href="/" className="mb-11 inline-flex items-center gap-2 font-display text-[22px] leading-7 font-medium text-auth-ink no-underline">
+      <img src="/icon-192.png" alt="" width={28} height={28} className="block h-7 w-7" />
+      Ink
+    </a>
   );
 }

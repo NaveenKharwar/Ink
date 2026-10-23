@@ -12,6 +12,8 @@ export interface PictureStore {
   get(userId: string, id: string, size?: PictureSize): Promise<Picture | null>;
   /** Deletes both sizes. */
   delete(userId: string, id: string): Promise<void>;
+  /** Deletes every file in the writer's folder (their account is being deleted). */
+  deleteAll(userId: string): Promise<void>;
 }
 
 const BUCKET = "pictures";
@@ -52,6 +54,27 @@ export function supabasePictureStore(supabaseUrl: string, serviceKey: string): P
         body: JSON.stringify({ prefixes: [path(userId, id), path(userId, id, "small")] })
       });
       if (!res.ok) throw new Error(`Storage could not delete the picture (${res.status})`);
+    },
+    async deleteAll(userId) {
+      const folder = encodeURIComponent(userId);
+      // A page at a time: each page is deleted before the next is listed, so the list always starts at the top.
+      for (let round = 0; round < 1000; round += 1) {
+        const listed = await fetch(new URL(`/storage/v1/object/list/${BUCKET}`, supabaseUrl), {
+          method: "POST",
+          headers: { ...auth, "Content-Type": "application/json" },
+          body: JSON.stringify({ prefix: folder, limit: 100, offset: 0 })
+        });
+        if (!listed.ok) throw new Error(`Storage could not list the pictures (${listed.status})`);
+        const names = ((await listed.json()) as Array<{ name: string }>).map((item) => `${folder}/${item.name}`);
+        if (names.length === 0) return;
+        const res = await fetch(new URL(`/storage/v1/object/${BUCKET}`, supabaseUrl), {
+          method: "DELETE",
+          headers: { ...auth, "Content-Type": "application/json" },
+          body: JSON.stringify({ prefixes: names })
+        });
+        if (!res.ok) throw new Error(`Storage could not delete the pictures (${res.status})`);
+      }
+      throw new Error("Storage kept listing pictures after they were deleted");
     }
   };
 }
@@ -69,6 +92,9 @@ export function memoryPictureStore(): PictureStore {
     async delete(userId, id) {
       pictures.delete(`${userId}/${id}/full`);
       pictures.delete(`${userId}/${id}/small`);
+    },
+    async deleteAll(userId) {
+      for (const key of [...pictures.keys()]) if (key.startsWith(`${userId}/`)) pictures.delete(key);
     }
   };
 }
