@@ -8,9 +8,10 @@ The `api-checks` job in `.github/workflows/ci.yml`:
 
 1. Starts a local Supabase (database, sign-in and storage) with the Supabase CLI.
 2. Runs `apps/api/ci/prepare.sh`: applies every migration in order and creates two confirmed writers with throwaway passwords.
-3. Makes an expired token (`apps/api/ci/mint-expired-token.mjs`), starts a stand-in embedder (`apps/api/ci/fake-embedder.ts`: same words, same vector) and the real API.
-4. Runs this whole collection with the Bruno CLI. A request fails the job when its `assert` or `tests` block fails.
-5. Checks that meaning vectors were really made, then posts one short comment on the PR (edited on every run). The full list of checks is on the run page.
+3. Runs the database tests (`pnpm --filter @ink/api test:db`, `apps/api/src/db-tests`): the real repository code against this database, each test with its own throwaway writers. They check at the database level that one writer never reaches another's pieces, search results, Echoes, meaning search, pictures or sign-in sessions, that a deleted piece stays deleted, and that a vector can only be saved under its piece's writer.
+4. Makes an expired token (`apps/api/ci/mint-expired-token.mjs`), starts a stand-in embedder (`apps/api/ci/fake-embedder.ts`: same words, same vector) and the real API.
+5. Runs this whole collection with the Bruno CLI. A request fails the job when its `assert` or `tests` block fails.
+6. Checks that meaning vectors were really made, then posts one short comment on the PR (edited on every run). The full list of checks is on the run page.
 
 If a check fails, the job keeps the API log and the Bruno report as a download (artifact `api-check-logs`, 7 days).
 
