@@ -20,6 +20,7 @@ import { Sidebar } from "./Sidebar";
 import { Tether, type TetherState } from "./Tether";
 import { useDesktopLayout } from "./useDesktopLayout";
 import { useLibrary } from "./useLibrary";
+import { usePieceDates } from "./usePieceDates";
 import { newId } from "../lib/newId";
 import { NOTE_SHOWN_MS } from "../ui/QuietNote";
 import { useVisibleArea } from "../lib/visibleArea";
@@ -131,6 +132,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
   const menuVisible = wide ? shell.menuVisible : menuOpen;
   const swipeStart = useRef<number | null>(null);
   const library = useLibrary();
+  const pieceDates = usePieceDates(openPieceId, library.items);
   // On a writer's first visits, a thread invites them to Echoes (then never again).
   // In development, `?tether` in the address shows it anyway, without counting a visit.
   const [tether, setTether] = useState<TetherState | "gone">(() =>
@@ -412,6 +414,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
         userId={userId}
         wide={wide}
         season={pieceSeason(view.target.id)}
+        dates={pieceDates}
         showMenuButton={!wide || !menuVisible}
         panelOpen={wide ? shell.panelVisible : pos === "panel"}
         onPanelToggle={() => {
@@ -557,6 +560,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
             phone
             shown={pos === "panel"}
             pieceId={openPieceId}
+            dates={pieceDates}
             exists={view.kind === "piece" && view.target.open}
             seasonSet={seasonSet}
             onClose={() => setPos("page")}
