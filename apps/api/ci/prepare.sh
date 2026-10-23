@@ -7,6 +7,13 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 eval "$(supabase status -o env | sed 's/^/export /')"
 
+# Migrations run in the order of their numbers, so no two may share one.
+shared=$(ls db/migrations/*.sql | xargs -n1 basename | cut -d_ -f1 | sort | uniq -d)
+if [ -n "$shared" ]; then
+  echo "Two migrations share a number: $shared" >&2
+  exit 1
+fi
+
 for file in $(ls db/migrations/*.sql | sort); do
   echo "applying $file"
   psql "$DB_URL" -v ON_ERROR_STOP=1 -q -f "$file"
