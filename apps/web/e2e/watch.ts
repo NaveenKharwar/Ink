@@ -42,12 +42,10 @@ export async function signIn(page: Page) {
     if (!(await tooSoon.isVisible()) || tries === 3) break;
     await page.waitForTimeout(1_500);
   }
-  // "Use your password instead" shows once the 20-second wait for a new code is over. Skip the wait
-  // a second at a time: each tick of the countdown sets the next one only after the page redraws.
+  // "Use your password instead" shows at once, while the wait for a new code is still running.
   await expect(codeSent).toBeVisible();
-  const usePassword = page.getByRole("button", { name: "Use your password instead" });
-  for (let s = 0; s < 30 && !(await usePassword.isVisible()); s++) await page.clock.runFor(1_000);
-  await usePassword.click();
+  await expect(page.getByRole("button", { name: "Send a new code" })).toBeHidden();
+  await page.getByRole("button", { name: "Use your password instead" }).click();
   await page.locator("#auth-password").fill(password!);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).toHaveTitle(/Writing, Ink/, { timeout: 20_000 });

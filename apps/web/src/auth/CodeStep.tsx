@@ -123,16 +123,17 @@ export function CodeStep({ email, onUsePassword, onChangeEmail }: Props) {
             It can take a minute. You can ask for a new code in 0:{String(left).padStart(2, "0")}.
           </div>
         ) : (
-          <>
-            <div className="text-auth-muted">Didn’t get it? Check your spam folder too.</div>
-            <div className="mt-2 flex flex-wrap gap-5">
-              <LinkButton strong onClick={resend}>
-                Send a new code
-              </LinkButton>
-              <LinkButton onClick={onUsePassword}>Use your password instead</LinkButton>
-            </div>
-          </>
+          <div className="text-auth-muted">Didn’t get it? Check your spam folder too.</div>
         )}
+        {/* The password is there from the start; only a new code waits for the countdown. */}
+        <div className="mt-2 flex flex-wrap gap-5">
+          {left <= 0 && (
+            <LinkButton strong onClick={resend}>
+              Send a new code
+            </LinkButton>
+          )}
+          <LinkButton onClick={onUsePassword}>Use your password instead</LinkButton>
+        </div>
         <div className="mt-1.5">
           <LinkButton quiet onClick={onChangeEmail}>
             Wrong email? Change it
