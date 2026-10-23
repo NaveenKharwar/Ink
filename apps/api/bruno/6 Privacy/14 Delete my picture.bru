@@ -1,10 +1,10 @@
 meta {
-  name: My picture is still there
+  name: Delete my picture
   type: http
-  seq: 12
+  seq: 14
 }
 
-get {
+delete {
   url: {{baseUrl}}/api/pictures/{{privatePictureId}}
   body: none
   auth: bearer
@@ -15,9 +15,9 @@ auth:bearer {
 }
 
 assert {
-  res.status: eq 200
+  res.status: eq 204
 }
 
 docs {
-  Back as the first writer: the picture survived the second writer's attempts. Expect 200.
+  Cleans up after the checks. Expect 204.
 }

@@ -1,12 +1,19 @@
 import type { PictureListResponse, PictureUsesResponse } from "@ink/schemas";
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { z } from "zod";
+import { perWriterLimit, tooMany } from "../rate-limit.js";
 import type { PicturesRepo } from "./repo.js";
 import type { PictureStore, PictureType } from "./store.js";
 
 // The web app resizes pictures before sending them (longest side 2400px), so real ones are far
 // smaller than this.
 export const PICTURE_MAX_BYTES = 5 * 1024 * 1024;
+// The small copy is 480px on its longest side, so it is far smaller than this.
+export const SMALL_MAX_BYTES = 1024 * 1024;
+// All of a writer's pictures together (the small copies are not counted).
+export const PICTURE_SPACE_BYTES = 200 * 1024 * 1024;
+// Adding a picture sends two uploads (the picture, then its small copy).
+const UPLOADS_PER_MINUTE = 30;
 
 const idParams = z.object({ id: z.string().uuid() });
 // `?size=small`: the small copy grids show. Without it, the picture as it is.
@@ -26,8 +33,11 @@ export function sniffPicture(bytes: Buffer): PictureType | null {
 }
 
 const notFound = (reply: FastifyReply) => reply.code(404).send({ error: "not_found", message: "This picture doesn't exist." });
+const tooLarge = (reply: FastifyReply) => reply.code(413).send({ error: "too_large", message: "This is too large to save." });
 
 export function registerPictureRoutes(app: FastifyInstance, store: PictureStore, repo: PicturesRepo) {
+  const uploads = perWriterLimit(UPLOADS_PER_MINUTE, 60_000);
+
   // Pictures arrive as their raw bytes, not JSON.
   app.addContentTypeParser(["image/jpeg", "image/webp"], { parseAs: "buffer", bodyLimit: PICTURE_MAX_BYTES }, (_request, body, done) =>
     done(null, body)
@@ -44,10 +54,18 @@ export function registerPictureRoutes(app: FastifyInstance, store: PictureStore,
     }
     const query = sizeQuery.safeParse(request.query);
     if (!query.success) return notFound(reply);
-    // The small copy is stored next to the picture; only the picture itself is listed.
+    if (!uploads.allow(request.userId)) return tooMany(reply);
+    const space = await repo.space(request.userId, params.data.id);
+    // The small copy is stored next to the picture, so it comes after the picture: a small copy
+    // with no picture would take space that is never listed and never deleted.
     if (query.data.size === "small") {
+      if (!space.exists) return notFound(reply);
+      if (bytes.length > SMALL_MAX_BYTES) return tooLarge(reply);
       await store.put(request.userId, params.data.id, { bytes, type }, "small");
       return reply.code(204).send();
+    }
+    if (space.otherBytes + bytes.length > PICTURE_SPACE_BYTES) {
+      return reply.code(413).send({ error: "picture_space_full", message: "Your pictures have used all their space." });
     }
     const header = request.headers[PREVIEW_HEADER];
     const preview = typeof header === "string" && header.length <= PREVIEW_MAX && PREVIEW.test(header) ? header : null;

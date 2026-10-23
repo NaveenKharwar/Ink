@@ -1,7 +1,7 @@
 meta {
-  name: My piece is still there
+  name: My piece is gone
   type: http
-  seq: 15
+  seq: 18
 }
 
 get {
@@ -15,9 +15,9 @@ auth:bearer {
 }
 
 assert {
-  res.status: eq 200
+  res.status: eq 404
 }
 
 docs {
-  Back as the first writer: the piece survived the second writer's delete. Expect 200.
+  The deleted piece is not there any more. Expect 404.
 }

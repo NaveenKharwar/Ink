@@ -150,13 +150,17 @@ export const openApiDocument = {
         summary: "Store one of your pictures (a cover, or a picture in Notes)",
         description:
           "Send the picture's bytes, JPEG or WebP (checked by the bytes themselves), at most 5 MB. The id is made by the client; " +
-          "sending the same id again replaces it, so a retry is safe. Pictures go to your own private folder only.",
+          "sending the same id again replaces it, so a retry is safe. Pictures go to your own private folder only. " +
+          "All your pictures together take at most 200 MB. `?size=small` stores the small copy (at most 1 MB) of a picture you already stored; " +
+          "for any other id it answers 404. At most 30 uploads a minute.",
         parameters: [idParam],
         requestBody: { required: true, content: { "image/webp": { schema: { type: "string", format: "binary" } }, "image/jpeg": { schema: { type: "string", format: "binary" } } } },
         responses: {
           "204": { description: "Stored." },
-          "413": json(errorBody, "Larger than 5 MB."),
+          "404": json(errorBody, "A small copy for a picture you haven't stored."),
+          "413": json(errorBody, "Larger than 5 MB (1 MB for a small copy), or your pictures have used all their space (`picture_space_full`)."),
           "415": json(errorBody, "Not a JPEG or WebP picture."),
+          "429": json(errorBody, "Too many uploads in a minute."),
           ...errors
         }
       },

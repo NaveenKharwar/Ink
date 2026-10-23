@@ -1,10 +1,10 @@
 meta {
-  name: My piece is gone
+  name: Delete my piece
   type: http
   seq: 17
 }
 
-get {
+delete {
   url: {{baseUrl}}/api/pieces/{{pieceId}}
   body: none
   auth: bearer
@@ -15,9 +15,9 @@ auth:bearer {
 }
 
 assert {
-  res.status: eq 404
+  res.status: eq 204
 }
 
 docs {
-  The deleted piece is not there any more. Expect 404.
+  The first writer deletes their own piece for good. Expect 204.
 }

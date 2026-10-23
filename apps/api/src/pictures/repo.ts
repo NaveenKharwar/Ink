@@ -9,6 +9,8 @@ export type PictureUse = { id: string; title: string | null; text: string };
 /** The list of each writer's pictures (the bytes are in the PictureStore). Every query names the writer. */
 export interface PicturesRepo {
   add(userId: string, id: string, picture: { type: PictureType; bytes: number; preview: string | null }): Promise<void>;
+  /** Whether the writer has this picture, and the space their other pictures take. */
+  space(userId: string, id: string): Promise<{ exists: boolean; otherBytes: number }>;
   list(userId: string): Promise<PictureSummary[]>;
   /** The writer's pieces that use the picture (cover or text), newest first. */
   uses(userId: string, id: string): Promise<PictureUse[]>;
@@ -29,6 +31,15 @@ export function pgPicturesRepo(db: pg.Pool): PicturesRepo {
          on conflict (user_id, id) do update set type = excluded.type, bytes = excluded.bytes, preview = excluded.preview`,
         [userId, id, picture.type, picture.bytes, picture.preview]
       );
+    },
+
+    async space(userId, id) {
+      const { rows } = await db.query<{ exists: boolean; other: string }>(
+        `select bool_or(id = $2) as exists, coalesce(sum(bytes) filter (where id <> $2), 0) as other
+         from pictures where user_id = $1`,
+        [userId, id]
+      );
+      return { exists: rows[0]?.exists ?? false, otherBytes: Number(rows[0]?.other ?? 0) };
     },
 
     async list(userId) {
@@ -100,6 +111,10 @@ export function memoryPicturesRepo(uses = new Map<string, PictureUse[]>()): Pict
       const key = `${userId}/${id}`;
       const createdAt = rows.get(key)?.createdAt ?? new Date((clock += 1000)).toISOString();
       rows.set(key, { userId, id, type: picture.type, bytes: picture.bytes, preview: picture.preview, createdAt });
+    },
+    async space(userId, id) {
+      const mine = [...rows.values()].filter((row) => row.userId === userId);
+      return { exists: mine.some((row) => row.id === id), otherBytes: mine.filter((row) => row.id !== id).reduce((sum, row) => sum + row.bytes, 0) };
     },
     async list(userId) {
       return [...rows.values()]
