@@ -109,3 +109,9 @@ If you want a clean start, put a fresh id (run `uuidgen` in a terminal) into the
 ## What to run, and when
 
 CI runs everything on each PR against a real database, including the second-user and broken-token checks. On your Mac, run folders to look at an answer yourself, and to check what CI cannot: how good the real embedder's answers are (floors, ranking). CI uses a stand-in that only needs shared words.
+
+## Browser tests
+
+After the Bruno collection, the same job builds the web app against the local Supabase, serves it (`vite preview`, port 4173, `/api` sent to the API) and runs the Playwright tests in `apps/web/e2e` in Chromium. They sign in through the real screens as the second writer (email, then "Use your password instead"), so the job keeps Supabase's test mail server running. Every test fails on a Content-Security-Policy block or an uncaught page error. They cover the sign-in page and the colour scheme script under the policy, signing in, writing and deleting a piece, and adding and deleting a picture.
+
+To run them on your own machine against a running preview and API: `pnpm --filter @ink/web e2e`. Without `E2E_EMAIL` and `E2E_PASSWORD` (a throwaway writer) only the signed-out tests run. On failure, CI keeps the Playwright report and traces in the `api-check-logs` artifact.
