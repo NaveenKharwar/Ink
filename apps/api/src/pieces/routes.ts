@@ -18,7 +18,7 @@ import { describeNear, NEAR_POOL, nearest } from "./typo.js";
 import type { EmbeddingQueue } from "../embeddings/queue.js";
 import { MIN_CLOSE_SIMILARITY, type Meaning } from "../search/meaning.js";
 import type { PiecesRepo } from "./repo.js";
-import { perWriterLimit, tooMany } from "../rate-limit.js";
+import { tooMany, type RateLimits } from "../rate-limit.js";
 
 const idParams = z.object({ id: z.string().uuid() });
 const uuid = z.string().uuid();
@@ -50,15 +50,11 @@ function invalid(reply: FastifyReply, error: z.ZodError) {
 }
 
 const SEARCH_LIMIT = 20;
-// The dialog asks twice per pause in typing (words, then meaning), so this allows brisk typing
-// but not a script hammering the embedder.
-const SEARCHES_PER_MINUTE = 120;
 const CLOSE_LIMIT = 5;
 
 const notFound = (reply: FastifyReply) => reply.code(404).send({ error: "not_found", message: "This piece doesn't exist." });
 
-export function registerPieceRoutes(app: FastifyInstance, repo: PiecesRepo, embeddings: EmbeddingQueue, meaning?: Meaning) {
-  const searches = perWriterLimit(SEARCHES_PER_MINUTE, 60_000);
+export function registerPieceRoutes(app: FastifyInstance, repo: PiecesRepo, embeddings: EmbeddingQueue, limits: RateLimits, meaning?: Meaning) {
 
   // Writing goes through here: the piece is created by its first sync, and two devices'
   // edits merge (Yjs), so neither overwrites the other.
@@ -117,7 +113,7 @@ export function registerPieceRoutes(app: FastifyInstance, repo: PiecesRepo, embe
   app.get("/api/search", async (request, reply) => {
     const query = searchQuery.safeParse(request.query);
     if (!query.success) return invalid(reply, query.error);
-    if (!searches.allow(request.userId)) return tooMany(reply);
+    if (!(await limits.allow(request.userId, "searches"))) return tooMany(reply);
     const words = searchWords(query.data.q);
     let rows = words.even.length ? await repo.search(request.userId, words, SEARCH_LIMIT) : [];
     // Nothing holds the words as typed: look again allowing a typo ("moonlihgt" finds "moonlight").
