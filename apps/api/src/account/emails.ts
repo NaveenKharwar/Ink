@@ -9,7 +9,7 @@ export function deleteLinkEmail(to: string, link: string): Mail {
     text(`You asked to delete the Ink account for ${escape(to)}. Open the link below, on any device, to finish.`, { padding: "12px 32px 20px 32px" }),
     button(escape(link), "Delete my account", BUTTON.danger),
     text("Nothing is deleted until you confirm on that page. The link works for 1 hour and only once.", { padding: "0 32px 12px 32px", size: 15, quiet: true }),
-    text("If this wasn't you, ignore this email. Your account stays as it is.", { padding: "0 32px 32px 32px", size: 15, quiet: true })
+    text("If this wasn't you, ignore this email. Your account stays as it is.", { padding: "0 32px 24px 32px", size: 15, quiet: true })
   ]);
   const plain = [
     "Delete your Ink account",
@@ -18,7 +18,9 @@ export function deleteLinkEmail(to: string, link: string): Mail {
     link,
     "",
     "Nothing is deleted until you confirm on that page. The link works for 1 hour and only once.",
-    "If this wasn't you, ignore this email. Your account stays as it is."
+    "If this wasn't you, ignore this email. Your account stays as it is.",
+    "",
+    "Naveen, Ink"
   ].join("\n");
   return { to, subject: "Delete your Ink account", text: plain, html };
 }
@@ -29,8 +31,7 @@ export function deletedEmail(to: string): Mail {
     header(),
     title("Your account is deleted"),
     text("Your writing, your pictures and everything Ink remembered about them are gone, on every device.", { padding: "12px 32px 20px 32px" }),
-    text("Thank you for writing with Ink.", { padding: "0 32px 24px 32px" }),
-    text("Naveen, Ink", { padding: "0 32px 32px 32px" })
+    text("Thank you for writing with Ink.", { padding: "0 32px 24px 32px" })
   ]);
   const plain = [
     "Your account is deleted",
