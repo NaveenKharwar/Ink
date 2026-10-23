@@ -1,7 +1,7 @@
 import type { PictureSummary, PictureUsesResponse } from "@ink/schemas";
 import { useEffect, useState, type DragEvent } from "react";
 import { pictures as picturesApi } from "../lib/api";
-import { addPicture, choosePicture, forgetPicture, formatBytes, PictureError, PICTURE_MESSAGES, usePicture, usePictureList } from "../lib/pictures";
+import { addPicture, choosePicture, forgetPicture, formatBytes, ON_PICTURES_PAGE, PictureError, PICTURE_MESSAGES, usePicture, usePictureList } from "../lib/pictures";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { Loader, ScreenLoader } from "../ui/Loader";
@@ -42,7 +42,7 @@ export function PicturesPage({ wide, showMenuButton, onMenu, seasonOf, onOpenPie
         await added.uploaded;
       }
     } catch (err) {
-      setMessage(err instanceof PictureError ? err.message : PICTURE_MESSAGES.failed);
+      setMessage(err instanceof PictureError ? (ON_PICTURES_PAGE[err.problem] ?? err.message) : PICTURE_MESSAGES.failed);
     } finally {
       setUploading(false);
       void list.refresh();

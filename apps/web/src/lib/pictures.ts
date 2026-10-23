@@ -16,6 +16,11 @@ export const PICTURE_MESSAGES: Record<PictureProblem, string> = {
   failed: "Ink couldn't add this picture. Try again in a moment."
 };
 
+// The same problems as said on the Pictures page itself, where the writer already is.
+export const ON_PICTURES_PAGE: Partial<Record<PictureProblem, string>> = {
+  full: "Your pictures have used all their space. Delete some here to add more."
+};
+
 export class PictureError extends Error {
   readonly problem: PictureProblem;
   constructor(problem: PictureProblem) {
