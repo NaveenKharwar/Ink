@@ -24,6 +24,8 @@ The sign-in code, the sign-up welcome and the password link are Supabase emails.
 
 The Reauthentication template is not used.
 
+The files are written from one shared email layout, `apps/api/src/emails/` (the same layout the API's own emails use). To change an email, edit `templates.ts` or `layout.ts`, run `pnpm --filter @ink/api emails:write`, and paste each file it reports as changed into Supabase. A test fails when a file and the layout differ.
+
 ## Checks, in order
 
 1. **Link goes to the right page.** In Profile press Add a password (or Change password). The email arrives with the subject "Set your Ink password", and the button opens `/set-password` on the same origin, showing "Choose your new password".
