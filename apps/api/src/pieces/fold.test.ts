@@ -61,6 +61,14 @@ test("a result shows its first line and the line the words were found in", () =>
   assert.deepEqual(hindi.match?.marks, [[11, 15]]);
 });
 
+test("a long line cut where a space falls still marks the whole word", () => {
+  // The cut starts 40 characters before the match, which here is a space.
+  const line = `${"x".repeat(60)} ${"y".repeat(38)} moon${" z".repeat(80)}`;
+  const { match } = describeMatch(`First\n${line}`, "moon");
+  const [start, end] = match!.marks[0]!;
+  assert.equal(match!.text.slice(start, end), "moon");
+});
+
 test("lists show the first two lines with words in them", () => {
   assert.deepEqual(openingLines("\nOne\n\nTwo\nThree"), ["One", "Two"]);
 });

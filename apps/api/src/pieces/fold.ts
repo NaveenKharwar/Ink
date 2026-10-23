@@ -154,12 +154,14 @@ const MAX_LINE = 160;
 // A long line is cut down around its first match, so the match is always in view.
 export function excerpt({ text, marks }: MarkedLine): MarkedLine {
   if (text.length <= MAX_LINE) return { text, marks };
-  const start = marks.length && marks[0]![0] > 60 ? marks[0]![0] - 40 : 0;
+  let start = marks.length && marks[0]![0] > 60 ? marks[0]![0] - 40 : 0;
+  // Start on a letter, not a space, so the marks still line up once the cut is trimmed.
+  while (start < text.length && /\s/.test(text[start]!)) start++;
   const end = Math.min(text.length, start + MAX_LINE);
   const lead = start > 0 ? "…" : "";
   const shift = lead.length - start;
   return {
-    text: lead + text.slice(start, end).trim() + (end < text.length ? "…" : ""),
+    text: lead + text.slice(start, end).trimEnd() + (end < text.length ? "…" : ""),
     marks: marks.filter(([s, e]) => s >= start && e <= end).map(([s, e]) => [s + shift, e + shift])
   };
 }
