@@ -2,6 +2,7 @@ import type { PictureSummary, PictureUsesResponse } from "@ink/schemas";
 import { useEffect, useState, type DragEvent } from "react";
 import { pictures as picturesApi } from "../lib/api";
 import { addPicture, choosePicture, forgetPicture, formatBytes, ON_PICTURES_PAGE, PictureError, PICTURE_MESSAGES, usePicture, usePictureList } from "../lib/pictures";
+import { parsePictureQuery, pictureAddress, PICTURES } from "../lib/route";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { Loader, ScreenLoader } from "../ui/Loader";
@@ -28,7 +29,37 @@ type Props = {
  */
 export function PicturesPage({ wide, showMenuButton, onMenu, seasonOf, onOpenPiece }: Props) {
   const list = usePictureList();
-  const [open, setOpen] = useState<PictureSummary | null>(null);
+  // The open picture is in the address (`/pictures?id=<id>`): opening one adds a step to the history,
+  // so Back closes it, and a refresh or a link opens it again.
+  const pictureInAddress = () => parsePictureQuery(window.location.search);
+  const [openId, setOpenId] = useState<string | null>(pictureInAddress);
+  useEffect(() => {
+    const onPop = () => setOpenId(pictureInAddress());
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+  const open: PictureSummary | null = (openId && list.items?.find((p) => p.id === openId)) || null;
+  // A picture that isn't the writer's (deleted, or never theirs) leaves the grid as it is.
+  useEffect(() => {
+    // An `id` that isn't one is the grid: the address says so too.
+    if (!openId && new URLSearchParams(window.location.search).has("id")) window.history.replaceState(null, "", PICTURES);
+    if (openId && list.items && !list.items.some((p) => p.id === openId)) {
+      window.history.replaceState(null, "", PICTURES);
+      setOpenId(null);
+    }
+  }, [openId, list.items]);
+  const openPicture = (id: string) => {
+    window.history.pushState({ inkPicture: true }, "", pictureAddress(id));
+    setOpenId(id);
+  };
+  // Closing takes back the step opening added; opened from a link or a refresh, there is none to take back.
+  const closePicture = () => {
+    if ((window.history.state as { inkPicture?: boolean } | null)?.inkPicture) window.history.back();
+    else {
+      window.history.replaceState(null, "", PICTURES);
+      setOpenId(null);
+    }
+  };
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -111,7 +142,7 @@ export function PicturesPage({ wide, showMenuButton, onMenu, seasonOf, onOpenPie
           ) : (
             <div className="mt-6 grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3">
               {list.items.map((item) => (
-                <PictureTile key={item.id} id={item.id} preview={item.preview} label="Open picture" onClick={() => setOpen(item)} />
+                <PictureTile key={item.id} id={item.id} preview={item.preview} label="Open picture" onClick={() => openPicture(item.id)} />
               ))}
             </div>
           )}
@@ -132,13 +163,11 @@ export function PicturesPage({ wide, showMenuButton, onMenu, seasonOf, onOpenPie
           picture={open}
           wide={wide}
           added={seasonOf(open.createdAt)}
-          onClose={() => setOpen(null)}
-          onOpenPiece={(id) => {
-            setOpen(null);
-            onOpenPiece(id);
-          }}
+          onClose={closePicture}
+          // The picture's step stays in the history, so Back from the piece returns to it.
+          onOpenPiece={onOpenPiece}
           onDeleted={() => {
-            setOpen(null);
+            closePicture();
             void list.refresh();
           }}
         />

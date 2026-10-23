@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
-import type { PieceStatus, RelatedNote } from "@ink/schemas";
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
+import type { PieceStatus, PieceStyle, RelatedNote } from "@ink/schemas";
 import { TETHER_VISITS, countTetherVisit, type Account } from "../lib/account";
 import { sync } from "../lib/localSave";
-import { ALL_WRITING, PICTURES, PROFILE, parseRoute, pieceAddress } from "../lib/route";
+import { allAddress, PICTURES, PROFILE, parseAllQuery, parseRoute, pieceAddress, searchIsOpen, withSearch } from "../lib/route";
 import { deviceTimeZone, groupBySeason, resolveSeasonSet, seasonText } from "../lib/seasons";
 import { supabase } from "../lib/supabase";
 import { NARROW_PAPER, READER_GAP, sheetRoom } from "../lib/beside";
@@ -41,12 +41,16 @@ const typingInPage = () => !!document.activeElement?.closest(".ProseMirror");
 // What the address says to show: a blank page, a piece to open, or All writing. A piece that
 // cannot exist (`/p/nonsense`) is shown as not found, like someone else's piece.
 type Target = { id: string; open: boolean };
-type View = { kind: "piece"; target: Target } | { kind: "all"; season: string | null; filter: PieceStatus | null } | { kind: "pictures" } | { kind: "profile" };
+type View =
+  | { kind: "piece"; target: Target }
+  | { kind: "all"; season: string | null; filter: PieceStatus | null; style: PieceStyle | null }
+  | { kind: "pictures" }
+  | { kind: "profile" };
 
 const blank = (): View => ({ kind: "piece", target: { id: newId(), open: false } });
 function viewFromAddress(): View {
   const route = parseRoute(window.location.pathname);
-  if (route.kind === "all") return { kind: "all", season: null, filter: null };
+  if (route.kind === "all") return { kind: "all", ...parseAllQuery(window.location.search) };
   if (route.kind === "profile") return { kind: "profile" };
   if (route.kind === "pictures") return { kind: "pictures" };
   if (route.kind === "piece") return { kind: "piece", target: { id: route.id, open: true } };
@@ -90,7 +94,22 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
   // load, so writers always meet it; × hides it for this visit only.
   const [menuOpen, setMenuOpen] = useRememberedOpen("ink-menu-open", false);
   const [panelOpen, setPanelOpen] = useState(true);
-  const [searchOpen, setSearchOpen] = useState(false);
+  // Search open is in the address (`search`, never the words): opening it adds a history step, so
+  // Back, Escape or × closes it; a refresh or a link opens it again, empty.
+  const [searchOpen, setSearchOpen] = useState(() => searchIsOpen(window.location.search));
+  const openSearch = useCallback(() => {
+    if (!searchIsOpen(window.location.search)) {
+      window.history.pushState({ inkSearch: true }, "", window.location.pathname + withSearch(window.location.search, true));
+    }
+    setSearchOpen(true);
+  }, []);
+  const closeSearch = () => {
+    if ((window.history.state as { inkSearch?: boolean } | null)?.inkSearch) window.history.back();
+    else {
+      window.history.replaceState(null, "", window.location.pathname + withSearch(window.location.search, false));
+      setSearchOpen(false);
+    }
+  };
   const [pos, setPos] = useState<PhonePos>("page");
   // The piece being written; the desktop layout and the older pieces being read belong to it.
   const openPieceId = view.kind === "piece" ? view.target.id : null;
@@ -118,20 +137,33 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
     account.tetherVisits < TETHER_VISITS || tetherForced ? "hang" : "gone"
   );
 
-  const go = (address: string, next: View) => {
-    if (window.location.pathname !== address) window.history.pushState(null, "", address);
+  // Moving to another screen adds a step to the history; narrowing All writing again replaces the
+  // step, so Back leaves the list instead of undoing each choice.
+  const go = (address: string, next: View, replace = false) => {
+    // Leaving from the search it opened takes that step's place, so Back returns to the page searched from.
+    if ((window.history.state as { inkSearch?: boolean } | null)?.inkSearch) replace = true;
+    if (window.location.pathname + window.location.search !== address) {
+      if (replace) window.history.replaceState(null, "", address);
+      else window.history.pushState(null, "", address);
+    }
     setView(next);
     setSearchOpen(false);
     setPos("page");
   };
   const newPiece = () => go("/", blank());
   const openPiece = (id: string) => go(pieceAddress(id), { kind: "piece", target: { id, open: true } });
-  const openAll = (season: string | null = null, filter: PieceStatus | null = null) => go(ALL_WRITING, { kind: "all", season, filter });
+  // All writing, narrowed to a season or Drafts or Finished. Already on it, the chosen style stays.
+  const openAll = (season: string | null = null, filter: PieceStatus | null = null) => {
+    const style = view.kind === "all" && (season || filter) ? view.style : null;
+    narrowAll({ season, filter, style });
+  };
+  const narrowAll = (next: { season: string | null; filter: PieceStatus | null; style: PieceStyle | null }) =>
+    go(allAddress(next), { kind: "all", ...next }, view.kind === "all");
   const openPictures = () => go(PICTURES, { kind: "pictures" });
   // Back to writing returns to where Profile was opened from (a blank page if opened directly).
   const beforeProfile = useRef<{ address: string; view: View } | null>(null);
   const openProfile = () => {
-    if (view.kind !== "profile") beforeProfile.current = { address: window.location.pathname, view };
+    if (view.kind !== "profile") beforeProfile.current = { address: window.location.pathname + window.location.search, view };
     go(PROFILE, { kind: "profile" });
   };
   const leaveProfile = () => {
@@ -172,7 +204,10 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
 
   // Back and forward move between pieces and All writing.
   useEffect(() => {
-    const onPop = () => setView(viewFromAddress());
+    const onPop = () => {
+      setView(viewFromAddress());
+      setSearchOpen(searchIsOpen(window.location.search));
+    };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
@@ -249,12 +284,12 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
         shell.toggleMenu();
       } else if (mod && e.key.toLowerCase() === "k") {
         e.preventDefault();
-        setSearchOpen(true);
+        openSearch();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [wide, shell.toggleMenu]);
+  }, [wide, shell.toggleMenu, openSearch]);
 
   // Seasons follow the device's time zone unless the writer chose a set in Profile.
   const timeZone = deviceTimeZone();
@@ -322,7 +357,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
     activeFilter,
     counts,
     loaded: library.items !== null,
-    onSearch: () => setSearchOpen(true),
+    onSearch: openSearch,
     onWrite: newPiece,
     onAll: () => openAll(),
     onPictures: openPictures,
@@ -362,7 +397,9 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
         seasonSet={seasonSet}
         groups={shownGroups}
         narrowedTo={seasonGroup ? { label: seasonGroup.text, clear: `Show all seasons, not only ${seasonGroup.text}` } : activeFilter ? { label: activeFilter === "draft" ? "Drafts" : "Finished", clear: `Show all writing, not only ${activeFilter === "draft" ? "drafts" : "finished pieces"}` } : null}
-        onClearNarrowing={() => setView({ kind: "all", season: null, filter: null })}
+        onClearNarrowing={() => narrowAll({ season: null, filter: null, style: view.style })}
+        style={view.style}
+        onStyle={(style) => narrowAll({ season: view.season, filter: view.filter, style })}
         onOpen={openPiece}
       />
     ) : (
@@ -390,7 +427,7 @@ export function WritingScreen({ account, userId }: { account: Account; userId: s
     );
 
   const search = searchOpen && (
-    <SearchDialog wide={wide} recent={recent} seasonSet={seasonSet} onOpen={openPiece} onClose={() => setSearchOpen(false)} />
+    <SearchDialog wide={wide} recent={recent} seasonSet={seasonSet} onOpen={openPiece} onClose={closeSearch} />
   );
 
   // Phone: the part of the screen actually showing (the keyboard can cover the rest).

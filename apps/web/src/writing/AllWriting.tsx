@@ -27,18 +27,24 @@ type Props = {
   /** What the list is narrowed to: a season as it reads on its own ("Monsoon 2025"), or Drafts or Finished. */
   narrowedTo: { label: string; clear: string } | null;
   onClearNarrowing: () => void;
+  /** The writing style the list is narrowed to (kept in the address), and choosing another. */
+  style: PieceStyle | null;
+  onStyle: (style: PieceStyle | null) => void;
   onOpen: (id: string) => void;
 };
 
 // All writing: every piece, grouped by the season it was written in, newest first.
 // Each row is the writer's own first lines, not a title.
-export function AllWriting({ wide, showMenuButton, onMenu, seasonSet, groups: all, narrowedTo, onClearNarrowing, onOpen }: Props) {
+export function AllWriting({ wide, showMenuButton, onMenu, seasonSet, groups: all, narrowedTo, onClearNarrowing, style, onStyle, onOpen }: Props) {
   const noticed = useNoticed();
-  // The list can be narrowed further to one writing style, with three quiet words under the title.
-  // A style the list holds none of is not offered; one that disappears (another season chosen) lets go.
-  const [style, setStyle] = useState<PieceStyle | null>(null);
+  // The list can be narrowed further to one writing style, with quiet words under the title: All,
+  // then each style this list holds. A chosen style the list holds none of (another season or
+  // Drafts and Finished chosen) lets go, and leaves the address too.
   const counts = useMemo(() => styleCounts(all?.flatMap((g) => g.items) ?? []), [all]);
   const activeStyle = style && counts.some((c) => c.style === style) ? style : null;
+  useEffect(() => {
+    if (all && style && !activeStyle) onStyle(null);
+  }, [all, style, activeStyle, onStyle]);
   const groups = useMemo(() => (all ? withStyle(all, activeStyle) : null), [all, activeStyle]);
   const total = groups?.reduce((n, g) => n + g.items.length, 0) ?? 0;
 
@@ -131,8 +137,8 @@ export function AllWriting({ wide, showMenuButton, onMenu, seasonSet, groups: al
               {total} {total === 1 ? "piece" : "pieces"}
             </div>
           )}
-          {/* Only when the list holds more than one style: All, then each style it holds with its count. */}
-          {all && counts.length > 1 && (
+          {/* All, then each style this list holds with its count (even when it holds only one). */}
+          {all && counts.length > 0 && (
             <div role="group" aria-label="Writing style" className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[13px] leading-5">
               {[{ style: null, label: "All", count: null }, ...counts.map((c) => ({ style: c.style, label: STYLE_PLURAL[c.style], count: c.count }))].map((option) => {
                 const on = option.style === activeStyle;
@@ -143,7 +149,7 @@ export function AllWriting({ wide, showMenuButton, onMenu, seasonSet, groups: al
                     aria-pressed={on}
                     onClick={() => {
                       // The list starts again from its top, so it is read from its first season.
-                      setStyle(option.style);
+                      onStyle(option.style);
                       setReading(null);
                     }}
                     className={`touch-44 cursor-pointer border-0 bg-transparent p-0 transition-colors duration-150 motion-reduce:transition-none ${

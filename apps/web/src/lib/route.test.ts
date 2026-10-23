@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { parseRoute, pieceAddress } from "./route";
+import { allAddress, parseAllQuery, parsePictureQuery, parseRoute, pictureAddress, pieceAddress, searchIsOpen, withSearch } from "./route";
 
 const ID = "3f0c7a52-8b1e-4d2a-9c3e-5a6b7c8d9e01";
 
@@ -38,3 +38,48 @@ test("/pictures is the writer's Pictures", () => {
   assert.deepEqual(parseRoute("/pictures/"), { kind: "pictures" });
   assert.deepEqual(parseRoute("/pictures/x"), { kind: "new" });
 });
+
+test("All writing's narrowing is read from the address", () => {
+  assert.deepEqual(parseAllQuery(""), { season: null, filter: null, style: null });
+  assert.deepEqual(parseAllQuery("?season=2025-winter"), { season: "2025-Winter", filter: null, style: null });
+  assert.deepEqual(parseAllQuery("?season=2026-MONSOON&style=notes"), { season: "2026-Monsoon", filter: null, style: "notes" });
+  assert.deepEqual(parseAllQuery("?filter=draft&style=poem"), { season: null, filter: "draft", style: "poem" });
+  assert.deepEqual(parseAllQuery("?filter=finished"), { season: null, filter: "finished", style: null });
+});
+
+test("a season and Drafts or Finished are never on at once, and anything unknown is left out", () => {
+  assert.deepEqual(parseAllQuery("?season=2025-winter&filter=draft"), { season: "2025-Winter", filter: null, style: null });
+  assert.deepEqual(parseAllQuery("?season=winter&filter=published&style=essay"), { season: null, filter: null, style: null });
+  assert.deepEqual(parseAllQuery("?season=2025-<b>&style=Notes"), { season: null, filter: null, style: null });
+});
+
+test("All writing's address holds only what it is narrowed to", () => {
+  assert.equal(allAddress(), "/all");
+  assert.equal(allAddress({ season: "2025-Winter" }), "/all?season=2025-winter");
+  assert.equal(allAddress({ season: "2025-Winter", filter: "draft", style: "notes" }), "/all?season=2025-winter&style=notes");
+  assert.equal(allAddress({ filter: "finished", style: "poem" }), "/all?filter=finished&style=poem");
+  for (const q of [{ season: "2026-Monsoon", style: "notes" as const }, { filter: "draft" as const }]) {
+    assert.deepEqual(parseAllQuery(allAddress(q).replace("/all", "")), { season: null, filter: null, style: null, ...q });
+  }
+});
+
+test("one open picture is in the Pictures address as ?id=", () => {
+  assert.equal(pictureAddress(ID), `/pictures?id=${ID}`);
+  assert.equal(parsePictureQuery(`?id=${ID}`), ID);
+  assert.equal(parsePictureQuery(`?id=${ID.toUpperCase()}`), ID);
+  assert.equal(parsePictureQuery("?id=not-an-id"), null);
+  assert.equal(parsePictureQuery(""), null);
+});
+
+test("search open is one word in the address, never what was typed", () => {
+  assert.equal(withSearch("", true), "?search");
+  assert.equal(withSearch("?style=notes", true), "?style=notes&search");
+  assert.equal(withSearch("?style=notes&search", true), "?style=notes&search");
+  assert.equal(withSearch("?style=notes&search", false), "?style=notes");
+  assert.equal(withSearch("?search", false), "");
+  assert.equal(searchIsOpen("?filter=draft&search"), true);
+  assert.equal(searchIsOpen("?filter=draft"), false);
+  // The rest of the address still reads the same with search open.
+  assert.deepEqual(parseAllQuery("?style=notes&search"), { season: null, filter: null, style: "notes" });
+});
+
