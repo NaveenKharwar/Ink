@@ -11,13 +11,13 @@
 # Ink
 
 <p align="center">
-  <img src="docs/images/desktop-edge.webp" alt="Ink open on a piece, with its echoes, older pieces close in meaning, beside it" width="860">
+  <img src="docs/images/desktop-window.webp" alt="Ink, a quiet place to write, with a memory for writers: a piece open with its echoes, older pieces close in meaning, beside it" width="860">
 </p>
 
 [Ink](https://withink.app) is a private place to write that remembers. It shows you the old poem that echoes today's line, the piece you forgot you started, and the idea you keep returning to. It never touches your sentences. It only gives your own words back at the right moment.
 
 <p align="center">
-  <img src="docs/images/phones.webp" alt="Ink on a phone: echoes beside the page, all writing grouped by season, and a blank page with a choice of style" width="720">
+  <img src="docs/images/phones.webp" alt="Ink on a phone. Echoes: what you wrote before, beside the page. Seasons: every piece, by when you wrote it. Styles: poem, story or notes." width="860">
 </p>
 
 ## Why another place to write
