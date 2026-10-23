@@ -6,7 +6,8 @@ import { isFollowable } from "../lib/link";
 import { LinkField } from "./LinkField";
 
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
-const action = `h-8 cursor-pointer rounded-md border-0 bg-transparent px-2.5 text-[13px] text-ink/70 transition-colors duration-150 hover:text-ink motion-reduce:transition-none ${focusRing}`;
+// On a touch screen each control also gets a 44px hit area (touch-44), without changing its look.
+const action = `touch-44 h-8 cursor-pointer rounded-md border-0 bg-transparent px-2.5 text-[13px] text-ink/70 transition-colors duration-150 hover:text-ink motion-reduce:transition-none ${focusRing}`;
 
 // The card's widest size, and the room it always keeps from the window's edges.
 const CARD_WIDTH = 360;
@@ -78,7 +79,7 @@ export function LinkCard({ editor }: { editor: Editor }) {
           href={state.href}
           target="_blank"
           rel="noopener noreferrer"
-          className={`min-w-0 truncate rounded-md px-2 py-1 text-[13px] text-accent underline underline-offset-2 ${focusRing}`}
+          className={`touch-44 min-w-0 truncate rounded-md px-2 py-1 text-[13px] text-accent underline underline-offset-2 ${focusRing}`}
         >
           {state.href.replace(/^https?:\/\//, "")}
         </a>
