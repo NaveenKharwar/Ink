@@ -115,8 +115,6 @@ export function PicturesPage({ wide, showMenuButton, onMenu, seasonOf, onOpenPie
               ))}
             </div>
           )}
-
-          <p className="m-0 mt-6 text-[13px] text-ink-muted">Only you can see these.</p>
         </div>
       </FadeScroll>
 
