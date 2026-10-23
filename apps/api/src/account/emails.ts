@@ -1,47 +1,45 @@
+import { BUTTON, button, escape, header, page, text, title } from "../emails/layout.js";
 import type { Mail } from "./mail.js";
-
-const escape = (value: string) =>
-  value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-
-const page = (body: string) =>
-  `<div style="font-family:Georgia,'Times New Roman',serif;font-size:16px;line-height:1.6;color:#1a1a1a;max-width:480px;margin:0 auto;padding:24px 8px">${body}</div>`;
 
 /** The email with the link that opens the page where the writer deletes their account. */
 export function deleteLinkEmail(to: string, link: string): Mail {
-  const text = [
-    `You asked to delete your Ink account (${to}).`,
+  const html = page([
+    header(),
+    title("Delete your Ink account"),
+    text(`You asked to delete the Ink account for ${escape(to)}. Open the link below, on any device, to finish.`, { padding: "12px 32px 20px 32px" }),
+    button(escape(link), "Delete my account", BUTTON.danger),
+    text("Nothing is deleted until you confirm on that page. The link works for 1 hour and only once.", { padding: "0 32px 12px 32px", size: 15, quiet: true }),
+    text("If this wasn't you, ignore this email. Your account stays as it is.", { padding: "0 32px 32px 32px", size: 15, quiet: true })
+  ]);
+  const plain = [
+    "Delete your Ink account",
     "",
-    "Open this link to finish. It works once, for 1 hour:",
+    `You asked to delete the Ink account for ${to}. Open this link, on any device, to finish:`,
     link,
     "",
-    "Nothing is deleted until you confirm on that page.",
-    "If you didn't ask for this, ignore this email. Your account stays as it is.",
-    "",
-    "Ink"
+    "Nothing is deleted until you confirm on that page. The link works for 1 hour and only once.",
+    "If this wasn't you, ignore this email. Your account stays as it is."
   ].join("\n");
-  const html = page(
-    `<p style="margin:0 0 16px">You asked to delete your Ink account (${escape(to)}).</p>` +
-      `<p style="margin:0 0 20px"><a href="${escape(link)}" style="display:inline-block;background:#9a4a3c;color:#ffffff;text-decoration:none;font-family:Arial,sans-serif;font-size:15px;padding:10px 18px;border-radius:8px">Delete my account</a></p>` +
-      `<p style="margin:0 0 16px">The link works once, for 1 hour. Nothing is deleted until you confirm on that page.</p>` +
-      `<p style="margin:0 0 16px;color:#666560">If you didn't ask for this, ignore this email. Your account stays as it is.</p>` +
-      `<p style="margin:0">Ink</p>`
-  );
-  return { to, subject: "Delete your Ink account", text, html };
+  return { to, subject: "Delete your Ink account", text: plain, html };
 }
 
 /** The note sent once the account is gone. */
 export function deletedEmail(to: string): Mail {
-  const text = [
-    "Your Ink account is deleted.",
+  const html = page([
+    header(),
+    title("Your account is deleted"),
+    text("Your writing, your pictures and everything Ink remembered about them are gone, on every device.", { padding: "12px 32px 20px 32px" }),
+    text("Thank you for writing with Ink.", { padding: "0 32px 24px 32px" }),
+    text("Naveen, Ink", { padding: "0 32px 32px 32px" })
+  ]);
+  const plain = [
+    "Your account is deleted",
     "",
     "Your writing, your pictures and everything Ink remembered about them are gone, on every device.",
     "",
-    "Thank you for writing with Ink."
+    "Thank you for writing with Ink.",
+    "",
+    "Naveen, Ink"
   ].join("\n");
-  const html = page(
-    `<p style="margin:0 0 16px">Your Ink account is deleted.</p>` +
-      `<p style="margin:0 0 16px">Your writing, your pictures and everything Ink remembered about them are gone, on every device.</p>` +
-      `<p style="margin:0">Thank you for writing with Ink.</p>`
-  );
-  return { to, subject: "Your Ink account is deleted", text, html };
+  return { to, subject: "Your Ink account is deleted", text: plain, html };
 }
