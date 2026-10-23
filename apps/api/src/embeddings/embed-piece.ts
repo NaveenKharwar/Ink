@@ -6,9 +6,10 @@ export type EmbedOutcome = "embedded" | "unchanged" | "removed" | "gone";
 
 /**
  * Brings one piece's vector up to date. Pieces kept out of memory, or with no text, have no vector.
- * Throws when the provider can't be reached, so the queue retries.
+ * Throws when the provider can't be reached, so the queue retries. `force` makes the vector again
+ * even when the text has not changed (after the way vectors are made changes).
  */
-export async function embedPiece(repo: EmbeddingsRepo, provider: EmbeddingProvider, pieceId: string): Promise<EmbedOutcome> {
+export async function embedPiece(repo: EmbeddingsRepo, provider: EmbeddingProvider, pieceId: string, { force = false } = {}): Promise<EmbedOutcome> {
   const piece = await repo.load(pieceId);
   if (!piece) return "gone";
   const text = [piece.title, piece.text].filter(Boolean).join("\n\n").trim();
@@ -17,7 +18,7 @@ export async function embedPiece(repo: EmbeddingsRepo, provider: EmbeddingProvid
     return "removed";
   }
   const hash = textHash(text);
-  if (piece.storedHash === hash) {
+  if (piece.storedHash === hash && !force) {
     await repo.touch(pieceId); // checked and current, so the sweep leaves it alone
     return "unchanged";
   }

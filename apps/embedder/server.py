@@ -1,6 +1,9 @@
 """Turns text into meaning vectors for Ink's related writing.
 
 POST /embed  {"texts": ["..."]}  ->  {"model": "...", "vectors": [[...1024 numbers...]]}
+
+A text longer than the model reads at once (512 tokens) is read in parts and the parts' vectors
+are averaged (see parts.py), so the whole of a long piece counts, not only its opening.
 GET  /health                     ->  {"ok": true, "model": "..."}
 
 Listens on localhost unless EMBEDDER_HOST says otherwise (a private Tailscale or Railway address, never a
@@ -14,6 +17,8 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from sentence_transformers import SentenceTransformer
+
+from parts import join_vectors, split_parts
 
 MODEL = "BAAI/bge-m3"
 # The full commit, so the weights can never change under the same name. It is BAAI's model as
@@ -36,6 +41,22 @@ model.max_seq_length = 512
 # The server answers requests on separate threads (the background queue and a search can arrive
 # together), but the model crashes the whole process when two encodes run at once on Apple's GPU.
 encode_lock = threading.Lock()
+
+
+def embed(texts):
+    """One normalised vector per text; a long text is read in parts (see parts.py)."""
+    split = [split_parts(t[:MAX_CHARS], model.tokenizer) for t in texts]
+    every_part = [part for parts, _ in split for part in parts]
+    with encode_lock:
+        vectors = model.encode(every_part, normalize_embeddings=True)
+    out, at = [], 0
+    for parts, counts in split:
+        if len(parts) == 1:
+            out.append(vectors[at])
+        else:
+            out.append(join_vectors(vectors[at : at + len(parts)], counts))
+        at += len(parts)
+    return [v.tolist() for v in out]
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -67,9 +88,7 @@ class Handler(BaseHTTPRequestHandler):
             ok = False
         if not ok:
             return self._send(400, {"error": f"send {{\"texts\": [1 to {MAX_TEXTS} strings]}}"})
-        with encode_lock:
-            vectors = model.encode([t[:MAX_CHARS] for t in texts], normalize_embeddings=True)
-        self._send(200, {"model": MODEL, "vectors": vectors.tolist()})
+        self._send(200, {"model": MODEL, "vectors": embed(texts)})
 
     def log_message(self, *args):
         pass
