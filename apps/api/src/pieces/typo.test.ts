@@ -52,7 +52,9 @@ test("a long search lets other work run while it reads", async () => {
   await new Promise((resolve) => setTimeout(resolve, 5));
   clearInterval(ticker);
   assert.ok(took > 100, `the search should take a while here (took ${took.toFixed(0)} ms)`);
-  assert.ok(longestWait < 60, `other work waited ${longestWait.toFixed(0)} ms`);
+  // Held in one go, other work would wait the whole search; pausing, a small part of it. Relative,
+  // so a slow or busy machine doesn't change the answer.
+  assert.ok(longestWait < took / 2, `other work waited ${longestWait.toFixed(0)} ms of a ${took.toFixed(0)} ms search`);
 });
 
 test("remembering pairs and pausing find the same pieces in the same order as scoring each piece alone", async () => {
