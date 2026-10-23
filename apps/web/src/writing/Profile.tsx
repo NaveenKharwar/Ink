@@ -97,7 +97,7 @@ export function Profile({ account, items, wide, showMenuButton, onMenu, onBack, 
           </Section>
           <Section>
             <SignOutButton onSignOut={onSignOut} />
-            <AccountFoot email={account.email} pieces={items?.length ?? 0} wide={wide} timeZone={timeZone} set={set} />
+            <AccountFoot email={account.email} items={items} wide={wide} timeZone={timeZone} set={set} />
           </Section>
         </div>
       </FadeScroll>
