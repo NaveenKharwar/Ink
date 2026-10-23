@@ -46,12 +46,16 @@ export const codeBox = (code: string) =>
 export const picture = (src: string, alt: string, width: number, height: number) =>
   `<tr><td style="padding:0 32px;"><img src="${src}" width="${width}" height="${height}" alt="${alt}" style="display:block;width:100%;height:auto;border:0;"></td></tr>`;
 
-/** The grey page and the white card around the rows. */
+/** The sign-off every email ends with. */
+export const signature = () => text("Naveen, Ink", { padding: "0 32px 32px 32px" });
+
+/** The grey page and the white card around the rows, ending with the sign-off. */
 export const page = (rows: string[]) =>
   [
     `<table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f4f4f2"><tr><td align="center" style="padding:32px 16px;">`,
     `<table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="max-width:520px;background-color:#ffffff;">`,
     ...rows,
+    signature(),
     `</table></td></tr></table>`,
     ""
   ].join("\n");
