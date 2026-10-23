@@ -1,0 +1,25 @@
+# Secrets and local settings never go into an image.
+.env
+.env.*
+!.env.example
+*.pem
+*.crt
+
+# Built and installed files: each image makes its own.
+**/node_modules
+**/dist
+**/.turbo
+**/logs
+**/*.log
+**/.venv
+**/__pycache__
+**/.hf
+
+# Not needed to build or run Ink.
+.git
+.github
+docs
+**/playwright-report
+**/test-results
+**/.playwright
+PRODUCT.md

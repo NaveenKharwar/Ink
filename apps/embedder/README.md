@@ -35,9 +35,16 @@ vector the model gives it whole, and the end of a long piece counts.
 python -m unittest discover -v -p "test_*.py"
 ```
 
-CI runs every `test_*.py` here when a pull request changes the embedder (`.github/workflows/embedder.yml`).
-It installs `requirements-ci.txt`: the same versions with hashes, torch as its CPU-only build for Linux.
-When `requirements.txt` changes, remake `requirements-ci.txt` too (the command is at its top).
+CI runs every `test_*.py` here inside the Docker image, on Intel and on ARM, when a pull request changes
+the embedder (`.github/workflows/embedder.yml`).
+
+## Docker
+
+`Dockerfile` builds the embedder for Linux (build it from the repository root; `compose.yaml` and
+[docs/docker.md](../../docs/docker.md) run it). It installs the same versions with hashes, torch as its CPU-only
+build: `requirements-ci.txt` on Intel machines, `requirements-arm64.txt` on ARM (Apple silicon, ARM servers).
+It listens on `0.0.0.0:8001`, so it needs `EMBEDDER_SECRET`, and keeps the model in `/models`.
+When `requirements.txt` changes, remake both Linux lists too (the commands are at their tops).
 
 ## After the way vectors are made changes
 

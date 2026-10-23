@@ -1,6 +1,6 @@
 # Run Ink yourself
 
-This guide sets up Ink on your own computer, from a fresh clone to signing in and writing.
+This guide sets up Ink on your own computer, from a fresh clone to signing in and writing. To run Ink in containers with one command, see [docker.md](./docker.md).
 
 ## What you need
 
