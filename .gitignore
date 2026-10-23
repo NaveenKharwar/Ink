@@ -16,3 +16,5 @@ coverage/
 .venv/
 __pycache__/
 logs/
+playwright-report/
+test-results/
