@@ -8,7 +8,7 @@ import { buffer } from "../lib/localSave";
 import { deviceTimeZone, resolveSeasonSet } from "../lib/seasons";
 import { supabase } from "../lib/supabase";
 import { useDocumentTitle } from "../lib/useDocumentTitle";
-import { Eyebrow, Heading, LinkButton, MainButton, Message } from "./parts";
+import { Eyebrow, Heading, InkHeader, LinkButton, MainButton, Message } from "./parts";
 
 type Step = { kind: "checking" } | { kind: "confirm"; pending: PendingDeletionResponse } | { kind: "done" } | { kind: "expired" };
 
@@ -93,8 +93,9 @@ export function DeleteAccountPage() {
   const sameWriter = !!pending && !!signedInAs && signedInAs.email.toLowerCase() === pending.email.toLowerCase();
 
   return (
-    <div className="auth flex min-h-dvh flex-col items-center bg-auth-cream px-5 pt-16 pb-16 text-auth-ink">
+    <div className="auth flex min-h-dvh flex-col items-center bg-auth-cream px-5 pt-8 pb-16 text-auth-ink">
       <main className="w-full max-w-[420px]">
+        <InkHeader />
         {step.kind === "checking" && (
           <>
             <Eyebrow>DELETE ACCOUNT</Eyebrow>

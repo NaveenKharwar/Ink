@@ -96,3 +96,14 @@ export function GoogleMark() {
     </svg>
   );
 }
+
+// The top of a page opened from an Ink email (setting a password, deleting the account): the
+// connections mark and the Lora wordmark, so the writer can see at a glance the page is Ink's.
+export function InkHeader() {
+  return (
+    <a href="/" className="mb-11 inline-flex items-center gap-2 font-display text-[22px] leading-7 font-medium text-auth-ink no-underline">
+      <img src="/icon-192.png" alt="" width={28} height={28} className="block h-7 w-7" />
+      Ink
+    </a>
+  );
+}
