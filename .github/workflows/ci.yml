@@ -51,8 +51,9 @@ jobs:
   # (database, sign-in, storage), the real API, and a stand-in embedder. Fails the PR if one writer
   # can reach another's writing, or a bad token gets in.
   api-checks:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # A fixed Ubuntu: the browser tests need one Playwright supports (it does not support 26.04 yet).
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
     permissions:
       contents: read
       pull-requests: write
@@ -80,7 +81,7 @@ jobs:
       - name: Start a local Supabase
         run: |
           supabase init --force
-          supabase start -x realtime,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+          supabase start -x realtime,imgproxy,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
 
       - name: Apply the migrations and create two writers
         run: apps/api/ci/prepare.sh
@@ -110,6 +111,28 @@ jobs:
       - name: Run the Bruno collection
         run: npx --yes @usebruno/cli@4.2.1 run --env Local --reporter-json "$GITHUB_WORKSPACE/bruno-results.json"
         working-directory: apps/api/bruno
+
+      # The browser tests: the built web app (pointed at this local Supabase) in Chromium, signed in
+      # through the real screens as the second writer. A security-policy block or page error fails them.
+      - name: Build and serve the web app
+        run: |
+          pnpm --filter @ink/web build
+          nohup pnpm --filter @ink/web preview --port 4173 --strictPort > web.out.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:4173/ > /dev/null && exit 0
+            sleep 1
+          done
+          echo "The web app did not start"; cat web.out.log; exit 1
+
+      - name: Install Chromium
+        run: pnpm --filter @ink/web exec playwright install --with-deps chromium
+
+      - name: Browser tests
+        env:
+          E2E_EMAIL: ${{ env.SECOND_EMAIL }}
+          E2E_PASSWORD: ${{ env.SECOND_PASSWORD }}
+          E2E_REQUIRE_SIGN_IN: "1"
+        run: pnpm --filter @ink/web e2e
 
       - name: The embeddings were really made
         if: always()
@@ -159,6 +182,7 @@ jobs:
         run: |
           echo "--- API"; tail -n 200 api.out.log || true
           echo "--- embedder"; tail -n 50 fake-embedder.log || true
+          echo "--- web"; tail -n 50 web.out.log || true
 
       # The whole logs and the Bruno report, to download from the run page when a check fails.
       - name: Keep the logs
@@ -171,5 +195,8 @@ jobs:
             fake-embedder.log
             apps/api/logs/api.log
             bruno-results.json
+            web.out.log
+            apps/web/playwright-report
+            apps/web/test-results
           if-no-files-found: ignore
           retention-days: 7
