@@ -1,6 +1,6 @@
 # How search works
 
-_As of 2026-10-01. Search is still being improved, so treat the numbers below as today's settings, not promises. Each one names the constant in the code that holds it._
+_The numbers below are settings, not promises: each one names the constant in the code that holds it._
 
 Search (Cmd+K) looks through the signed-in writer's own pieces and nothing else. Every query is scoped to the writer in the database, and pieces the writer keeps out of memory are never searched by meaning.
 
@@ -50,10 +50,10 @@ Code: `apps/api/src/search/meaning.ts`, `apps/api/src/pieces/routes.ts`, `apps/a
 
 ### How it works
 
-- Each piece is turned into a vector (1,024 numbers) by BGE-M3, an open model that runs on our own machine. The writing never leaves it. Vectors are made in the background after a save, never while the writer types.
+- Each piece is turned into a vector (1,024 numbers) by BGE-M3, an open model that runs on Ink's own private server. The writing never leaves Ink. Vectors are made in the background after a save, never while the writer types.
 - When a search runs, the typed words are turned into a vector the same way and compared with the writer's pieces using cosine similarity. A pause of 200 ms in the search box looks for the words; meaning waits for a pause of 500 ms, since every request wakes the model.
 - The model's server handles one request at a time, so a search can wait behind background work. If it does not answer within 5 seconds, or is not set up, search shows the words group only. Nothing breaks.
-- The dialog asks for the two groups as two requests (`/api/search?part=words` and `?part=close`, which the API also answers together when `part` is left out). The words come back in a fraction of a second and are shown at once; a small loader waits under them while meaning is worked out, and "Close in meaning" appears when it is ready (about 3 seconds today on a busy local model). If meaning fails, the writer keeps the words.
+- The dialog asks for the two groups as two requests (`/api/search?part=words` and `?part=close`, which the API also answers together when `part` is left out). The words come back in a fraction of a second and are shown at once; a small loader waits under them while meaning is worked out, and "Close in meaning" appears when it is ready (about 3 seconds on a busy local model). If meaning fails, the writer keeps the words.
 
 ### What the score means
 
@@ -65,7 +65,7 @@ The cutoff is a guess from one archive of about 60 pieces, so it will be retuned
 
 - A word or two gives the model little to work on. For queries like "table" or "sleep" everything scores about 0.45 to 0.5, real matches and noise alike, so no piece clears 0.53 and the group stays empty. Showing nothing is better than showing wrong pieces.
 - A concrete word with real matches ("rain") scores 0.53 to 0.61 for those pieces.
-- Related writing in the editor compares whole pieces with each other, which scores differently, so it has its own, lower cutoff (0.45). Forgotten and Loose lines beside it use the same 0.53 as here, so they show only clearly close pieces and are often empty.
+- Related, in Echoes beside the page, compares whole pieces with each other, which scores differently, so it has its own, lower cutoff (0.45). Forgotten and Loose lines beside it use the same 0.53 as here, so they show only clearly close pieces and are often empty.
 
 ### Which pieces are left out
 
@@ -77,7 +77,7 @@ The cutoff is a guess from one archive of about 60 pieces, so it will be retuned
 
 ## Limits on requests
 
-Each writer may search 120 times a minute and open the panel (Related or Noticed) 60 times a minute; past that the API answers 429 for the rest of the minute. A search the writer has moved on from stops waiting for the model.
+Each writer may search 120 times a minute and ask for Echoes or Noticed 60 times a minute; past that the API answers 429 for the rest of the minute. A search the writer has moved on from stops waiting for the model.
 
 ## Known limits
 
