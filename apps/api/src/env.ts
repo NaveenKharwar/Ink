@@ -20,7 +20,11 @@ const envSchema = z.object({
   // Seconds a piece must be quiet before it is embedded (default 30). Only the CI checks shorten it.
   EMBED_QUIET_SECONDS: z.coerce.number().int().positive().optional(),
   // A file the API appends its log lines to (ids, scores and errors, never writing). Development defaults to logs/api.log; elsewhere unset means terminal only.
-  LOG_FILE: z.string().min(1).optional()
+  LOG_FILE: z.string().min(1).optional(),
+  // Where the web app lives ("https://app.example"), for the link in the delete-account email. Development defaults to http://localhost:5173.
+  APP_URL: z.string().url().optional(),
+  // Sends the delete-account emails (Resend, the same sender as the sign-in emails). Development without it prints them in the terminal.
+  RESEND_API_KEY: z.string().min(1).optional()
 });
 
 export function privateHostEntries(list: string | undefined): string[] {

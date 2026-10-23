@@ -1,0 +1,31 @@
+meta {
+  name: Another writer exports
+  type: http
+  seq: 20
+}
+
+get {
+  url: {{baseUrl}}/api/export
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{secondToken}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("none of the first writer's pieces", () => {
+    const body = JSON.stringify(res.body);
+    [expect(bru.interpolate("{{otherPieceId}}")).to.have.length(36), expect(body).to.not.include(bru.interpolate("{{otherPieceId}}"))];
+    [expect(bru.interpolate("{{pieceId}}")).to.have.length(36), expect(body).to.not.include(bru.interpolate("{{pieceId}}"))];
+  });
+}
+
+docs {
+  The second writer's own export. None of the first writer's pieces may be in it.
+}

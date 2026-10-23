@@ -10,7 +10,11 @@ export const LIMITS = {
   // above any reading pace.
   looks: { max: 60, windowMs: 60_000 },
   // Adding a picture sends two uploads (the picture, then its small copy).
-  uploads: { max: 30, windowMs: 60_000 }
+  uploads: { max: 30, windowMs: 60_000 },
+  // Each one sends an email to the writer's own address.
+  deleteLinks: { max: 5, windowMs: 3_600_000 },
+  // Downloading all the writing asks for it a page at a time.
+  exports: { max: 120, windowMs: 60_000 }
 } as const;
 
 export type Bucket = keyof typeof LIMITS;

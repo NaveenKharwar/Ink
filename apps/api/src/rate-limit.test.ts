@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { memoryRateLimits } from "./rate-limit.js";
+import { LIMITS, memoryRateLimits } from "./rate-limit.js";
 
-const small = { searches: { max: 2, windowMs: 1000 }, looks: { max: 1, windowMs: 1000 }, uploads: { max: 1, windowMs: 1000 } };
+const small = { ...LIMITS, searches: { max: 2, windowMs: 1000 }, looks: { max: 1, windowMs: 1000 }, uploads: { max: 1, windowMs: 1000 } };
 
 test("each writer has their own allowance for each kind, and it comes back with the next window", async () => {
   let t = 0;

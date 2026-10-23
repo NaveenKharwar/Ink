@@ -24,7 +24,7 @@ test("the limits hold across two API machines counting at the same moment", asyn
 });
 
 test("each writer and each kind has its own allowance", async () => {
-  const limits = pgRateLimits(db, { searches: { max: 1, windowMs: 60_000 }, looks: { max: 1, windowMs: 60_000 }, uploads: { max: 1, windowMs: 60_000 } });
+  const limits = pgRateLimits(db, { ...LIMITS, searches: { max: 1, windowMs: 60_000 }, looks: { max: 1, windowMs: 60_000 }, uploads: { max: 1, windowMs: 60_000 } });
   const [asha, ravi] = [await writer(), await writer()];
   assert.equal(await limits.allow(asha, "uploads"), true);
   assert.equal(await limits.allow(asha, "uploads"), false);
@@ -33,7 +33,7 @@ test("each writer and each kind has its own allowance", async () => {
 });
 
 test("the allowance comes back when the window ends", async () => {
-  const limits = pgRateLimits(db, { searches: { max: 2, windowMs: 1000 }, looks: LIMITS.looks, uploads: LIMITS.uploads });
+  const limits = pgRateLimits(db, { ...LIMITS, searches: { max: 2, windowMs: 1000 }, looks: LIMITS.looks, uploads: LIMITS.uploads });
   const asha = await writer();
   assert.deepEqual([await limits.allow(asha, "searches"), await limits.allow(asha, "searches"), await limits.allow(asha, "searches")], [true, true, false]);
   await new Promise((resolve) => setTimeout(resolve, 1100));

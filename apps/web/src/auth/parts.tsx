@@ -13,15 +13,16 @@ export function Heading({ children }: { children: ReactNode }) {
 export function MainButton({
   children,
   busy = false,
+  danger = false,
   className = "",
   ...rest
-}: ButtonHTMLAttributes<HTMLButtonElement> & { busy?: boolean }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & { busy?: boolean; danger?: boolean }) {
   return (
     <button
       {...rest}
       disabled={busy || rest.disabled}
       aria-busy={busy || undefined}
-      className={`flex h-12 w-full cursor-pointer items-center justify-center gap-3 rounded-auth-control border-0 bg-auth-ink text-[15px] font-medium text-white hover:bg-black disabled:cursor-default disabled:opacity-80 aria-busy:opacity-100 ${className}`}
+      className={`flex h-12 w-full cursor-pointer items-center justify-center gap-3 rounded-auth-control border-0 ${danger ? "bg-[#9a4a3c] hover:bg-[#843d31]" : "bg-auth-ink hover:bg-black"} text-[15px] font-medium text-white disabled:cursor-default disabled:opacity-80 aria-busy:opacity-100 ${className}`}
     >
       {busy ? (
         <>

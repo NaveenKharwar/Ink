@@ -1,4 +1,7 @@
+import { resendMailer, noMailer, terminalMailer } from "./account/mail.js";
+import { pgAccountRepo, supabaseAccountAuth } from "./account/repo.js";
 import { buildApp } from "./app.js";
+import { pgExportRepo } from "./export/repo.js";
 import { pgSessionCheck, supabaseTokenVerifier, withLiveSession } from "./auth.js";
 import { createPool } from "./db.js";
 import { httpEmbeddingProvider } from "./embeddings/http.js";
@@ -26,16 +29,28 @@ const embeddings = env.EMBEDDER_URL
 // Search by meaning embeds the typed words as the writer waits, so it gives up quickly and falls back to words.
 const meaning = env.EMBEDDER_URL ? { repo: pgMeaningRepo(pool), embedder: httpEmbeddingProvider(env.EMBEDDER_URL, undefined, 5_000, env.EMBEDDER_SECRET) } : undefined;
 
+const development = env.NODE_ENV === "development";
+const pictureStore = supabasePictureStore(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
+const mailer = env.RESEND_API_KEY ? resendMailer(env.RESEND_API_KEY) : development ? terminalMailer() : noMailer;
+
 const app = await buildApp({
   repo: pgPiecesRepo(pool),
   related: pgRelatedRepo(pool),
-  pictures: { store: supabasePictureStore(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY), repo: pgPicturesRepo(pool) },
+  pictures: { store: pictureStore, repo: pgPicturesRepo(pool) },
   limits: pgRateLimits(pool),
   verify: withLiveSession(supabaseTokenVerifier(env.SUPABASE_URL), pgSessionCheck(pool)),
   embeddings,
   meaning,
   logger: logFile ? fileLogStream(logFile) : true,
-  docs: env.NODE_ENV === "development"
+  docs: development,
+  account: {
+    repo: pgAccountRepo(pool),
+    auth: supabaseAccountAuth(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY),
+    pictures: pictureStore,
+    mailer,
+    appUrl: env.APP_URL ?? (development ? "http://localhost:5173" : null)
+  },
+  exports: pgExportRepo(pool)
 });
 for (const message of warnings) app.log.warn(message);
 

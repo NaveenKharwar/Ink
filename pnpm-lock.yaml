@@ -296,6 +296,9 @@ importers:
       '@tiptap/y-tiptap':
         specifier: ^3.0.9
         version: 3.0.9(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.6)(y-protocols@1.0.7(yjs@13.6.33))(yjs@13.6.33)
+      fflate:
+        specifier: 0.8.2
+        version: 0.8.2
       idb:
         specifier: ^8.0.3
         version: 8.0.3
@@ -1139,6 +1142,9 @@ packages:
     peerDependenciesMeta:
       picomatch:
         optional: true
+
+  fflate@0.8.2:
+    resolution: {integrity: sha512-cPJU47OaAoCbg0pBvzsgpTPhmhqI5eJjh/JIu8tPj5q+T7iLvW/JAYUqmE7KOB4R1ZyEhzBaIQpQpardBF5z8A==}
 
   find-my-way@9.9.0:
     resolution: {integrity: sha512-sJsgZ1sQH2UDuowPuMKg8az7Qc8F0jnj+SKkFWU/+T0xcFlgV5skgXOGUqmQzOdmW6ALA7AhJINWx3qFBkbLHA==}
@@ -2427,6 +2433,8 @@ snapshots:
   fdir@6.5.0(picomatch@4.0.7):
     optionalDependencies:
       picomatch: 4.0.7
+
+  fflate@0.8.2: {}
 
   find-my-way@9.9.0:
     dependencies:

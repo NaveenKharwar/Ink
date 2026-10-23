@@ -12,7 +12,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json",
     "test:db": "tsx --test --test-concurrency=1 src/db-tests/*.db.test.ts",
     "lint": "echo \"(lint not configured yet)\"",
-    "test": "tsx --test src/pieces/routes.test.ts src/pieces/fold.test.ts src/pieces/typo.test.ts src/pictures/routes.test.ts src/related/routes.test.ts src/rate-limit.test.ts src/auth.test.ts src/embeddings/embeddings.test.ts src/embeddings/embed-piece.test.ts"
+    "test": "tsx --test src/pieces/routes.test.ts src/pieces/fold.test.ts src/pieces/typo.test.ts src/pictures/routes.test.ts src/related/routes.test.ts src/rate-limit.test.ts src/auth.test.ts src/embeddings/embeddings.test.ts src/embeddings/embed-piece.test.ts src/account/routes.test.ts"
   },
   "dependencies": {
     "@fastify/swagger": "^9.9.0",
