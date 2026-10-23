@@ -7,13 +7,14 @@
     "dev": "NODE_ENV=development tsx watch --env-file=../../.env src/server.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
+    "db:migrate": "tsx --env-file=../../.env src/scripts/migrate.ts",
     "search:rebuild": "tsx --env-file=../../.env src/scripts/rebuild-search-text.ts",
     "embed:rebuild": "tsx --env-file=../../.env src/scripts/rebuild-embeddings.ts",
     "emails:write": "tsx src/scripts/write-email-templates.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json",
     "test:db": "tsx --test --test-concurrency=1 src/db-tests/*.db.test.ts",
     "lint": "echo \"(lint not configured yet)\"",
-    "test": "tsx --test src/pieces/routes.test.ts src/pieces/fold.test.ts src/pieces/typo.test.ts src/pictures/routes.test.ts src/related/routes.test.ts src/rate-limit.test.ts src/auth.test.ts src/embeddings/embeddings.test.ts src/embeddings/embed-piece.test.ts src/emails/templates.test.ts src/account/routes.test.ts"
+    "test": "tsx --test src/pieces/routes.test.ts src/pieces/fold.test.ts src/pieces/typo.test.ts src/pictures/routes.test.ts src/related/routes.test.ts src/rate-limit.test.ts src/auth.test.ts src/embeddings/embeddings.test.ts src/embeddings/embed-piece.test.ts src/emails/templates.test.ts src/account/routes.test.ts src/migrate.test.ts"
   },
   "dependencies": {
     "@fastify/swagger": "^9.9.0",

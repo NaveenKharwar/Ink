@@ -7,7 +7,7 @@ CI runs this whole collection on every pull request. This guide is for trying th
 The `api-checks` job in `.github/workflows/ci.yml`:
 
 1. Starts a local Supabase (database, sign-in and storage) with the Supabase CLI.
-2. Runs `apps/api/ci/prepare.sh`: applies every migration in order and creates two confirmed writers with throwaway passwords.
+2. Runs `apps/api/ci/prepare.sh`: applies the migrations with `pnpm db:migrate` (twice, to prove a repeat changes nothing) and creates two confirmed writers with throwaway passwords.
 3. Runs the database tests (`pnpm --filter @ink/api test:db`, `apps/api/src/db-tests`): the real repository code against this database, each test with its own throwaway writers. They check at the database level that one writer never reaches another's pieces, search results, Echoes, meaning search, pictures or sign-in sessions, that a deleted piece stays deleted, and that a vector can only be saved under its piece's writer.
 4. Makes an expired token (`apps/api/ci/mint-expired-token.mjs`), starts a stand-in embedder (`apps/api/ci/fake-embedder.ts`: same words, same vector) and the real API.
 5. Runs this whole collection with the Bruno CLI. A request fails the job when its `assert` or `tests` block fails.
@@ -38,9 +38,9 @@ Every new endpoint that reads or changes a writer's data gets its cross-writer r
 
 Open Bruno, choose **Open Collection**, and pick this folder.
 
-CI sets these itself, with throwaway users; this is only for running the collection on your Mac. Next you need a `.env` file here. It holds your test accounts, so git ignores it, and you should never commit it:
+To run the collection on your own computer, put a `.env` file in this folder (CI sets these itself, with throwaway writers). It holds your test accounts, so git ignores it; never commit it:
 
-```
+```ini
 SUPABASE_URL=
 SUPABASE_ANON_KEY=
 TEST_EMAIL=
@@ -69,33 +69,19 @@ Then pick the **Local** environment in the top right of Bruno. If it still says 
 
 ## Read the Docs tab
 
-Every request has a **Docs** tab. It tells you what the request does and what you should see: which status code, and what to look for in the answer. That tab is the truth for a single request, so this file doesn't repeat it. When you're unsure what "good" looks like, look there first.
+Every request has a **Docs** tab: what it does, which status to expect and what to look for in the answer. It is the truth for a single request, so this file doesn't repeat it.
 
-## Variables
+## Tokens and writers
 
-You'll see names in double curly braces, like `{{baseUrl}}` or `{{pieceId}}`. Bruno swaps them for their values before sending.
+The sign-in requests save `token` (the first writer) and `secondToken` (the second); the "Privacy" requests use `secondToken`. A token lasts about an hour, so when everything answers 401, sign in again. If a sign-in fails, Bruno keeps the old value, so check its answer.
 
-The `token` is the one to understand. The sign-in requests save it, and every other request sends it. It lasts about an hour, so when everything suddenly answers 401, just sign in again.
-
-If a variable was never set, Bruno sends the name as plain text. That usually shows up as a strange 400 or 404, so if an answer makes no sense, check the variables before anything else.
-
-## Running things
-
-Press **Send** to run one request, or right-click a folder and choose **Run** to run them all. Look at the status code first, then at the body.
-
-## Trying it as someone else
-
-The second user's sign-in saves its own token as `secondToken`. The requests that act as the second writer (the "Privacy" ones) use it, and everything else uses `token`. Nothing needs switching.
-
-Always look at the answer of the sign-in itself. If it fails, Bruno quietly keeps the earlier value, and you carry on thinking you're someone else when you're not.
-
-Also remember that things belong to whoever created them. If you create something while signed in as the second user, it's theirs, and if you later ask for it as that same user, a 200 is the right answer. So when a request succeeds and you expected it to fail, find out who owns the data before you blame the API. In the Supabase SQL editor, something like this will tell you:
+Things belong to whoever created them. When a request you expected to fail succeeds, check who owns the data before blaming the API:
 
 ```sql
 select user_id from <table> where id = '<id>';
 ```
 
-If you want a clean start, put a fresh id (run `uuidgen` in a terminal) into the variable and save. Just don't commit that change.
+A variable that was never set is sent as plain text, which shows up as an odd 400 or 404.
 
 ## Adding a request
 
@@ -113,6 +99,6 @@ CI runs everything on each PR against a real database, including the second-user
 
 ## Browser tests
 
-After the Bruno collection, the same job builds the web app against the local Supabase, serves it (`vite preview`, port 4173, `/api` sent to the API) and runs the Playwright tests in `apps/web/e2e` in Chromium. They sign in through the real screens as the second writer (email, then "Use your password instead"), so the job keeps Supabase's test mail server running. Every test fails on a Content-Security-Policy block or an uncaught page error. They cover the sign-in page and the colour scheme script under the policy, signing in, writing and deleting a piece, and adding and deleting a picture.
+After the Bruno collection, the same job builds the web app against the local Supabase, serves it (`vite preview`, port 4173, `/api` sent to the API) and runs the Playwright tests in `apps/web/e2e` in Chromium. They sign in through the real screens as the second writer (email, then "Use your password instead"), so the job keeps Supabase's test mail server running. Every test fails on a Content-Security-Policy block or an uncaught page error. They cover the sign-in page and the colour scheme script under the policy, signing in, writing and deleting a piece, pictures and picture space, link cards, the page addresses, the piece dates and the style filter, one file per area in `apps/web/e2e`.
 
 To run them on your own machine against a running preview and API: `pnpm --filter @ink/web e2e`. Without `E2E_EMAIL` and `E2E_PASSWORD` (a throwaway writer) only the signed-out tests run. On failure, CI keeps the Playwright report and traces in the `api-check-logs` artifact.

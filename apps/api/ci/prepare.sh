@@ -1,23 +1,24 @@
 #!/usr/bin/env bash
 # Prepares a local Supabase stack for the API checks: applies the migrations, creates two confirmed
 # writers and writes the values the API and the Bruno collection read to $GITHUB_ENV (or prints them).
-# Needs `supabase start` to have run, and psql and curl.
+# Needs `supabase start` to have run, the packages installed, and curl.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 eval "$(supabase status -o env | sed 's/^/export /')"
 
-# Migrations run in the order of their numbers, so no two may share one.
-shared=$(ls db/migrations/*.sql | xargs -n1 basename | cut -d_ -f1 | sort | uniq -d)
-if [ -n "$shared" ]; then
-  echo "Two migrations share a number: $shared" >&2
+# The same command a developer runs (`pnpm db:migrate`), which refuses two migrations with one number.
+# The second run proves a repeat applies nothing. No certificate on the local stack, so development.
+migrate() {
+  NODE_ENV=development DATABASE_URL="${DB_URL}?sslmode=disable" SUPABASE_URL="$API_URL" \
+    SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" pnpm exec tsx src/scripts/migrate.ts
+}
+migrate
+again=$(migrate)
+if [ "$again" != "The database is up to date." ]; then
+  echo "A second db:migrate run did something: $again" >&2
   exit 1
 fi
-
-for file in $(ls db/migrations/*.sql | sort); do
-  echo "applying $file"
-  psql "$DB_URL" -v ON_ERROR_STOP=1 -q -f "$file"
-done
 
 # Throwaway accounts in a database that only lives for this run.
 FIRST_PASSWORD="ci-$(openssl rand -hex 12)"
