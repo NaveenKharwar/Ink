@@ -24,12 +24,36 @@ test("deleting a picture takes it out of the writer's pieces, and another writer
   assert.deepEqual((await pictures.uses(asha, picture)).map((u) => u.id), [covered]);
   assert.deepEqual(await pictures.uses(ravi, picture), []);
 
-  assert.equal(await pictures.remove(ravi, picture), false);
+  let filesDeleted = 0;
+  const deleteFiles = async () => void (filesDeleted += 1);
+  assert.equal(await pictures.remove(ravi, picture, deleteFiles), false);
+  assert.equal(filesDeleted, 0, "another writer's delete never reaches the files");
   assert.equal((await pictures.list(asha)).length, 1);
 
-  assert.equal(await pictures.remove(asha, picture), true);
+  assert.equal(await pictures.remove(asha, picture, deleteFiles), true);
+  assert.equal(filesDeleted, 1);
   assert.deepEqual(await pictures.list(asha), []);
   const { rows } = await db.query("select picture_ids from pieces where id = $1", [covered]);
   assert.deepEqual(rows[0].picture_ids, []);
   assert.equal((await pgPiecesRepo(db).get(asha, covered))?.text, "Under the cover");
+});
+
+test("when the files can't be deleted, nothing changes and the picture can be deleted again", async () => {
+  const asha = await writer();
+  const picture = randomUUID();
+  await pictures.add(asha, picture, { type: "image/jpeg", bytes: 70, preview: null });
+  const covered = await piece(asha, [["Still under the cover"]], { cover: { id: picture, crop } });
+  const state = async () => ({
+    listed: (await pictures.list(asha)).map((p) => p.id),
+    uses: (await pictures.uses(asha, picture)).map((u) => u.id),
+    row: (await db.query("select picture_ids, ydoc from pieces where id = $1", [covered])).rows[0]
+  });
+  const before = await state();
+
+  await assert.rejects(pictures.remove(asha, picture, async () => { throw new Error("Storage could not delete the picture (503)"); }));
+  assert.deepEqual(await state(), before);
+
+  assert.equal(await pictures.remove(asha, picture, async () => {}), true);
+  assert.deepEqual(await pictures.list(asha), []);
+  assert.deepEqual((await state()).row.picture_ids, []);
 });
